@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>YTLiveChat Overlay</title>
+    <style>
+        @font-face {
+            font-family: 'Inconsolata-LXGWMono-Medium';
+            src: url('./Inconsolata-LXGWMono-Medium.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Inconsolata-LXGWMono-Medium', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: transparent;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #chat-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            height: 100%;
+            width: 100%;
+            padding: 10px;
+            padding-bottom: 15px;
+            gap: 6px;
+        }
+
+        .message-box {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 6px 10px;
+            color: white;
+            /* 移除默认 animation，改由动态 class 分配 */
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        /* 动画库 (10 种) */
+        .anim-0 { animation: animLeft 0.4s ease-out; }
+        @keyframes animLeft { from { transform: translateX(-30px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        .anim-1 { animation: animRight 0.4s ease-out; }
+        @keyframes animRight { from { transform: translateX(30px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        .anim-2 { animation: animUp 0.4s ease-out; }
+        @keyframes animUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .anim-3 { animation: animZoom 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes animZoom { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .anim-4 { animation: animRotate 0.4s ease-out; }
+        @keyframes animRotate { from { transform: translateX(-20px) rotate(-5deg); opacity: 0; } to { transform: translateX(0) rotate(0); opacity: 1; } }
+
+        .anim-5 { animation: animDown 0.4s ease-out; }
+        @keyframes animDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .anim-6 { animation: animFlip 0.5s ease-out; }
+        @keyframes animFlip { from { transform: perspective(400px) rotateX(90deg); opacity: 0; } to { transform: perspective(400px) rotateX(0); opacity: 1; } }
+
+        .anim-7 { animation: animBounce 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+        @keyframes animBounce { from { transform: translateY(40px) scale(0.8); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+
+        .anim-8 { animation: animBlur 0.4s ease-out; }
+        @keyframes animBlur { from { filter: blur(10px); opacity: 0; transform: scale(1.1); } to { filter: blur(0); opacity: 1; transform: scale(1); } }
+
+        .anim-9 { animation: animSkew 0.4s ease-out; }
+        @keyframes animSkew { from { transform: skewX(-20deg) translateX(-50px); opacity: 0; } to { transform: skewX(0) translateX(0); opacity: 1; } }
+
+
+        .avatar {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 1px solid #ff4b4b;
+        }
+
+        .content {
+            flex: 1;
+        }
+
+        .author {
+            font-weight: bold;
+            font-size: 0.75em;
+            color: #ff9d9d;
+            margin-bottom: 1px;
+        }
+
+        .text {
+            font-size: 0.85em;
+            line-height: 1.3;
+            word-break: break-all;
+        }
+
+        /* 打赏特殊样式 */
+        .message-box.superchat {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 140, 0, 0.3));
+            border: 1px solid rgba(255, 215, 0, 0.5);
+        }
+        .superchat .author { color: gold; }
+
+        /* 会员特殊样式 */
+        .message-box.membership {
+            background: linear-gradient(135deg, rgba(0, 255, 0, 0.2), rgba(0, 100, 0, 0.2));
+            border: 1px solid rgba(0, 255, 0, 0.4);
+        }
+        .membership .author { color: #00ff00; }
+
+        @keyframes slideIn {
+            from { transform: translateX(-50px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .fade-out {
+            animation: fadeOut 0.5s ease-in forwards;
+        }
+        
+        @keyframes fadeOut {
+            to { opacity: 0; transform: translateY(-20px); }
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container"></div>
+
+    <script>
+        const container = document.getElementById('chat-container');
+        let socket;
+
+        // 根据字符串生成固定颜色
+        function stringToColor(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            // 使用不同的偏移量来增加颜色多样性
+            const h = Math.abs(hash) % 360;
+            const s = 65 + (Math.abs(hash >> 8) % 25); // 饱和度在 65%-90% 之间波动
+            const l = 70 + (Math.abs(hash >> 16) % 15); // 亮度在 70%-85% 之间波动
+            return `hsl(${h}, ${s}%, ${l}%)`;
+        }
+
+        function connect() {
+            console.log("正在连接 WebSocket...");
+            socket = new WebSocket(`ws://${window.location.host}/ws`);
+
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                addMessage(data);
+            };
+
+            socket.onopen = () => {
+                console.log("WebSocket 已连接");
+            };
+
+            socket.onclose = () => {
+                console.log("WebSocket 已断开，5秒后尝试重连...");
+                setTimeout(connect, 5000); // 5秒后自动重连
+            };
+
+            socket.onerror = (err) => {
+                console.error("WebSocket 错误:", err);
+                socket.close();
+            };
+        }
+
+        connect(); // 初始化连接
+
+        function addMessage(msg) {
+            console.log("收到消息:", msg); // 在浏览器控制台打印收到的数据
+            let avatarUrl = msg.avatar;
+            if (avatarUrl && avatarUrl.startsWith('//')) {
+                avatarUrl = 'https:' + avatarUrl;
+            }
+            if (!avatarUrl) {
+                avatarUrl = 'https://www.gstatic.com/images/branding/product/1x/avatar_circle_blue_512dp.png';
+            }
+
+            const div = document.createElement('div');
+            div.className = 'message-box';
+            
+            // 选一个固定的动画 (基于作者名哈希)
+            let nameHash = 0;
+            for (let i = 0; i < msg.author.length; i++) {
+                nameHash = msg.author.charCodeAt(i) + ((nameHash << 5) - nameHash);
+            }
+            const animIndex = Math.abs(nameHash) % 10; // 我们定义了 10 种动画
+            div.classList.add(`anim-${animIndex}`);
+
+            if (msg.isSuperChat) div.classList.add('superchat');
+            if (msg.isMembership) div.classList.add('membership');
+
+            const isSpecial = msg.isSuperChat || msg.isMembership;
+            const authorColor = isSpecial ? '' : `style="color: ${stringToColor(msg.author)}"`;
+
+            const content = `
+                <img class="avatar" src="${avatarUrl}" referrerpolicy="no-referrer" onerror="this.src='https://www.gstatic.com/images/branding/product/1x/avatar_circle_blue_512dp.png'" />
+                <div class="content">
+                    <div class="author" ${authorColor}>${msg.author} ${msg.isSuperChat ? '💰 ' + msg.amount : ''}</div>
+                    <div class="text">${msg.text}</div>
+                </div>
+            `;
+            div.innerHTML = content;
+            container.appendChild(div);
+
+            // 自动移除旧消息 (保持一定数量，防止内存占用)
+            if (container.children.length > 50) {
+                container.removeChild(container.firstChild);
+            }
+        }
+    </script>
+</body>
+</html>
