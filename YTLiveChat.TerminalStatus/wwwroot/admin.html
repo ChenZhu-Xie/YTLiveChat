@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal Admin - Update Status</title>
+    <style>
+        @font-face {
+            font-family: 'Inconsolata';
+            src: url('./Inconsolata-LXGWMono-Medium.ttf') format('truetype');
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #1a1b26; /* Tokyo Night dark */
+            font-family: 'Inconsolata', monospace;
+            color: #c0caf5;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .header {
+            background: #24283b;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #414868;
+        }
+
+        .title-input {
+            background: transparent;
+            border: 1px solid #414868;
+            color: #7aa2f7;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-family: inherit;
+            margin-left: 10px;
+            flex-grow: 1;
+        }
+
+        .editor-container {
+            flex-grow: 1;
+            padding: 20px;
+            position: relative;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            border: none;
+            color: #9ece6a; /* Terminal green */
+            font-family: 'Inconsolata', monospace;
+            font-size: 20px;
+            outline: none;
+            resize: none;
+            line-height: 1.5;
+        }
+
+        .status-info {
+            position: absolute;
+            bottom: 10px;
+            right: 20px;
+            font-size: 12px;
+            color: #565f89;
+        }
+
+        label { font-size: 14px; color: #565f89; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <label>TITLE:</label>
+        <input type="text" id="titleInput" class="title-input" placeholder="NVIM | status.txt" value="NVIM | status.txt">
+    </div>
+    <div class="editor-container">
+        <textarea id="statusInput" placeholder="Type status message here..."></textarea>
+        <div class="status-info">SIGNALR: <span id="syncStatus">DISCONNECTED</span></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+    <script>
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/statusHub")
+            .withAutomaticReconnect()
+            .build();
+
+        const statusInput = document.getElementById("statusInput");
+        const titleInput = document.getElementById("titleInput");
+        const syncStatus = document.getElementById("syncStatus");
+
+        async function start() {
+            try {
+                await connection.start();
+                syncStatus.innerText = "CONNECTED";
+                syncStatus.style.color = "#9ece6a";
+            } catch (err) {
+                console.error(err);
+                setTimeout(start, 5000);
+            }
+        };
+
+        connection.onclose(() => {
+            syncStatus.innerText = "DISCONNECTED";
+            syncStatus.style.color = "#f7768e";
+        });
+
+        function sync() {
+            connection.invoke("UpdateStatus", statusInput.value, statusInput.selectionStart)
+                .catch(err => console.error(err));
+        }
+
+        statusInput.addEventListener("input", sync);
+        statusInput.addEventListener("keyup", sync);
+        statusInput.addEventListener("click", sync);
+
+        titleInput.addEventListener("input", () => {
+            connection.invoke("UpdateTitle", titleInput.value).catch(err => console.error(err));
+        });
+
+        // Initialize values from server
+        connection.on("ReceiveStatus", (message, cursorPosition) => {
+            if (document.activeElement !== statusInput) {
+                statusInput.value = message;
+                statusInput.selectionStart = statusInput.selectionEnd = cursorPosition;
+            }
+        });
+
+        connection.on("ReceiveTitle", (title) => {
+            if (document.activeElement !== titleInput) {
+                titleInput.value = title;
+            }
+        });
+
+        start();
+    </script>
+</body>
+</html>

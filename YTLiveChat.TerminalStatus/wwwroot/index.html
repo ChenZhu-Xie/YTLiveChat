@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal Status Overlay</title>
+    <style>
+        @font-face {
+            font-family: 'Inconsolata';
+            src: url('./Inconsolata-LXGWMono-Medium.ttf') format('truetype');
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: transparent;
+            font-family: 'Inconsolata', monospace;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .terminal {
+            background: rgba(18, 18, 18, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            box-shadow: inset 0 0 60px rgba(0,0,0,0.5);
+        }
+
+        .title-bar {
+            background: rgba(40, 40, 40, 0.9);
+            /* 进一步压缩高度：上下 padding 从 12px 减为 6px */
+            padding: 6px 15px; 
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .dots {
+            display: flex;
+            gap: 6px;
+            margin-right: 15px;
+        }
+
+        .dot {
+            width: 10px; /* 圆点也稍微缩小一点，更精致 */
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .red { background: #ff5f56; }
+        .yellow { background: #ffbd2e; }
+        .green { background: #27c93f; }
+
+        .title-text {
+            color: #ffffff;
+            font-size: 24px; /* 标题稍微调整到 24px，避免在窄标题栏里太挤 */
+            font-weight: bold;
+            flex-grow: 1;
+            text-align: center;
+            margin-right: 31px; /* 重新计算：10*3(dots)+6*2(gap)+15(margin) = 57 / 2 左右 */
+            text-shadow: 0 0 10px rgba(255,255,255,0.3);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .content {
+            /* 极大压缩边距：padding 从 30px 减为 10px (上) 和 12px (左) */
+            padding: 10px 12px; 
+            color: #ebdbb2; 
+            font-size: 22px;
+            line-height: 1.4; /* 稍微压缩行高，允许更多行 */
+            white-space: pre-wrap;
+            flex-grow: 1;
+            overflow: hidden;
+            /* 确保首字符贴近左上角 */
+            text-align: left; 
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 11px;
+            height: 22px;
+            background: #50fa7b; 
+            vertical-align: middle;
+            margin-left: 2px;
+            animation: blink 1s infinite;
+            box-shadow: 0 0 6px #50fa7b;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="terminal">
+        <div class="title-bar">
+            <div class="dots">
+                <div class="dot red"></div>
+                <div class="dot yellow"></div>
+                <div class="dot green"></div>
+            </div>
+            <div id="title" class="title-text">NVIM | status.txt</div>
+        </div>
+        <div id="content" class="content">Initializing...<span class="cursor"></span></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+    <script>
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/statusHub")
+            .withAutomaticReconnect()
+            .build();
+
+        function escapeHtml(text) {
+            if (!text) return "";
+            return text.replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+        }
+
+        connection.on("ReceiveStatus", (message, cursorPosition) => {
+            const contentDiv = document.getElementById("content");
+            const msg = message || "";
+            const before = msg.substring(0, cursorPosition);
+            const after = msg.substring(cursorPosition);
+            
+            contentDiv.innerHTML = escapeHtml(before) + '<span class="cursor"></span>' + escapeHtml(after);
+        });
+
+        connection.on("ReceiveTitle", (title) => {
+            document.getElementById("title").innerText = title;
+        });
+
+        connection.start().catch(err => console.error(err.toString()));
+    </script>
+</body>
+</html>
