@@ -66,7 +66,22 @@ chatService.ChatReceived += async (sender, e) =>
 };
 
 chatService.ErrorOccurred += (s, e) => {
-    Console.WriteLine($"[错误] {e.GetException().Message}");
+    Console.WriteLine($"[错误] {DateTime.Now:HH:mm:ss} - {e.GetException().Message}");
+};
+
+// --- 自动重连逻辑 ---
+chatService.ChatStopped += async (s, e) =>
+{
+    Console.WriteLine($"[系统] {DateTime.Now:HH:mm:ss} - 监控已停止。原因: {e.Reason}");
+    
+    // 延迟 30 秒后尝试重连，避免频繁请求
+    const int reconnectDelayMs = 30000;
+    Console.WriteLine($"[系统] 将在 {reconnectDelayMs / 1000} 秒后尝试自动重新连接...");
+    
+    await Task.Delay(reconnectDelayMs);
+    
+    Console.WriteLine($"[系统] 正在尝试重新启动监控...");
+    chatService.Start(handle: "@xczphysics");
 };
 
 // WebSocket 终结点

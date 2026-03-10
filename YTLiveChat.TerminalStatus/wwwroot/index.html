@@ -22,6 +22,9 @@
             overflow: hidden;
             width: 100vw;
             height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
         }
 
         .terminal {
@@ -61,13 +64,15 @@
         .green { background: #27c93f; }
 
         .title-text {
-            color: #ffffff;
+            background: linear-gradient(to right, #4a95e3, #c16781);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
             font-size: 24px; /* 标题稍微调整到 24px，避免在窄标题栏里太挤 */
             font-weight: bold;
             flex-grow: 1;
             text-align: center;
             margin-right: 31px; /* 重新计算：10*3(dots)+6*2(gap)+15(margin) = 57 / 2 左右 */
-            text-shadow: 0 0 10px rgba(255,255,255,0.3);
+            text-shadow: 0 0 10px rgba(255,255,255,0.1);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -111,7 +116,7 @@
                 <div class="dot yellow"></div>
                 <div class="dot green"></div>
             </div>
-            <div id="title" class="title-text">NVIM | status.txt</div>
+            <div id="title" class="title-text">KanBan 看板</div>
         </div>
         <div id="content" class="content">Initializing...<span class="cursor"></span></div>
     </div>
