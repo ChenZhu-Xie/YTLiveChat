@@ -21,10 +21,12 @@
             background-color: transparent;
             width: 100vw;
             height: 100vh;
+            /* OBS 高清优化 */
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            text-rendering: optimizeLegibility;
-            image-rendering: -webkit-optimize-contrast; /* 提高图片采样质量 */
+            text-rendering: geometricPrecision;
+            transform: translateZ(0); /* 强制 GPU 渲染 */
+            image-rendering: -webkit-optimize-contrast; 
         }
 
         #chat-container {

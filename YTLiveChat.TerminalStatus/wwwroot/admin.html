@@ -32,7 +32,10 @@
         .title-input {
             background: linear-gradient(to right, #4a95e3, #c16781);
             -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            /* 关键：直接使用 color 而不是 text-fill-color，或者确保 caret-color 优先级最高 */
+            color: transparent; 
+            caret-color: #4a95e3 !important; 
             border: 1px solid #414868;
             padding: 5px 10px;
             border-radius: 4px;
@@ -56,6 +59,7 @@
             background: transparent;
             border: none;
             color: #9ece6a; /* Terminal green */
+            caret-color: #9ece6a;
             font-family: 'Inconsolata', monospace;
             font-size: 20px;
             outline: none;

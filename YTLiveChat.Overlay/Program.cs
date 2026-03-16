@@ -2,8 +2,38 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using YTLiveChat.Contracts.Services;
 using YTLiveChat.DependencyInjection;
+
+// 1. 自动化环境清理 (仅限 Windows)
+if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+{
+    try
+    {
+        var currentPid = Environment.ProcessId;
+        var processName = "YTLiveChat.Overlay";
+        
+        // 清理同名的其他残留进程 (防止构建时的文件锁定)
+        var killCommand = $"-Command \"Get-Process -Name '{processName}' -ErrorAction SilentlyContinue | ForEach-Object {{ if ($_.Id -ne {currentPid}) {{ Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue }} }}\"";
+        
+        var process = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = "powershell",
+                Arguments = killCommand,
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            }
+        };
+        process.Start();
+        process.WaitForExit();
+    }
+    catch { /* 忽略任何清理过程中的错误 */ }
+}
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddYTLiveChat(builder.Configuration);

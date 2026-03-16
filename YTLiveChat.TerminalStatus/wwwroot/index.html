@@ -22,13 +22,15 @@
             overflow: hidden;
             width: 100vw;
             height: 100vh;
+            /* OBS 高清优化 */
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            text-rendering: optimizeLegibility;
+            text-rendering: geometricPrecision;
+            transform: translateZ(0); /* 强制 GPU 渲染 */
         }
 
         .terminal {
-            background: rgba(18, 18, 18, 0.7);
+            background: rgba(26, 27, 38, 0.8); 
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.15);
             width: 100%;
@@ -39,7 +41,7 @@
         }
 
         .title-bar {
-            background: rgba(40, 40, 40, 0.9);
+            background: rgba(36, 40, 59, 0.9);
             /* 进一步压缩高度：上下 padding 从 12px 减为 6px */
             padding: 6px 15px; 
             display: flex;
@@ -81,7 +83,7 @@
         .content {
             /* 极大压缩边距：padding 从 30px 减为 10px (上) 和 12px (左) */
             padding: 10px 12px; 
-            color: #ebdbb2; 
+            color: #9ece6a; 
             font-size: 22px;
             line-height: 1.4; /* 稍微压缩行高，允许更多行 */
             white-space: pre-wrap;
@@ -92,19 +94,15 @@
         }
 
         .cursor {
-            display: inline-block;
-            width: 11px;
-            height: 22px;
-            background: #50fa7b; 
-            vertical-align: middle;
-            margin-left: 2px;
+            background: #9ece6a; 
+            color: #1a1b26;
             animation: blink 1s infinite;
-            box-shadow: 0 0 6px #50fa7b;
+            box-shadow: 0 0 6px #9ece6a;
         }
 
         @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
+            0%, 100% { background: #9ece6a; color: #1a1b26; }
+            50% { background: transparent; color: inherit; }
         }
     </style>
 </head>
@@ -139,9 +137,10 @@
             const contentDiv = document.getElementById("content");
             const msg = message || "";
             const before = msg.substring(0, cursorPosition);
-            const after = msg.substring(cursorPosition);
+            const charAtCursor = msg.substring(cursorPosition, cursorPosition + 1) || " ";
+            const after = msg.substring(cursorPosition + 1);
             
-            contentDiv.innerHTML = escapeHtml(before) + '<span class="cursor"></span>' + escapeHtml(after);
+            contentDiv.innerHTML = escapeHtml(before) + '<span class="cursor">' + escapeHtml(charAtCursor) + '</span>' + escapeHtml(after);
         });
 
         connection.on("ReceiveTitle", (title) => {
