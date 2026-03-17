@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <title>YTLiveChat Overlay</title>
@@ -10,9 +11,11 @@
             font-weight: normal;
             font-style: normal;
         }
+
         * {
             box-sizing: border-box;
         }
+
         body {
             margin: 0;
             padding: 0;
@@ -25,8 +28,9 @@
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             text-rendering: geometricPrecision;
-            transform: translateZ(0); /* 强制 GPU 渲染 */
-            image-rendering: -webkit-optimize-contrast; 
+            transform: translateZ(0);
+            /* 强制 GPU 渲染 */
+            image-rendering: -webkit-optimize-contrast;
         }
 
         #chat-container {
@@ -55,35 +59,167 @@
         }
 
         /* 动画库 (10 种) */
-        .anim-0 { animation: animLeft 0.4s ease-out; }
-        @keyframes animLeft { from { transform: translateX(-30px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .anim-0 {
+            animation: animLeft 0.4s ease-out;
+        }
 
-        .anim-1 { animation: animRight 0.4s ease-out; }
-        @keyframes animRight { from { transform: translateX(30px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes animLeft {
+            from {
+                transform: translateX(-30px);
+                opacity: 0;
+            }
 
-        .anim-2 { animation: animUp 0.4s ease-out; }
-        @keyframes animUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
 
-        .anim-3 { animation: animZoom 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        @keyframes animZoom { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .anim-1 {
+            animation: animRight 0.4s ease-out;
+        }
 
-        .anim-4 { animation: animRotate 0.4s ease-out; }
-        @keyframes animRotate { from { transform: translateX(-20px) rotate(-5deg); opacity: 0; } to { transform: translateX(0) rotate(0); opacity: 1; } }
+        @keyframes animRight {
+            from {
+                transform: translateX(30px);
+                opacity: 0;
+            }
 
-        .anim-5 { animation: animDown 0.4s ease-out; }
-        @keyframes animDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
 
-        .anim-6 { animation: animFlip 0.5s ease-out; }
-        @keyframes animFlip { from { transform: perspective(400px) rotateX(90deg); opacity: 0; } to { transform: perspective(400px) rotateX(0); opacity: 1; } }
+        .anim-2 {
+            animation: animUp 0.4s ease-out;
+        }
 
-        .anim-7 { animation: animBounce 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
-        @keyframes animBounce { from { transform: translateY(40px) scale(0.8); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+        @keyframes animUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
 
-        .anim-8 { animation: animBlur 0.4s ease-out; }
-        @keyframes animBlur { from { filter: blur(10px); opacity: 0; transform: scale(1.1); } to { filter: blur(0); opacity: 1; transform: scale(1); } }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
 
-        .anim-9 { animation: animSkew 0.4s ease-out; }
-        @keyframes animSkew { from { transform: skewX(-20deg) translateX(-50px); opacity: 0; } to { transform: skewX(0) translateX(0); opacity: 1; } }
+        .anim-3 {
+            animation: animZoom 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes animZoom {
+            from {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .anim-4 {
+            animation: animRotate 0.4s ease-out;
+        }
+
+        @keyframes animRotate {
+            from {
+                transform: translateX(-20px) rotate(-5deg);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0) rotate(0);
+                opacity: 1;
+            }
+        }
+
+        .anim-5 {
+            animation: animDown 0.4s ease-out;
+        }
+
+        @keyframes animDown {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .anim-6 {
+            animation: animFlip 0.5s ease-out;
+        }
+
+        @keyframes animFlip {
+            from {
+                transform: perspective(400px) rotateX(90deg);
+                opacity: 0;
+            }
+
+            to {
+                transform: perspective(400px) rotateX(0);
+                opacity: 1;
+            }
+        }
+
+        .anim-7 {
+            animation: animBounce 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        @keyframes animBounce {
+            from {
+                transform: translateY(40px) scale(0.8);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+
+        .anim-8 {
+            animation: animBlur 0.4s ease-out;
+        }
+
+        @keyframes animBlur {
+            from {
+                filter: blur(10px);
+                opacity: 0;
+                transform: scale(1.1);
+            }
+
+            to {
+                filter: blur(0);
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .anim-9 {
+            animation: animSkew 0.4s ease-out;
+        }
+
+        @keyframes animSkew {
+            from {
+                transform: skewX(-20deg) translateX(-50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: skewX(0) translateX(0);
+                opacity: 1;
+            }
+        }
 
 
         .avatar {
@@ -101,17 +237,17 @@
 
         .author {
             font-weight: bold;
-            font-size: 1.1em;
+            font-size: 1.0em;
             color: #ff9d9d;
             margin-bottom: 2px;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
         }
 
         .text {
-            font-size: 1.2em;
+            font-size: 0.5em;
             line-height: 1.4;
             word-break: break-all;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
         }
 
         /* 打赏特殊样式 */
@@ -119,29 +255,46 @@
             background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 140, 0, 0.3));
             border: 1px solid rgba(255, 215, 0, 0.5);
         }
-        .superchat .author { color: gold; }
+
+        .superchat .author {
+            color: gold;
+        }
 
         /* 会员特殊样式 */
         .message-box.membership {
             background: linear-gradient(135deg, rgba(0, 255, 0, 0.2), rgba(0, 100, 0, 0.2));
             border: 1px solid rgba(0, 255, 0, 0.4);
         }
-        .membership .author { color: #00ff00; }
+
+        .membership .author {
+            color: #00ff00;
+        }
 
         @keyframes slideIn {
-            from { transform: translateX(-50px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+            from {
+                transform: translateX(-50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
-        
+
         .fade-out {
             animation: fadeOut 0.5s ease-in forwards;
         }
-        
+
         @keyframes fadeOut {
-            to { opacity: 0; transform: translateY(-20px); }
+            to {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
         }
     </style>
 </head>
+
 <body>
     <div id="chat-container"></div>
 
@@ -200,7 +353,7 @@
 
             const div = document.createElement('div');
             div.className = 'message-box';
-            
+
             // 选一个固定的动画 (基于作者名哈希)
             let nameHash = 0;
             for (let i = 0; i < msg.author.length; i++) {
@@ -232,4 +385,5 @@
         }
     </script>
 </body>
+
 </html>
