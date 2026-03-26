@@ -91,6 +91,9 @@
             overflow: hidden;
             /* 确保首字符贴近左上角 */
             text-align: left; 
+            /* 强制换行优化 */
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
 
         .cursor {
@@ -98,11 +101,14 @@
             color: #1a1b26;
             animation: blink 1s infinite;
             box-shadow: 0 0 6px #9ece6a;
+            display: inline-block;
+            line-height: 1;
+            vertical-align: middle;
         }
 
         @keyframes blink {
-            0%, 100% { background: #9ece6a; color: #1a1b26; }
-            50% { background: transparent; color: inherit; }
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
         }
     </style>
 </head>
@@ -126,6 +132,17 @@
             .withAutomaticReconnect()
             .build();
 
+        const colors = [
+            '#7aa2f7', // blue
+            '#bb9af7', // purple
+            '#7dcfff', // cyan
+            '#e0af68', // yellow
+            '#f7768e', // red
+            '#9ece6a', // green
+            '#b4f9f8', // aqua
+            '#ff9e64'  // orange
+        ];
+
         function escapeHtml(text) {
             if (!text) return "";
             return text.replace(/&/g, "&amp;")
@@ -133,14 +150,46 @@
                 .replace(/>/g, "&gt;");
         }
 
+        function renderColoredContent(message, cursorPosition) {
+            const msg = message || "";
+            let resultHtml = "";
+            let currentLineIndex = 0;
+            
+            const startSpan = (idx) => `<span style="color: ${colors[idx % colors.length]}">`;
+            
+            resultHtml += startSpan(currentLineIndex);
+            
+            for (let i = 0; i <= msg.length; i++) {
+                if (i === cursorPosition) {
+                    const color = colors[currentLineIndex % colors.length];
+                    const charAtCursor = msg[i] || " ";
+                    if (charAtCursor === '\n') {
+                        resultHtml += `<span class="cursor" style="background: ${color}; color: #1a1b26; box-shadow: 0 0 6px ${color};">&nbsp;</span>`;
+                    } else {
+                        resultHtml += `<span class="cursor" style="background: ${color}; color: #1a1b26; box-shadow: 0 0 6px ${color};">${escapeHtml(charAtCursor)}</span>`;
+                        continue; // Skip the character we just rendered as cursor
+                    }
+                }
+                
+                if (i < msg.length) {
+                    const char = msg[i];
+                    if (char === '\n') {
+                        resultHtml += `</span>\n`;
+                        currentLineIndex++;
+                        resultHtml += startSpan(currentLineIndex);
+                    } else {
+                        resultHtml += escapeHtml(char);
+                    }
+                }
+            }
+            
+            resultHtml += `</span>`;
+            return resultHtml;
+        }
+
         connection.on("ReceiveStatus", (message, cursorPosition) => {
             const contentDiv = document.getElementById("content");
-            const msg = message || "";
-            const before = msg.substring(0, cursorPosition);
-            const charAtCursor = msg.substring(cursorPosition, cursorPosition + 1) || " ";
-            const after = msg.substring(cursorPosition + 1);
-            
-            contentDiv.innerHTML = escapeHtml(before) + '<span class="cursor">' + escapeHtml(charAtCursor) + '</span>' + escapeHtml(after);
+            contentDiv.innerHTML = renderColoredContent(message, cursorPosition);
         });
 
         connection.on("ReceiveTitle", (title) => {

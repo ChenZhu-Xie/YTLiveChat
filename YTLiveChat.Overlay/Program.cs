@@ -55,6 +55,9 @@ app.UseStaticFiles();
 
 var sockets = new ConcurrentDictionary<Guid, WebSocket>();
 var messageHistory = new ConcurrentQueue<string>(); // 存储最近 30 条消息的 JSON
+var seenMessageIds = new ConcurrentDictionary<string, byte>();
+var seenMessageIdsQueue = new ConcurrentQueue<string>();
+const int MaxSeenMessagesCache = 1000;
 
 // 监听 YouTube 聊天
 var chatService = app.Services.GetRequiredService<IYTLiveChat>();
@@ -63,6 +66,21 @@ chatService.InitialPageLoaded += (s, e) => Console.WriteLine($"[系统] 已连�
 
 chatService.ChatReceived += async (sender, e) =>
 {
+    // 消息去重
+    if (!seenMessageIds.TryAdd(e.ChatItem.Id, 0))
+    {
+        return;
+    }
+
+    seenMessageIdsQueue.Enqueue(e.ChatItem.Id);
+    while (seenMessageIdsQueue.Count > MaxSeenMessagesCache)
+    {
+        if (seenMessageIdsQueue.TryDequeue(out var oldId))
+        {
+            seenMessageIds.TryRemove(oldId, out _);
+        }
+    }
+
     var authorName = e.ChatItem.Author.Name;
     var messageText = string.Join("", e.ChatItem.Message.Select(p => p is YTLiveChat.Contracts.Models.TextPart t ? t.Text : (p is YTLiveChat.Contracts.Models.EmojiPart em ? em.EmojiText : "")));
 
@@ -70,6 +88,7 @@ chatService.ChatReceived += async (sender, e) =>
 
     var message = new
     {
+        id = e.ChatItem.Id,
         author = authorName,
         text = messageText,
         isSuperChat = e.ChatItem.Superchat != null,

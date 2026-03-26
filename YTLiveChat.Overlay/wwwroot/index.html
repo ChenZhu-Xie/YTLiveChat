@@ -300,6 +300,7 @@
 
     <script>
         const container = document.getElementById('chat-container');
+        const seenIds = new Set();
         let socket;
 
         // 根据字符串生成固定颜色
@@ -342,6 +343,18 @@
         connect(); // 初始化连接
 
         function addMessage(msg) {
+            if (msg.id && seenIds.has(msg.id)) {
+                return;
+            }
+            if (msg.id) {
+                seenIds.add(msg.id);
+                // 保持 Set 大小，防止内存泄漏
+                if (seenIds.size > 200) {
+                    const firstEntry = seenIds.values().next().value;
+                    seenIds.delete(firstEntry);
+                }
+            }
+
             console.log("收到消息:", msg); // 在浏览器控制台打印收到的数据
             let avatarUrl = msg.avatar;
             if (avatarUrl && avatarUrl.startsWith('//')) {
