@@ -66,18 +66,21 @@
         .green { background: #27c93f; }
 
         .title-text {
-            background: linear-gradient(to right, #4a95e3, #c16781);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 24px; /* 标题稍微调整到 24px，避免在窄标题栏里太挤 */
+            font-size: 24px;
             font-weight: bold;
             flex-grow: 1;
             text-align: center;
-            margin-right: 31px; /* 重新计算：10*3(dots)+6*2(gap)+15(margin) = 57 / 2 左右 */
-            text-shadow: 0 0 10px rgba(255,255,255,0.1);
+            margin-right: 31px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+
+        #title {
+            background: linear-gradient(to right, #4a95e3, #c16781);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 10px rgba(255,255,255,0.1);
         }
 
         .content {
@@ -93,7 +96,7 @@
             text-align: left; 
             /* 强制换行优化 */
             overflow-wrap: break-word;
-            word-break: break-word;
+            word-break: break-all; /* 使用 break-all 确保 URL 也能在任意处断开 */
         }
 
         .cursor {
@@ -101,14 +104,13 @@
             color: #1a1b26;
             animation: blink 1s infinite;
             box-shadow: 0 0 6px #9ece6a;
-            display: inline-block;
-            line-height: 1;
-            vertical-align: middle;
+            display: inline; /* 关键：改为 inline 避免破坏换行 */
+            padding: 1px 0;
         }
 
         @keyframes blink {
             0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
+            50% { opacity: 0.4; }
         }
     </style>
 </head>
@@ -120,7 +122,7 @@
                 <div class="dot yellow"></div>
                 <div class="dot green"></div>
             </div>
-            <div id="title" class="title-text">KanBan 看板</div>
+            <div class="title-text"><span id="title">KanBan 看板</span></div>
         </div>
         <div id="content" class="content">Initializing...<span class="cursor"></span></div>
     </div>

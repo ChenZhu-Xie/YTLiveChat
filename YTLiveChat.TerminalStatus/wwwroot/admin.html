@@ -71,12 +71,18 @@
             line-height: 1.5;
             white-space: pre-wrap;
             overflow-wrap: break-word;
+            word-break: break-all;
             box-sizing: border-box;
             background: transparent;
+            /* 确保对齐：消除不同浏览器的默认平滑差异 */
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: geometricPrecision;
         }
 
         #statusInput {
-            color: transparent; /* Hide real text to show backdrop */
+            color: transparent !important; /* 强制透明，让背景层显现 */
+            -webkit-text-fill-color: transparent !important;
             caret-color: #9ece6a;
             outline: none;
             resize: none;
