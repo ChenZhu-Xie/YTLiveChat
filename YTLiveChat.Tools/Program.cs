@@ -868,8 +868,10 @@ static string? GetActionType(JsonElement action)
         return null;
     }
 
+    string? nonTrackingFallback = null;
     foreach (JsonProperty property in action.EnumerateObject())
     {
+        // Prefer an explicit Action/Command-suffixed key.
         if (
             property.Name.EndsWith("Action", StringComparison.Ordinal)
             || property.Name.EndsWith("Command", StringComparison.Ordinal)
@@ -877,10 +879,19 @@ static string? GetActionType(JsonElement action)
         {
             return property.Name;
         }
+
+        // Track the first non-tracking property as a fallback so that a new top-level
+        // key that doesn't follow the Action/Command naming convention is still surfaced
+        // (e.g. a hypothetical future "liveChatGoalRenderer" at the top level).
+        if (property.Name != "clickTrackingParams")
+        {
+            nonTrackingFallback ??= property.Name;
+        }
     }
 
-    // No action/command property found — this is a tracking-only entry.
-    return null;
+    // Return any non-tracking property we found so unknown structures are not silently dropped.
+    // Returns null only when the object is purely clickTrackingParams with no payload.
+    return nonTrackingFallback;
 }
 
 static List<JsonElement> ReadActionsFromLog(string path)

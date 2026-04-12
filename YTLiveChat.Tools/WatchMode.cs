@@ -340,8 +340,10 @@ internal static class WatchMode
     }
 
     /// <summary>
-    /// Returns the action/command type property name (e.g. "addChatItemAction"), or null
-    /// if the object has no property ending in "Action"/"Command" — i.e. it's tracking-only.
+    /// Returns the action/command type property name (e.g. "addChatItemAction"), or the first
+    /// non-tracking property name if no Action/Command suffix is found (so that new top-level
+    /// event structures that don't follow the Action/Command naming pattern are still surfaced).
+    /// Returns null only when the object contains nothing but clickTrackingParams (pure ping).
     /// </summary>
     private static string? GetActionType(JsonElement action)
     {
@@ -350,6 +352,7 @@ internal static class WatchMode
             return null;
         }
 
+        string? nonTrackingFallback = null;
         foreach (JsonProperty prop in action.EnumerateObject())
         {
             if (
@@ -359,9 +362,15 @@ internal static class WatchMode
             {
                 return prop.Name;
             }
+
+            if (prop.Name != "clickTrackingParams")
+            {
+                nonTrackingFallback ??= prop.Name;
+            }
         }
 
-        return null;
+        // Null only for pure clickTrackingParams-only entries (no payload).
+        return nonTrackingFallback;
     }
 
     /// <summary>
