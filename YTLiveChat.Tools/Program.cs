@@ -17,8 +17,9 @@ if (options.Paths.Count == 0)
     }
 }
 
-// Dump mode: collect full untruncated renderer JSON for extraction
+// Dump mode: collect full untruncated JSON for targeted extraction
 List<JsonElement> dumpedRenderers = [];
+List<JsonElement> dumpedActions = [];
 
 HashSet<string> knownActionTypes =
 [
@@ -30,6 +31,15 @@ HashSet<string> knownActionTypes =
     "markChatItemsByAuthorAsDeletedAction",
     "changeEngagementPanelVisibilityAction",
     "signalAction",
+    // Poll lifecycle
+    "showLiveChatActionPanelAction",
+    "updateLiveChatPollAction",
+    "closeLiveChatActionPanelAction",
+    // Pinned banners
+    "addBannerToLiveChatCommand",
+    "removeBannerForLiveChatCommand",
+    // Moderation state (no result data)
+    "liveChatReportModerationStateCommand",
 ];
 
 HashSet<string> knownItemRenderers =
@@ -41,6 +51,9 @@ HashSet<string> knownItemRenderers =
     "liveChatSponsorshipsGiftPurchaseAnnouncementRenderer",
     "liveChatSponsorshipsGiftRedemptionAnnouncementRenderer",
     "liveChatPlaceholderItemRenderer",
+    // System/engagement messages — no public event, treated as informational noise
+    "liveChatViewerEngagementMessageRenderer",
+    "liveChatModeChangeMessageRenderer",
 ];
 
 HashSet<string> membershipRenderers =
@@ -83,6 +96,7 @@ foreach (string path in options.Paths)
             }
 
             Increment(actionCounts, actionType);
+            TryDumpAction(actionType, action, options, dumpedActions);
 
             if (
                 actionType == "addChatItemAction"
@@ -210,11 +224,31 @@ if (options.EnableVariants)
 if (options.DumpRenderer != null)
 {
     Console.WriteLine();
-    Console.WriteLine($"== Dump: {options.DumpRenderer}{(options.FilterSubtext != null ? $" (headerSubtext prefix: \"{options.FilterSubtext}\")" : "")} ==");
+    Console.WriteLine($"== Dump Renderer: {options.DumpRenderer}{(options.FilterSubtext != null ? $" (headerSubtext prefix: \"{options.FilterSubtext}\")" : "")} ==");
     Console.WriteLine($"  {dumpedRenderers.Count} match(es)");
 
     JsonSerializerOptions prettyJson = new() { WriteIndented = true };
     string dumpJson = JsonSerializer.Serialize(dumpedRenderers, prettyJson);
+
+    if (options.DumpOutput != null)
+    {
+        File.WriteAllText(options.DumpOutput, dumpJson, Encoding.UTF8);
+        Console.WriteLine($"  Written to: {options.DumpOutput}");
+    }
+    else
+    {
+        Console.WriteLine(dumpJson);
+    }
+}
+
+if (options.DumpAction != null)
+{
+    Console.WriteLine();
+    Console.WriteLine($"== Dump Action: {options.DumpAction} ==");
+    Console.WriteLine($"  {dumpedActions.Count} match(es)");
+
+    JsonSerializerOptions prettyJson = new() { WriteIndented = true };
+    string dumpJson = JsonSerializer.Serialize(dumpedActions, prettyJson);
 
     if (options.DumpOutput != null)
     {
@@ -240,6 +274,26 @@ if (parseErrors.Count > 0)
 }
 
 return 0;
+
+static void TryDumpAction(
+    string actionType,
+    JsonElement action,
+    Options options,
+    List<JsonElement> dumpedActions
+)
+{
+    if (options.DumpAction == null)
+    {
+        return;
+    }
+
+    if (!actionType.Equals(options.DumpAction, StringComparison.OrdinalIgnoreCase))
+    {
+        return;
+    }
+
+    dumpedActions.Add(action.Clone());
+}
 
 static void TryDumpRenderer(
     string rendererType,
@@ -357,6 +411,7 @@ static Options ParseOptions(string[] args)
     bool enableVariants = false;
     int maxVariantRows = 25;
     string? dumpRenderer = null;
+    string? dumpAction = null;
     string? filterSubtext = null;
     string? dumpOutput = null;
 
@@ -387,6 +442,13 @@ static Options ParseOptions(string[] args)
             continue;
         }
 
+        const string dumpActionPrefix = "--dump-action=";
+        if (arg.StartsWith(dumpActionPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            dumpAction = arg[dumpActionPrefix.Length..];
+            continue;
+        }
+
         const string filterSubtextPrefix = "--filter-subtext=";
         if (arg.StartsWith(filterSubtextPrefix, StringComparison.OrdinalIgnoreCase))
         {
@@ -410,7 +472,7 @@ static Options ParseOptions(string[] args)
         paths.Add(arg);
     }
 
-    return new(paths, enableVariants, maxVariantRows, dumpRenderer, filterSubtext, dumpOutput);
+    return new(paths, enableVariants, maxVariantRows, dumpRenderer, dumpAction, filterSubtext, dumpOutput);
 }
 
 static Options PromptOptionsInteractive()
@@ -451,7 +513,7 @@ static Options PromptOptionsInteractive()
         maxVariantRows = parsed;
     }
 
-    return new(paths, enableVariants, maxVariantRows, DumpRenderer: null, FilterSubtext: null, DumpOutput: null);
+    return new(paths, enableVariants, maxVariantRows, DumpRenderer: null, DumpAction: null, FilterSubtext: null, DumpOutput: null);
 }
 
 static void PrintUsage()
@@ -470,7 +532,13 @@ static void PrintUsage()
     );
     Console.WriteLine("  --max-variant-rows=<n>        Limits printed rows per variant section. Default: 25.");
     Console.WriteLine(
-        "  --dump-renderer=<name>        Extract full untruncated JSON for all matching renderer types."
+        "  --dump-renderer=<name>        Extract full untruncated JSON for all matching addChatItemAction renderer types."
+    );
+    Console.WriteLine(
+        "  --dump-action=<name>          Extract full untruncated JSON for all matching top-level action types."
+    );
+    Console.WriteLine(
+        "                                Use this for actions that aren't addChatItemAction renderers (polls, banners, etc.)."
     );
     Console.WriteLine(
         "  --filter-subtext=<prefix>     When used with --dump-renderer, only include items whose headerSubtext"
@@ -483,18 +551,24 @@ static void PrintUsage()
     );
     Console.WriteLine();
     Console.WriteLine("Examples:");
-    Console.WriteLine(
-        "  # Find all membership item renderers in a log:"
-    );
+    Console.WriteLine("  # Find all membership item renderers in a log:");
     Console.WriteLine(
         "  dotnet run --project YTLiveChat.Tools -- --dump-renderer=liveChatMembershipItemRenderer log.json"
     );
     Console.WriteLine();
-    Console.WriteLine(
-        "  # Extract only membership upgrade events (by headerSubtext prefix) to a file:"
-    );
+    Console.WriteLine("  # Extract only membership upgrade events (by headerSubtext prefix) to a file:");
     Console.WriteLine(
         "  dotnet run --project YTLiveChat.Tools -- --dump-renderer=liveChatMembershipItemRenderer --filter-subtext=\"Upgraded\" --dump-output=upgrade_events.json log.json"
+    );
+    Console.WriteLine();
+    Console.WriteLine("  # Dump all poll creation actions to a file:");
+    Console.WriteLine(
+        "  dotnet run --project YTLiveChat.Tools -- --dump-action=showLiveChatActionPanelAction --dump-output=polls.json log.jsonl"
+    );
+    Console.WriteLine();
+    Console.WriteLine("  # Dump all banner add actions:");
+    Console.WriteLine(
+        "  dotnet run --project YTLiveChat.Tools -- --dump-action=addBannerToLiveChatCommand log.jsonl"
     );
 }
 
@@ -967,6 +1041,7 @@ internal sealed record Options(
     bool EnableVariants,
     int MaxVariantRows,
     string? DumpRenderer,
+    string? DumpAction,
     string? FilterSubtext,
     string? DumpOutput
 );
