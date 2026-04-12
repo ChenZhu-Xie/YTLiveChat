@@ -394,22 +394,17 @@ internal static class WatchMode
 
     private static string GetRendererKey(JsonElement action)
     {
-        if (action.ValueKind != JsonValueKind.Object)
+        string? actionType = GetActionType(action);
+        if (actionType == null)
         {
             return "?";
         }
 
-        using JsonElement.ObjectEnumerator outer = action.EnumerateObject();
-        if (!outer.MoveNext())
-        {
-            return "?";
-        }
-
-        // Try to dig one level deeper to get the renderer key inside addChatItemAction.item
-        JsonElement actionValue = outer.Current.Value;
+        // For addChatItemAction, dig into .item to get the renderer name.
         if (
-            actionValue.ValueKind == JsonValueKind.Object
-            && actionValue.TryGetProperty("item", out JsonElement item)
+            actionType == "addChatItemAction"
+            && action.TryGetProperty("addChatItemAction", out JsonElement addChat)
+            && addChat.TryGetProperty("item", out JsonElement item)
             && item.ValueKind == JsonValueKind.Object
         )
         {
@@ -420,7 +415,7 @@ internal static class WatchMode
             }
         }
 
-        return outer.Current.Name;
+        return actionType;
     }
 
     private static string BuildDefaultOutputPath()
