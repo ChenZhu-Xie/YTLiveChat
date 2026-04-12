@@ -89,9 +89,11 @@ foreach (string path in options.Paths)
         foreach (JsonElement action in ReadActionsFromLog(path))
         {
             string? actionType = GetActionType(action);
-            if (string.IsNullOrWhiteSpace(actionType))
+            if (actionType == null)
             {
-                Increment(actionCounts, "<invalid-action>");
+                // No action/command property — tracking-only entry (e.g. only clickTrackingParams).
+                // These carry no event data and are not counted as unknown actions.
+                Increment(actionCounts, "<tracking-only>");
                 continue;
             }
 
@@ -192,7 +194,7 @@ foreach (
         .ThenBy(x => x.Key, StringComparer.Ordinal)
 )
 {
-    if (!knownActionTypes.Contains(kv.Key))
+    if (!knownActionTypes.Contains(kv.Key) && kv.Key != "<tracking-only>")
     {
         Console.WriteLine($"{kv.Value,6}  {kv.Key}");
     }
@@ -866,10 +868,8 @@ static string? GetActionType(JsonElement action)
         return null;
     }
 
-    string? fallback = null;
     foreach (JsonProperty property in action.EnumerateObject())
     {
-        fallback ??= property.Name;
         if (
             property.Name.EndsWith("Action", StringComparison.Ordinal)
             || property.Name.EndsWith("Command", StringComparison.Ordinal)
@@ -879,7 +879,8 @@ static string? GetActionType(JsonElement action)
         }
     }
 
-    return fallback;
+    // No action/command property found — this is a tracking-only entry.
+    return null;
 }
 
 static List<JsonElement> ReadActionsFromLog(string path)

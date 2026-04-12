@@ -751,11 +751,20 @@ internal static partial class Parser
             throw new ArgumentNullException(nameof(action));
 
         bool isTickerAction = false;
+        string? tickerOuterId = null;
         AddChatItemActionItem? item = action.AddChatItemAction?.Item;
         if (item == null)
         {
             item = GetTickerBackedAddChatItem(action);
             isTickerAction = item != null;
+            if (isTickerAction)
+            {
+                AddLiveChatTickerItemActionItem? tickerItem = action.AddLiveChatTickerItemAction?.Item;
+                tickerOuterId =
+                    tickerItem?.LiveChatTickerSponsorItemRenderer?.Id
+                    ?? tickerItem?.LiveChatTickerPaidMessageItemRenderer?.Id
+                    ?? tickerItem?.LiveChatTickerPaidStickerItemRenderer?.Id;
+            }
         }
 
         if (item == null)
@@ -1225,7 +1234,7 @@ internal static partial class Parser
         // --- Construct Final ChatItem (Using Contract Model) ---
         Contracts.Models.ChatItem chatItem = new() // Use contract type
         {
-            Id = baseRenderer.Id ?? Guid.NewGuid().ToString(),
+            Id = baseRenderer.Id ?? tickerOuterId ?? Guid.NewGuid().ToString(),
             Timestamp = timestamp,
             Author = author, // Assign the fully populated author object
             Message = messageParts,

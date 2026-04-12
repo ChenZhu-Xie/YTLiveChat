@@ -9,12 +9,50 @@ using YTLiveChat.Contracts.Services;
 using YTLiveChat.Services;
 
 /// <summary>
-/// Live-watch mode: connects to one or more channels/handles and captures only events that are
-/// unrecognized by the parser (unknown actions, unknown membership types). Produces a JSONL file
-/// containing raw action objects that can be fed back into the Tools log-analysis commands.
+/// Live-watch mode: connects to one or more channels/handles and captures events that are
+/// unrecognized by the parser (unknown actions, unknown membership types), and optionally
+/// all non-trivial events (--all-events). Produces a JSONL file containing raw action objects
+/// that can be fed back into the Tools log-analysis commands.
 /// </summary>
 internal static class WatchMode
 {
+    // Action types the library handles but which produce no ChatItem (intentionally silent).
+    // These are NOT unknown — filtering them avoids noise in the default capture mode.
+    private static readonly HashSet<string> s_knownSkippedActionTypes = new(StringComparer.Ordinal)
+    {
+        "removeChatItemAction",
+        "replaceChatItemAction",
+        "removeChatItemByAuthorAction",
+        "markChatItemsByAuthorAsDeletedAction",
+        "changeEngagementPanelVisibilityAction",
+        "signalAction",
+        // Poll lifecycle — handled by PollStarted/PollUpdated/PollClosed events
+        "showLiveChatActionPanelAction",
+        "updateLiveChatPollAction",
+        "closeLiveChatActionPanelAction",
+        // Banner lifecycle
+        "addBannerToLiveChatCommand",
+        "removeBannerForLiveChatCommand",
+        // Moderation state
+        "liveChatReportModerationStateCommand",
+    };
+
+    // addChatItemAction item renderers the library explicitly skips (no ChatItem produced).
+    private static readonly HashSet<string> s_knownSkippedRendererTypes = new(StringComparer.Ordinal)
+    {
+        "liveChatPlaceholderItemRenderer",
+        "liveChatViewerEngagementMessageRenderer",
+        "liveChatModeChangeMessageRenderer",
+    };
+
+    // For --all-events: high-volume renderers that add no analytical value. Everything
+    // NOT in this list (and not tracking-only) is captured.
+    private static readonly HashSet<string> s_allEventsRendererBlacklist = new(StringComparer.Ordinal)
+    {
+        "liveChatTextMessageRenderer",
+        "liveChatPlaceholderItemRenderer",
+    };
+
     public static async Task<int> RunAsync(string[] args)
     {
         WatchOptions options = ParseWatchOptions(args);
@@ -39,7 +77,12 @@ internal static class WatchMode
             Console.WriteLine($"Skipping live IDs: {string.Join(", ", options.SkippedLiveIds)}");
         }
 
-        Console.WriteLine($"Capturing: {(options.AllMembership ? "all membership events + unknowns" : "unknown actions + unknown membership types")}");
+        string captureDesc = options.AllEvents
+            ? "all events (except regular chat and placeholders)"
+            : options.AllMembership
+                ? "all membership events + unknowns"
+                : "unknown actions + unknown membership types";
+        Console.WriteLine($"Capturing: {captureDesc}");
         Console.WriteLine("Press Ctrl+C to stop.");
         Console.WriteLine();
 
@@ -50,6 +93,9 @@ internal static class WatchMode
             cts.Cancel();
         };
 
+        // AutoFlush = true causes StreamWriter to flush its internal buffer to the underlying
+        // FileStream after every write, which in turn flushes to the OS file cache.
+        // Each captured event is visible on disk immediately — no batching until stop.
         using StreamWriter writer = new(outputPath, append: false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)) { AutoFlush = true };
         int[] capturedCount = [0];
         object fileLock = new();
@@ -137,22 +183,85 @@ internal static class WatchMode
     {
         chat.RawActionReceived += (_, e) =>
         {
-            bool isCompletelyUnknown = e.ParsedChatItem == null;
-            bool isUnknownMembership =
-                e.ParsedChatItem?.MembershipDetails?.EventType == MembershipEventType.Unknown;
-            bool isKnownMembership =
-                options.AllMembership && e.ParsedChatItem?.MembershipDetails != null;
-
-            if (!isCompletelyUnknown && !isUnknownMembership && !isKnownMembership)
+            // Get the action type. If null, this is a tracking-only entry
+            // (e.g. only clickTrackingParams with no actual action/command property).
+            // These carry no data and should be silently discarded in all modes.
+            string? actionType = GetActionType(e.RawAction);
+            if (actionType == null)
             {
                 return;
             }
 
-            string reason = isCompletelyUnknown ? "unknown-action"
-                : isUnknownMembership ? "unknown-membership"
-                : "membership";
+            bool hasItem = e.ParsedChatItem != null;
+            bool isUnknownMembership =
+                e.ParsedChatItem?.MembershipDetails?.EventType == MembershipEventType.Unknown;
+            bool hasMembership = hasItem && e.ParsedChatItem!.MembershipDetails != null;
 
+            string reason;
             string rendererKey = GetRendererKey(e.RawAction);
+
+            if (options.AllEvents)
+            {
+                // --all-events: capture everything except the high-volume blacklisted renderers.
+                if (s_allEventsRendererBlacklist.Contains(rendererKey))
+                {
+                    return;
+                }
+
+                if (!hasItem && s_knownSkippedActionTypes.Contains(actionType))
+                {
+                    reason = "known";
+                }
+                else if (hasMembership)
+                {
+                    reason = isUnknownMembership ? "unknown-membership" : "membership";
+                }
+                else if (hasItem)
+                {
+                    reason = "parsed";
+                }
+                else
+                {
+                    reason = "unknown";
+                }
+            }
+            else
+            {
+                // Default mode: capture only genuinely unknown events + optional memberships.
+                bool isKnownMembership = options.AllMembership && hasMembership;
+
+                if (!hasItem)
+                {
+                    // Known action types the library handles without producing a ChatItem.
+                    // These are NOT unknown — don't capture them.
+                    if (s_knownSkippedActionTypes.Contains(actionType))
+                    {
+                        return;
+                    }
+
+                    // Known renderers the library intentionally ignores.
+                    string? rendererType = GetRendererTypeFromItem(e.RawAction);
+                    if (rendererType != null && s_knownSkippedRendererTypes.Contains(rendererType))
+                    {
+                        return;
+                    }
+
+                    reason = "unknown-action";
+                }
+                else if (isUnknownMembership)
+                {
+                    reason = "unknown-membership";
+                }
+                else if (isKnownMembership)
+                {
+                    reason = "membership";
+                }
+                else
+                {
+                    return;
+                }
+            }
+
             string compactJson = JsonSerializer.Serialize(e.RawAction);
 
             lock (fileLock)
@@ -230,6 +339,50 @@ internal static class WatchMode
         }
     }
 
+    /// <summary>
+    /// Returns the action/command type property name (e.g. "addChatItemAction"), or null
+    /// if the object has no property ending in "Action"/"Command" — i.e. it's tracking-only.
+    /// </summary>
+    private static string? GetActionType(JsonElement action)
+    {
+        if (action.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        foreach (JsonProperty prop in action.EnumerateObject())
+        {
+            if (
+                prop.Name.EndsWith("Action", StringComparison.Ordinal)
+                || prop.Name.EndsWith("Command", StringComparison.Ordinal)
+            )
+            {
+                return prop.Name;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Returns the renderer name from inside addChatItemAction.item (e.g. "liveChatTextMessageRenderer"),
+    /// or null if the action is not an addChatItemAction or the item is missing.
+    /// </summary>
+    private static string? GetRendererTypeFromItem(JsonElement action)
+    {
+        if (
+            !action.TryGetProperty("addChatItemAction", out JsonElement addChat)
+            || !addChat.TryGetProperty("item", out JsonElement item)
+            || item.ValueKind != JsonValueKind.Object
+        )
+        {
+            return null;
+        }
+
+        using JsonElement.ObjectEnumerator enumerator = item.EnumerateObject();
+        return enumerator.MoveNext() ? enumerator.Current.Name : null;
+    }
+
     private static string GetRendererKey(JsonElement action)
     {
         if (action.ValueKind != JsonValueKind.Object)
@@ -274,6 +427,7 @@ internal static class WatchMode
         int checkIntervalMs = 10000;
         bool includeScheduled = false;
         bool allMembership = false;
+        bool allEvents = false;
         string? outputPath = null;
 
         foreach (string arg in args)
@@ -287,6 +441,12 @@ internal static class WatchMode
             if (arg.Equals("--all-membership", StringComparison.OrdinalIgnoreCase))
             {
                 allMembership = true;
+                continue;
+            }
+
+            if (arg.Equals("--all-events", StringComparison.OrdinalIgnoreCase))
+            {
+                allEvents = true;
                 continue;
             }
 
@@ -323,7 +483,7 @@ internal static class WatchMode
             targets.Add(ParseTarget(arg));
         }
 
-        return new WatchOptions(targets, skippedLiveIds, checkIntervalMs, includeScheduled, allMembership, outputPath);
+        return new WatchOptions(targets, skippedLiveIds, checkIntervalMs, includeScheduled, allMembership, allEvents, outputPath);
     }
 
     private static WatchTarget ParseTarget(string identifier)
@@ -362,6 +522,15 @@ internal static class WatchMode
             "  --all-membership          Also capture all successfully-parsed membership events, not just Unknown ones."
         );
         Console.WriteLine(
+            "  --all-events              Capture all non-trivial events (memberships, superchats, polls, banners,"
+        );
+        Console.WriteLine(
+            "                            moderation, unknowns, etc.). Skips only regular chat messages and"
+        );
+        Console.WriteLine(
+            "                            placeholder items. Use this to verify correctness of known event types."
+        );
+        Console.WriteLine(
             "  --output=<path>           Output JSONL file path. Default: logs/watch_<timestamp>.jsonl."
         );
         Console.WriteLine();
@@ -375,6 +544,19 @@ internal static class WatchMode
         Console.WriteLine(
             "  - With --all-membership: all membership events (New/Milestone/Gift/Redemption too)."
         );
+        Console.WriteLine(
+            "  - With --all-events: everything except regular chat (liveChatTextMessageRenderer)"
+        );
+        Console.WriteLine(
+            "    and placeholder items (liveChatPlaceholderItemRenderer)."
+        );
+        Console.WriteLine();
+        Console.WriteLine("Reason labels in console output:");
+        Console.WriteLine("  unknown-action     Unrecognized action or renderer — new event type, investigate.");
+        Console.WriteLine("  unknown-membership Membership event with EventType=Unknown — unrecognized subtype.");
+        Console.WriteLine("  membership         Known membership event (with --all-membership or --all-events).");
+        Console.WriteLine("  known              Known action type that doesn't produce a ChatItem (polls, banners, etc.).");
+        Console.WriteLine("  parsed             Any other successfully-parsed ChatItem (superchats, stickers, etc.).");
         Console.WriteLine();
         Console.WriteLine("Output is a JSONL file (one raw action JSON per line) compatible with");
         Console.WriteLine("the log-analysis commands (--dump-renderer, --variants, etc.).");
@@ -386,6 +568,9 @@ internal static class WatchMode
         Console.WriteLine(
             "  dotnet run --project YTLiveChat.Tools -- watch --skip=abc123,def456 --output=upgrades.jsonl @SomeStreamer"
         );
+        Console.WriteLine(
+            "  dotnet run --project YTLiveChat.Tools -- watch --all-events @SomeStreamer"
+        );
     }
 
     private sealed record WatchOptions(
@@ -394,6 +579,7 @@ internal static class WatchMode
         int CheckIntervalMs,
         bool IncludeScheduled,
         bool AllMembership,
+        bool AllEvents,
         string? OutputPath
     );
 
