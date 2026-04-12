@@ -1313,6 +1313,196 @@ internal static partial class Parser
         return (items, continuationToken);
     }
 
+    /// <summary>
+    /// Extracts a <see cref="Contracts.Models.PollItem"/> from a poll-related action
+    /// (<c>updateLiveChatPollAction</c> or <c>showLiveChatActionPanelAction</c>).
+    /// Returns null if the action is not a poll action or is missing required fields.
+    /// </summary>
+    public static Contracts.Models.PollItem? ToPollItem(this Action action)
+    {
+        bool isNew = action.ShowLiveChatActionPanelAction != null;
+        PollRenderer? pollRenderer =
+            action.UpdateLiveChatPollAction?.PollToUpdate?.PollRenderer
+            ?? action.ShowLiveChatActionPanelAction
+                ?.PanelToShow
+                ?.LiveChatActionPanelRenderer
+                ?.Contents
+                ?.PollRenderer;
+
+        if (pollRenderer is null)
+            return null;
+
+        string? pollId = pollRenderer.LiveChatPollId;
+        if (string.IsNullOrWhiteSpace(pollId))
+            return null;
+
+        // Extract choices
+        List<Contracts.Models.PollChoice> choices = [];
+        if (pollRenderer.Choices != null)
+        {
+            foreach (Models.Response.PollChoice choice in pollRenderer.Choices)
+            {
+                string choiceText =
+                    choice.Text?.Runs != null
+                        ? string.Concat(
+                            choice.Text.Runs.OfType<MessageText>().Select(r => r.Text ?? string.Empty)
+                        )
+                        : string.Empty;
+
+                choices.Add(
+                    new Contracts.Models.PollChoice
+                    {
+                        Text = choiceText,
+                        IsSelected = choice.Selected,
+                        VoteRatio = choice.VoteRatio,
+                    }
+                );
+            }
+        }
+
+        // Extract creator handle and total-vote count from metadataText runs.
+        // Typical format: ["@CreatorHandle", " • ", "just now", " • ", "1,234 votes"]
+        string? creatorHandle = null;
+        int? totalVotes = null;
+        List<MessageRun>? metaRuns = pollRenderer.Header?.PollHeaderRenderer?.MetadataText?.Runs;
+        if (metaRuns is { Count: > 0 })
+        {
+            creatorHandle = (metaRuns[0] as MessageText)?.Text?.Trim();
+            if (metaRuns.Count > 1)
+            {
+                string? lastRunText = (metaRuns[metaRuns.Count - 1] as MessageText)?.Text?.Trim();
+                totalVotes = ParseVoteCount(lastRunText);
+            }
+        }
+
+        // Extract poll question (frequently empty in the wild)
+        string? question = null;
+        List<MessageRun>? questionRuns =
+            pollRenderer.Header?.PollHeaderRenderer?.PollQuestion?.Runs;
+        if (questionRuns is { Count: > 0 })
+        {
+            string joined = string.Concat(
+                questionRuns.OfType<MessageText>().Select(r => r.Text ?? string.Empty)
+            );
+            if (!string.IsNullOrWhiteSpace(joined))
+                question = joined;
+        }
+
+        return new Contracts.Models.PollItem
+        {
+            PollId = pollId!,
+            Question = question,
+            CreatorHandle = creatorHandle,
+            TotalVotes = totalVotes,
+            Choices = choices,
+            IsNew = isNew,
+        };
+    }
+
+    /// <summary>
+    /// Returns the poll ID from a <c>closeLiveChatActionPanelAction</c>, or null for other actions.
+    /// </summary>
+    public static string? ToClosedPollId(this Action action) =>
+        action.CloseLiveChatActionPanelAction?.TargetPanelId;
+
+    /// <summary>
+    /// Returns the target item ID from a <c>removeChatItemAction</c>, or null for other actions.
+    /// </summary>
+    public static string? ToDeletedItemId(this Action action) =>
+        action.RemoveChatItemAction?.TargetItemId;
+
+    /// <summary>
+    /// Returns the external channel ID from <c>removeChatItemByAuthorAction</c> or
+    /// <c>markChatItemsByAuthorAsDeletedAction</c>, or null if neither is present.
+    /// </summary>
+    public static string? ToDeletedByAuthorChannelId(this Action action) =>
+        action.RemoveChatItemByAuthorAction?.ExternalChannelId
+        ?? action.MarkChatItemsByAuthorAsDeletedAction?.ExternalChannelId;
+
+    /// <summary>
+    /// Extracts a <see cref="Contracts.Models.BannerItem"/> from an <c>addBannerToLiveChatCommand</c> action.
+    /// Returns null for other action types or when required fields are absent.
+    /// </summary>
+    public static Contracts.Models.BannerItem? ToBannerItem(this Action action)
+    {
+        LiveChatBannerRenderer? banner =
+            action.AddBannerToLiveChatCommand?.BannerRenderer?.LiveChatBannerRenderer;
+        if (banner is null)
+            return null;
+
+        string? actionId = banner.ActionId;
+        if (string.IsNullOrWhiteSpace(actionId))
+            return null;
+
+        // Extract "Pinned by @handle" from the banner header text runs
+        string? pinnedBy = null;
+        Message? headerText = banner.Header?.LiveChatBannerHeaderRenderer?.Text;
+        if (headerText?.Runs is not null)
+        {
+            pinnedBy = string.Concat(
+                headerText.Runs.OfType<MessageText>().Select(r => r.Text ?? string.Empty)
+            ).Trim();
+            if (string.IsNullOrEmpty(pinnedBy))
+                pinnedBy = null;
+        }
+
+        LiveChatTextMessageRenderer? textRenderer = banner.Contents?.LiveChatTextMessageRenderer;
+        if (textRenderer is null)
+            return null;
+
+        Contracts.Models.Author author = new()
+        {
+            Name = textRenderer.AuthorName?.Text ?? "Unknown",
+            ChannelId = textRenderer.AuthorExternalChannelId ?? string.Empty,
+            Thumbnail = textRenderer.AuthorPhoto?.Thumbnails?.ToImage(textRenderer.AuthorName?.Text),
+        };
+
+        Contracts.Models.MessagePart[] messageParts =
+            textRenderer.Message?.Runs?.ToMessageParts() ?? [];
+
+        DateTimeOffset timestamp = DateTimeOffset.UtcNow;
+        if (long.TryParse(textRenderer.TimestampUsec, out long tsUsec))
+        {
+            timestamp = DateTimeOffset.FromUnixTimeMilliseconds(tsUsec / 1000);
+        }
+
+        return new Contracts.Models.BannerItem
+        {
+            ActionId = actionId!,
+            BannerType = banner.BannerType,
+            PinnedBy = pinnedBy,
+            Author = author,
+            Message = messageParts,
+            MessageId = textRenderer.Id ?? string.Empty,
+            Timestamp = timestamp,
+        };
+    }
+
+    /// <summary>
+    /// Returns the target action ID from a <c>removeBannerForLiveChatCommand</c>, or null.
+    /// </summary>
+    public static string? ToRemovedBannerActionId(this Action action) =>
+        action.RemoveBannerForLiveChatCommand?.TargetActionId;
+
+    /// <summary>
+    /// Parses a vote-count run string like "1,234 votes" or "0 votes" into an integer.
+    /// Returns null if the text is absent or unparseable.
+    /// </summary>
+    private static int? ParseVoteCount(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return null;
+
+        // Take the token before the first space ("1,234 votes" → "1,234")
+        string trimmed = text!.Trim();
+        int spaceIdx = trimmed.IndexOf(' ');
+        string numPart = spaceIdx > 0 ? trimmed.Substring(0, spaceIdx) : trimmed;
+
+        // Strip thousands separators and parse
+        string digits = numPart.Replace(",", string.Empty);
+        return int.TryParse(digits, out int n) ? n : null;
+    }
+
     #region Regex Definitions
 #if NET7_0_OR_GREATER
     [GeneratedRegex(

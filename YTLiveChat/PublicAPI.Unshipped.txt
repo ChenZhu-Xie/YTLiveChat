@@ -1,1 +1,171 @@
-﻿
+#nullable enable
+virtual YTLiveChat.Services.YTLiveChat.OnBannerAdded(YTLiveChat.Contracts.Services.BannerAddedEventArgs! e) -> void
+virtual YTLiveChat.Services.YTLiveChat.OnBannerRemoved(YTLiveChat.Contracts.Services.BannerRemovedEventArgs! e) -> void
+virtual YTLiveChat.Services.YTLiveChat.OnChatItemDeleted(YTLiveChat.Contracts.Services.ChatItemDeletedEventArgs! e) -> void
+virtual YTLiveChat.Services.YTLiveChat.OnChatItemsDeletedByAuthor(YTLiveChat.Contracts.Services.ChatItemsDeletedByAuthorEventArgs! e) -> void
+virtual YTLiveChat.Services.YTLiveChat.OnPollClosed(YTLiveChat.Contracts.Services.PollClosedEventArgs! e) -> void
+virtual YTLiveChat.Services.YTLiveChat.OnPollUpdated(YTLiveChat.Contracts.Services.PollUpdatedEventArgs! e) -> void
+YTLiveChat.Contracts.Models.BannerItem
+YTLiveChat.Contracts.Models.BannerItem.ActionId.get -> string!
+YTLiveChat.Contracts.Models.BannerItem.ActionId.set -> void
+YTLiveChat.Contracts.Models.BannerItem.Author.get -> YTLiveChat.Contracts.Models.Author!
+YTLiveChat.Contracts.Models.BannerItem.Author.set -> void
+YTLiveChat.Contracts.Models.BannerItem.BannerItem() -> void
+YTLiveChat.Contracts.Models.BannerItem.BannerType.get -> string?
+YTLiveChat.Contracts.Models.BannerItem.BannerType.set -> void
+YTLiveChat.Contracts.Models.BannerItem.Message.get -> YTLiveChat.Contracts.Models.MessagePart![]!
+YTLiveChat.Contracts.Models.BannerItem.Message.set -> void
+YTLiveChat.Contracts.Models.BannerItem.MessageId.get -> string!
+YTLiveChat.Contracts.Models.BannerItem.MessageId.set -> void
+YTLiveChat.Contracts.Models.BannerItem.PinnedBy.get -> string?
+YTLiveChat.Contracts.Models.BannerItem.PinnedBy.set -> void
+YTLiveChat.Contracts.Models.BannerItem.Timestamp.get -> System.DateTimeOffset
+YTLiveChat.Contracts.Models.BannerItem.Timestamp.set -> void
+YTLiveChat.Contracts.Models.PollChoice
+YTLiveChat.Contracts.Models.PollChoice.IsSelected.get -> bool
+YTLiveChat.Contracts.Models.PollChoice.IsSelected.set -> void
+YTLiveChat.Contracts.Models.PollChoice.PollChoice() -> void
+YTLiveChat.Contracts.Models.PollChoice.Text.get -> string!
+YTLiveChat.Contracts.Models.PollChoice.Text.set -> void
+YTLiveChat.Contracts.Models.PollChoice.VoteRatio.get -> double
+YTLiveChat.Contracts.Models.PollChoice.VoteRatio.set -> void
+YTLiveChat.Contracts.Models.PollItem
+YTLiveChat.Contracts.Models.PollItem.Choices.get -> System.Collections.Generic.IReadOnlyList<YTLiveChat.Contracts.Models.PollChoice!>!
+YTLiveChat.Contracts.Models.PollItem.Choices.set -> void
+YTLiveChat.Contracts.Models.PollItem.CreatorHandle.get -> string?
+YTLiveChat.Contracts.Models.PollItem.CreatorHandle.set -> void
+YTLiveChat.Contracts.Models.PollItem.IsNew.get -> bool
+YTLiveChat.Contracts.Models.PollItem.IsNew.set -> void
+YTLiveChat.Contracts.Models.PollItem.PollId.get -> string!
+YTLiveChat.Contracts.Models.PollItem.PollId.set -> void
+YTLiveChat.Contracts.Models.PollItem.PollItem() -> void
+YTLiveChat.Contracts.Models.PollItem.Question.get -> string?
+YTLiveChat.Contracts.Models.PollItem.Question.set -> void
+YTLiveChat.Contracts.Models.PollItem.TotalVotes.get -> int?
+YTLiveChat.Contracts.Models.PollItem.TotalVotes.set -> void
+YTLiveChat.Contracts.Services.BannerAddedEventArgs
+YTLiveChat.Contracts.Services.BannerAddedEventArgs.Banner.get -> YTLiveChat.Contracts.Models.BannerItem!
+YTLiveChat.Contracts.Services.BannerAddedEventArgs.Banner.set -> void
+YTLiveChat.Contracts.Services.BannerAddedEventArgs.BannerAddedEventArgs() -> void
+YTLiveChat.Contracts.Services.BannerRemovedEventArgs
+YTLiveChat.Contracts.Services.BannerRemovedEventArgs.BannerRemovedEventArgs() -> void
+YTLiveChat.Contracts.Services.BannerRemovedEventArgs.TargetActionId.get -> string!
+YTLiveChat.Contracts.Services.BannerRemovedEventArgs.TargetActionId.set -> void
+YTLiveChat.Contracts.Services.ChatItemDeletedEventArgs
+YTLiveChat.Contracts.Services.ChatItemDeletedEventArgs.ChatItemDeletedEventArgs() -> void
+YTLiveChat.Contracts.Services.ChatItemDeletedEventArgs.TargetId.get -> string!
+YTLiveChat.Contracts.Services.ChatItemDeletedEventArgs.TargetId.set -> void
+YTLiveChat.Contracts.Services.ChatItemsDeletedByAuthorEventArgs
+YTLiveChat.Contracts.Services.ChatItemsDeletedByAuthorEventArgs.ChannelId.get -> string!
+YTLiveChat.Contracts.Services.ChatItemsDeletedByAuthorEventArgs.ChannelId.set -> void
+YTLiveChat.Contracts.Services.ChatItemsDeletedByAuthorEventArgs.ChatItemsDeletedByAuthorEventArgs() -> void
+YTLiveChat.Contracts.Services.IYTLiveChat.BannerAdded -> System.EventHandler<YTLiveChat.Contracts.Services.BannerAddedEventArgs!>?
+YTLiveChat.Contracts.Services.IYTLiveChat.BannerRemoved -> System.EventHandler<YTLiveChat.Contracts.Services.BannerRemovedEventArgs!>?
+YTLiveChat.Contracts.Services.IYTLiveChat.ChatItemDeleted -> System.EventHandler<YTLiveChat.Contracts.Services.ChatItemDeletedEventArgs!>?
+YTLiveChat.Contracts.Services.IYTLiveChat.ChatItemsDeletedByAuthor -> System.EventHandler<YTLiveChat.Contracts.Services.ChatItemsDeletedByAuthorEventArgs!>?
+YTLiveChat.Contracts.Services.IYTLiveChat.PollClosed -> System.EventHandler<YTLiveChat.Contracts.Services.PollClosedEventArgs!>?
+YTLiveChat.Contracts.Services.IYTLiveChat.PollUpdated -> System.EventHandler<YTLiveChat.Contracts.Services.PollUpdatedEventArgs!>?
+YTLiveChat.Contracts.Services.PollClosedEventArgs
+YTLiveChat.Contracts.Services.PollClosedEventArgs.PollClosedEventArgs() -> void
+YTLiveChat.Contracts.Services.PollClosedEventArgs.PollId.get -> string!
+YTLiveChat.Contracts.Services.PollClosedEventArgs.PollId.set -> void
+YTLiveChat.Contracts.Services.PollUpdatedEventArgs
+YTLiveChat.Contracts.Services.PollUpdatedEventArgs.Poll.get -> YTLiveChat.Contracts.Models.PollItem!
+YTLiveChat.Contracts.Services.PollUpdatedEventArgs.Poll.set -> void
+YTLiveChat.Contracts.Services.PollUpdatedEventArgs.PollUpdatedEventArgs() -> void
+YTLiveChat.Models.Response.Action.AddBannerToLiveChatCommand.get -> YTLiveChat.Models.Response.AddBannerToLiveChatCommand?
+YTLiveChat.Models.Response.Action.CloseLiveChatActionPanelAction.get -> YTLiveChat.Models.Response.CloseLiveChatActionPanelAction?
+YTLiveChat.Models.Response.Action.CloseLiveChatActionPanelAction.init -> void
+YTLiveChat.Models.Response.CloseLiveChatActionPanelAction
+YTLiveChat.Models.Response.CloseLiveChatActionPanelAction.TargetPanelId.get -> string?
+YTLiveChat.Models.Response.CloseLiveChatActionPanelAction.TargetPanelId.init -> void
+YTLiveChat.Models.Response.Action.AddBannerToLiveChatCommand.init -> void
+YTLiveChat.Models.Response.Action.RemoveBannerForLiveChatCommand.get -> YTLiveChat.Models.Response.RemoveBannerForLiveChatCommand?
+YTLiveChat.Models.Response.Action.RemoveBannerForLiveChatCommand.init -> void
+YTLiveChat.Models.Response.Action.ShowLiveChatActionPanelAction.get -> YTLiveChat.Models.Response.ShowLiveChatActionPanelAction?
+YTLiveChat.Models.Response.Action.ShowLiveChatActionPanelAction.init -> void
+YTLiveChat.Models.Response.Action.UpdateLiveChatPollAction.get -> YTLiveChat.Models.Response.UpdateLiveChatPollAction?
+YTLiveChat.Models.Response.Action.UpdateLiveChatPollAction.init -> void
+YTLiveChat.Models.Response.AddBannerToLiveChatCommand
+YTLiveChat.Models.Response.AddBannerToLiveChatCommand.BannerRenderer.get -> YTLiveChat.Models.Response.BannerRendererContainer?
+YTLiveChat.Models.Response.AddBannerToLiveChatCommand.BannerRenderer.init -> void
+YTLiveChat.Models.Response.BannerRendererContainer
+YTLiveChat.Models.Response.BannerRendererContainer.LiveChatBannerRenderer.get -> YTLiveChat.Models.Response.LiveChatBannerRenderer?
+YTLiveChat.Models.Response.BannerRendererContainer.LiveChatBannerRenderer.init -> void
+YTLiveChat.Models.Response.LiveChatActionPanelRenderer
+YTLiveChat.Models.Response.LiveChatActionPanelRenderer.Contents.get -> YTLiveChat.Models.Response.LiveChatActionPanelRendererContents?
+YTLiveChat.Models.Response.LiveChatActionPanelRenderer.Contents.init -> void
+YTLiveChat.Models.Response.LiveChatActionPanelRenderer.Id.get -> string?
+YTLiveChat.Models.Response.LiveChatActionPanelRenderer.Id.init -> void
+YTLiveChat.Models.Response.LiveChatActionPanelRendererContents
+YTLiveChat.Models.Response.LiveChatActionPanelRendererContents.PollRenderer.get -> YTLiveChat.Models.Response.PollRenderer?
+YTLiveChat.Models.Response.LiveChatActionPanelRendererContents.PollRenderer.init -> void
+YTLiveChat.Models.Response.LiveChatBannerHeaderContainer
+YTLiveChat.Models.Response.LiveChatBannerHeaderContainer.LiveChatBannerHeaderRenderer.get -> YTLiveChat.Models.Response.LiveChatBannerHeaderRenderer?
+YTLiveChat.Models.Response.LiveChatBannerHeaderContainer.LiveChatBannerHeaderRenderer.init -> void
+YTLiveChat.Models.Response.LiveChatBannerHeaderRenderer
+YTLiveChat.Models.Response.LiveChatBannerHeaderRenderer.Icon.get -> YTLiveChat.Models.Response.Icon?
+YTLiveChat.Models.Response.LiveChatBannerHeaderRenderer.Icon.init -> void
+YTLiveChat.Models.Response.LiveChatBannerHeaderRenderer.Text.get -> YTLiveChat.Models.Response.Message?
+YTLiveChat.Models.Response.LiveChatBannerHeaderRenderer.Text.init -> void
+YTLiveChat.Models.Response.LiveChatBannerRenderer
+YTLiveChat.Models.Response.LiveChatBannerRenderer.ActionId.get -> string?
+YTLiveChat.Models.Response.LiveChatBannerRenderer.ActionId.init -> void
+YTLiveChat.Models.Response.LiveChatBannerRenderer.BannerType.get -> string?
+YTLiveChat.Models.Response.LiveChatBannerRenderer.BannerType.init -> void
+YTLiveChat.Models.Response.LiveChatBannerRenderer.Contents.get -> YTLiveChat.Models.Response.LiveChatBannerRendererContents?
+YTLiveChat.Models.Response.LiveChatBannerRenderer.Contents.init -> void
+YTLiveChat.Models.Response.LiveChatBannerRenderer.Header.get -> YTLiveChat.Models.Response.LiveChatBannerHeaderContainer?
+YTLiveChat.Models.Response.LiveChatBannerRenderer.Header.init -> void
+YTLiveChat.Models.Response.LiveChatBannerRendererContents
+YTLiveChat.Models.Response.LiveChatBannerRendererContents.LiveChatTextMessageRenderer.get -> YTLiveChat.Models.Response.LiveChatTextMessageRenderer?
+YTLiveChat.Models.Response.LiveChatBannerRendererContents.LiveChatTextMessageRenderer.init -> void
+YTLiveChat.Models.Response.PanelToShow
+YTLiveChat.Models.Response.PanelToShow.LiveChatActionPanelRenderer.get -> YTLiveChat.Models.Response.LiveChatActionPanelRenderer?
+YTLiveChat.Models.Response.PanelToShow.LiveChatActionPanelRenderer.init -> void
+YTLiveChat.Models.Response.PollChoice
+YTLiveChat.Models.Response.PollChoice.Selected.get -> bool
+YTLiveChat.Models.Response.PollChoice.Selected.init -> void
+YTLiveChat.Models.Response.PollChoice.Text.get -> YTLiveChat.Models.Response.Message?
+YTLiveChat.Models.Response.PollChoice.Text.init -> void
+YTLiveChat.Models.Response.PollChoice.VotePercentage.get -> YTLiveChat.Models.Response.SimpleText?
+YTLiveChat.Models.Response.PollChoice.VotePercentage.init -> void
+YTLiveChat.Models.Response.PollChoice.VoteRatio.get -> double
+YTLiveChat.Models.Response.PollChoice.VoteRatio.init -> void
+YTLiveChat.Models.Response.PollHeader
+YTLiveChat.Models.Response.PollHeader.PollHeaderRenderer.get -> YTLiveChat.Models.Response.PollHeaderRenderer?
+YTLiveChat.Models.Response.PollHeader.PollHeaderRenderer.init -> void
+YTLiveChat.Models.Response.PollHeaderRenderer
+YTLiveChat.Models.Response.PollHeaderRenderer.LiveChatPollType.get -> string?
+YTLiveChat.Models.Response.PollHeaderRenderer.LiveChatPollType.init -> void
+YTLiveChat.Models.Response.PollHeaderRenderer.MetadataText.get -> YTLiveChat.Models.Response.Message?
+YTLiveChat.Models.Response.PollHeaderRenderer.MetadataText.init -> void
+YTLiveChat.Models.Response.PollHeaderRenderer.PollQuestion.get -> YTLiveChat.Models.Response.Message?
+YTLiveChat.Models.Response.PollHeaderRenderer.PollQuestion.init -> void
+YTLiveChat.Models.Response.PollHeaderRenderer.Thumbnail.get -> YTLiveChat.Models.Response.AuthorPhoto?
+YTLiveChat.Models.Response.PollHeaderRenderer.Thumbnail.init -> void
+YTLiveChat.Models.Response.PollRenderer
+YTLiveChat.Models.Response.PollRenderer.Choices.get -> System.Collections.Generic.List<YTLiveChat.Models.Response.PollChoice!>?
+YTLiveChat.Models.Response.PollRenderer.Choices.init -> void
+YTLiveChat.Models.Response.PollRenderer.Header.get -> YTLiveChat.Models.Response.PollHeader?
+YTLiveChat.Models.Response.PollRenderer.Header.init -> void
+YTLiveChat.Models.Response.PollRenderer.LiveChatPollId.get -> string?
+YTLiveChat.Models.Response.PollRenderer.LiveChatPollId.init -> void
+YTLiveChat.Models.Response.PollToUpdate
+YTLiveChat.Models.Response.PollToUpdate.PollRenderer.get -> YTLiveChat.Models.Response.PollRenderer?
+YTLiveChat.Models.Response.PollToUpdate.PollRenderer.init -> void
+YTLiveChat.Models.Response.RemoveBannerForLiveChatCommand
+YTLiveChat.Models.Response.RemoveBannerForLiveChatCommand.TargetActionId.get -> string?
+YTLiveChat.Models.Response.RemoveBannerForLiveChatCommand.TargetActionId.init -> void
+YTLiveChat.Models.Response.ShowLiveChatActionPanelAction
+YTLiveChat.Models.Response.ShowLiveChatActionPanelAction.PanelToShow.get -> YTLiveChat.Models.Response.PanelToShow?
+YTLiveChat.Models.Response.ShowLiveChatActionPanelAction.PanelToShow.init -> void
+YTLiveChat.Models.Response.UpdateLiveChatPollAction
+YTLiveChat.Models.Response.UpdateLiveChatPollAction.PollToUpdate.get -> YTLiveChat.Models.Response.PollToUpdate?
+YTLiveChat.Models.Response.UpdateLiveChatPollAction.PollToUpdate.init -> void
+YTLiveChat.Services.YTLiveChat.BannerAdded -> System.EventHandler<YTLiveChat.Contracts.Services.BannerAddedEventArgs!>?
+YTLiveChat.Services.YTLiveChat.BannerRemoved -> System.EventHandler<YTLiveChat.Contracts.Services.BannerRemovedEventArgs!>?
+YTLiveChat.Services.YTLiveChat.ChatItemDeleted -> System.EventHandler<YTLiveChat.Contracts.Services.ChatItemDeletedEventArgs!>?
+YTLiveChat.Services.YTLiveChat.ChatItemsDeletedByAuthor -> System.EventHandler<YTLiveChat.Contracts.Services.ChatItemsDeletedByAuthorEventArgs!>?
+YTLiveChat.Services.YTLiveChat.PollClosed -> System.EventHandler<YTLiveChat.Contracts.Services.PollClosedEventArgs!>?
+YTLiveChat.Services.YTLiveChat.PollUpdated -> System.EventHandler<YTLiveChat.Contracts.Services.PollUpdatedEventArgs!>?

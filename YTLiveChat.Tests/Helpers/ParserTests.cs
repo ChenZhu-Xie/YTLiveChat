@@ -1334,4 +1334,178 @@ public class ParserTests
         string? reason = Parser.DetectInaccessibleLiveReason(html);
         Assert.AreEqual("members-only", reason);
     }
+
+    // ── Poll parsing ──────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void ToPollItem_UpdatePollActionWithVotes_ReturnsPollItemWithVoteData()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.UpdatePollActionWithVotes(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+
+        PollItem? poll = Parser.ToPollItem(action);
+
+        Assert.IsNotNull(poll, "ToPollItem should return a non-null PollItem.");
+        Assert.AreEqual("POLL_ID_UPDATE_01", poll.PollId);
+        Assert.IsFalse(poll.IsNew, "An updateLiveChatPollAction should not be marked IsNew.");
+        Assert.AreEqual("@StreamerHandle", poll.CreatorHandle);
+        Assert.AreEqual(1234, poll.TotalVotes);
+        Assert.AreEqual(2, poll.Choices.Count);
+        Assert.AreEqual("Option A", poll.Choices[0].Text);
+        Assert.AreEqual(0.28, poll.Choices[0].VoteRatio, 0.001);
+        Assert.AreEqual("Option B", poll.Choices[1].Text);
+        Assert.AreEqual(0.72, poll.Choices[1].VoteRatio, 0.001);
+    }
+
+    [TestMethod]
+    public void ToPollItem_ShowPanelActionNewPoll_ReturnsPollItemIsNew()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.ShowPanelActionNewPoll(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+
+        PollItem? poll = Parser.ToPollItem(action);
+
+        Assert.IsNotNull(poll, "ToPollItem should return a non-null PollItem.");
+        Assert.AreEqual("POLL_ID_SHOW_01", poll.PollId);
+        Assert.IsTrue(poll.IsNew, "A showLiveChatActionPanelAction should be marked IsNew.");
+        Assert.AreEqual("@Creator", poll.CreatorHandle);
+        Assert.AreEqual(0, poll.TotalVotes);
+        Assert.AreEqual(2, poll.Choices.Count);
+        Assert.AreEqual("Yes", poll.Choices[0].Text);
+        Assert.AreEqual("No", poll.Choices[1].Text);
+    }
+
+    [TestMethod]
+    public void ToPollItem_UnrelatedAction_ReturnsNull()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.RemoveChatItem(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+        Assert.IsNull(Parser.ToPollItem(action));
+    }
+
+    // ── Message deletion ──────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void ToDeletedItemId_RemoveChatItemAction_ReturnsTargetId()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.RemoveChatItem(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+
+        string? targetId = Parser.ToDeletedItemId(action);
+
+        Assert.AreEqual("REMOVED_MSG_ID_01", targetId);
+    }
+
+    [TestMethod]
+    public void ToDeletedItemId_UnrelatedAction_ReturnsNull()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.AddBannerPinnedMessage(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+        Assert.IsNull(Parser.ToDeletedItemId(action));
+    }
+
+    [TestMethod]
+    public void ToDeletedByAuthorChannelId_RemoveChatItemByAuthorAction_ReturnsChannelId()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.RemoveChatItemByAuthor(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+
+        string? channelId = Parser.ToDeletedByAuthorChannelId(action);
+
+        Assert.AreEqual("UC_BANNED_CHANNEL_01", channelId);
+    }
+
+    // ── Banner parsing ────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void ToBannerItem_AddBannerPinnedMessage_ReturnsBannerItem()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.AddBannerPinnedMessage(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+
+        BannerItem? banner = Parser.ToBannerItem(action);
+
+        Assert.IsNotNull(banner, "ToBannerItem should return a non-null BannerItem.");
+        Assert.AreEqual("PINNED_ACTION_ID_01", banner.ActionId);
+        Assert.AreEqual("Pinned by @Host", banner.PinnedBy);
+        Assert.AreEqual("@Host", banner.Author.Name);
+        Assert.AreEqual("UC_HOST_01", banner.Author.ChannelId);
+        Assert.AreEqual(1, banner.Message.Length);
+        Assert.IsInstanceOfType<TextPart>(banner.Message[0]);
+        Assert.AreEqual("Pinned message body", ((TextPart)banner.Message[0]).Text);
+        Assert.AreEqual("PINNED_TEXT_ID_01", banner.MessageId);
+    }
+
+    [TestMethod]
+    public void ToBannerItem_UnrelatedAction_ReturnsNull()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.RemoveChatItem(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+        Assert.IsNull(Parser.ToBannerItem(action));
+    }
+
+    [TestMethod]
+    public void ToRemovedBannerActionId_RemoveBannerCommand_ReturnsTargetActionId()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.RemoveBanner(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+
+        string? removedId = Parser.ToRemovedBannerActionId(action);
+
+        Assert.AreEqual("PINNED_ACTION_ID_01", removedId);
+    }
+
+    // ── Poll closed ───────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void ToClosedPollId_ClosePanelAction_ReturnsPollId()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.CloseLiveChatActionPanel(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+
+        string? pollId = Parser.ToClosedPollId(action);
+
+        Assert.AreEqual("POLL_ID_SHOW_01", pollId);
+    }
+
+    [TestMethod]
+    public void ToClosedPollId_UnrelatedAction_ReturnsNull()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.RemoveChatItem(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+        Assert.IsNull(Parser.ToClosedPollId(action));
+    }
 }

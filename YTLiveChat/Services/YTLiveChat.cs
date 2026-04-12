@@ -44,6 +44,24 @@ public class YTLiveChat : IYTLiveChat // Changed to public for direct instantiat
     public event EventHandler<RawActionReceivedEventArgs>? RawActionReceived;
 
     /// <inheritdoc />
+    public event EventHandler<PollUpdatedEventArgs>? PollUpdated;
+
+    /// <inheritdoc />
+    public event EventHandler<PollClosedEventArgs>? PollClosed;
+
+    /// <inheritdoc />
+    public event EventHandler<ChatItemDeletedEventArgs>? ChatItemDeleted;
+
+    /// <inheritdoc />
+    public event EventHandler<ChatItemsDeletedByAuthorEventArgs>? ChatItemsDeletedByAuthor;
+
+    /// <inheritdoc />
+    public event EventHandler<BannerAddedEventArgs>? BannerAdded;
+
+    /// <inheritdoc />
+    public event EventHandler<BannerRemovedEventArgs>? BannerRemoved;
+
+    /// <inheritdoc />
     public event EventHandler<ErrorOccurredEventArgs>? ErrorOccurred;
 
     private static readonly Random s_random = new();
@@ -820,6 +838,9 @@ public class YTLiveChat : IYTLiveChat // Changed to public for direct instantiat
     /// <returns>The next continuation token, if available.</returns>
     private string? ProcessResponseAndEmitEvents(LiveChatResponse response, string? rawJson)
     {
+        // Fire non-ChatItem events (polls, deletions, banners) for any subscribed handlers.
+        EmitActionEvents(response.ContinuationContents?.LiveChatContinuation?.Actions);
+
         bool shouldEmitRawActions = RawActionReceived != null;
 
         if (!shouldEmitRawActions)
@@ -1428,6 +1449,146 @@ public class YTLiveChat : IYTLiveChat // Changed to public for direct instantiat
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error invoking RawActionReceived event handler.");
+        }
+    }
+
+    /// <summary>Iterates parsed actions and fires poll/delete/banner events for subscribed handlers.</summary>
+    private void EmitActionEvents(List<Models.Response.Action>? actions)
+    {
+        if (actions is null)
+            return;
+
+        bool hasPoll = PollUpdated != null;
+        bool hasPollClosed = PollClosed != null;
+        bool hasDelete = ChatItemDeleted != null;
+        bool hasDeleteByAuthor = ChatItemsDeletedByAuthor != null;
+        bool hasBannerAdd = BannerAdded != null;
+        bool hasBannerRemove = BannerRemoved != null;
+
+        if (!hasPoll && !hasPollClosed && !hasDelete && !hasDeleteByAuthor && !hasBannerAdd && !hasBannerRemove)
+            return;
+
+        foreach (Models.Response.Action action in actions)
+        {
+            if (hasPoll)
+            {
+                Contracts.Models.PollItem? poll = action.ToPollItem();
+                if (poll is not null)
+                    OnPollUpdated(new() { Poll = poll });
+            }
+
+            if (hasPollClosed)
+            {
+                string? closedPollId = action.ToClosedPollId();
+                if (closedPollId is not null)
+                    OnPollClosed(new() { PollId = closedPollId });
+            }
+
+            if (hasDelete)
+            {
+                string? targetId = action.ToDeletedItemId();
+                if (targetId is not null)
+                    OnChatItemDeleted(new() { TargetId = targetId });
+            }
+
+            if (hasDeleteByAuthor)
+            {
+                string? channelId = action.ToDeletedByAuthorChannelId();
+                if (channelId is not null)
+                    OnChatItemsDeletedByAuthor(new() { ChannelId = channelId });
+            }
+
+            if (hasBannerAdd)
+            {
+                Contracts.Models.BannerItem? banner = action.ToBannerItem();
+                if (banner is not null)
+                    OnBannerAdded(new() { Banner = banner });
+            }
+
+            if (hasBannerRemove)
+            {
+                string? removedId = action.ToRemovedBannerActionId();
+                if (removedId is not null)
+                    OnBannerRemoved(new() { TargetActionId = removedId });
+            }
+        }
+    }
+
+    /// <summary>Invokes the PollUpdated event.</summary>
+    protected virtual void OnPollUpdated(PollUpdatedEventArgs e)
+    {
+        try
+        {
+            PollUpdated?.Invoke(this, e);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error invoking PollUpdated event handler for poll {PollId}.", e.Poll?.PollId);
+        }
+    }
+
+    /// <summary>Invokes the PollClosed event.</summary>
+    protected virtual void OnPollClosed(PollClosedEventArgs e)
+    {
+        try
+        {
+            PollClosed?.Invoke(this, e);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error invoking PollClosed event handler for poll {PollId}.", e.PollId);
+        }
+    }
+
+    /// <summary>Invokes the ChatItemDeleted event.</summary>
+    protected virtual void OnChatItemDeleted(ChatItemDeletedEventArgs e)
+    {
+        try
+        {
+            ChatItemDeleted?.Invoke(this, e);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error invoking ChatItemDeleted event handler for target {TargetId}.", e.TargetId);
+        }
+    }
+
+    /// <summary>Invokes the ChatItemsDeletedByAuthor event.</summary>
+    protected virtual void OnChatItemsDeletedByAuthor(ChatItemsDeletedByAuthorEventArgs e)
+    {
+        try
+        {
+            ChatItemsDeletedByAuthor?.Invoke(this, e);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error invoking ChatItemsDeletedByAuthor event handler for channel {ChannelId}.", e.ChannelId);
+        }
+    }
+
+    /// <summary>Invokes the BannerAdded event.</summary>
+    protected virtual void OnBannerAdded(BannerAddedEventArgs e)
+    {
+        try
+        {
+            BannerAdded?.Invoke(this, e);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error invoking BannerAdded event handler for action {ActionId}.", e.Banner?.ActionId);
+        }
+    }
+
+    /// <summary>Invokes the BannerRemoved event.</summary>
+    protected virtual void OnBannerRemoved(BannerRemovedEventArgs e)
+    {
+        try
+        {
+            BannerRemoved?.Invoke(this, e);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error invoking BannerRemoved event handler for target {TargetActionId}.", e.TargetActionId);
         }
     }
 

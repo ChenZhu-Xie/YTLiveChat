@@ -673,6 +673,161 @@ public record RemoveChatItemByAuthorAction
     public string? ExternalChannelId { get; init; }
 }
 
+// =============================================
+// Poll models (updateLiveChatPollAction, showLiveChatActionPanelAction)
+// =============================================
+
+public record PollChoice
+{
+    [JsonPropertyName("text")]
+    public Message? Text { get; init; }
+
+    [JsonPropertyName("selected")]
+    public bool Selected { get; init; }
+
+    [JsonPropertyName("voteRatio")]
+    public double VoteRatio { get; init; }
+
+    [JsonPropertyName("votePercentage")]
+    public SimpleText? VotePercentage { get; init; }
+}
+
+public record PollHeaderRenderer
+{
+    [JsonPropertyName("pollQuestion")]
+    public Message? PollQuestion { get; init; }
+
+    [JsonPropertyName("thumbnail")]
+    public AuthorPhoto? Thumbnail { get; init; }
+
+    [JsonPropertyName("metadataText")]
+    public Message? MetadataText { get; init; }
+
+    [JsonPropertyName("liveChatPollType")]
+    public string? LiveChatPollType { get; init; }
+}
+
+public record PollHeader
+{
+    [JsonPropertyName("pollHeaderRenderer")]
+    public PollHeaderRenderer? PollHeaderRenderer { get; init; }
+}
+
+public record PollRenderer
+{
+    [JsonPropertyName("liveChatPollId")]
+    public string? LiveChatPollId { get; init; }
+
+    [JsonPropertyName("choices")]
+    public List<PollChoice>? Choices { get; init; }
+
+    [JsonPropertyName("header")]
+    public PollHeader? Header { get; init; }
+}
+
+public record PollToUpdate
+{
+    [JsonPropertyName("pollRenderer")]
+    public PollRenderer? PollRenderer { get; init; }
+}
+
+public record UpdateLiveChatPollAction
+{
+    [JsonPropertyName("pollToUpdate")]
+    public PollToUpdate? PollToUpdate { get; init; }
+}
+
+public record LiveChatActionPanelRendererContents
+{
+    [JsonPropertyName("pollRenderer")]
+    public PollRenderer? PollRenderer { get; init; }
+}
+
+public record LiveChatActionPanelRenderer
+{
+    [JsonPropertyName("contents")]
+    public LiveChatActionPanelRendererContents? Contents { get; init; }
+
+    [JsonPropertyName("id")]
+    public string? Id { get; init; }
+}
+
+public record PanelToShow
+{
+    [JsonPropertyName("liveChatActionPanelRenderer")]
+    public LiveChatActionPanelRenderer? LiveChatActionPanelRenderer { get; init; }
+}
+
+public record ShowLiveChatActionPanelAction
+{
+    [JsonPropertyName("panelToShow")]
+    public PanelToShow? PanelToShow { get; init; }
+}
+
+public record CloseLiveChatActionPanelAction
+{
+    [JsonPropertyName("targetPanelId")]
+    public string? TargetPanelId { get; init; }
+}
+
+// =============================================
+// Banner models (addBannerToLiveChatCommand, removeBannerForLiveChatCommand)
+// =============================================
+
+public record LiveChatBannerHeaderRenderer
+{
+    [JsonPropertyName("icon")]
+    public Icon? Icon { get; init; }
+
+    [JsonPropertyName("text")]
+    public Message? Text { get; init; }
+}
+
+public record LiveChatBannerHeaderContainer
+{
+    [JsonPropertyName("liveChatBannerHeaderRenderer")]
+    public LiveChatBannerHeaderRenderer? LiveChatBannerHeaderRenderer { get; init; }
+}
+
+public record LiveChatBannerRendererContents
+{
+    [JsonPropertyName("liveChatTextMessageRenderer")]
+    public LiveChatTextMessageRenderer? LiveChatTextMessageRenderer { get; init; }
+}
+
+public record LiveChatBannerRenderer
+{
+    [JsonPropertyName("header")]
+    public LiveChatBannerHeaderContainer? Header { get; init; }
+
+    [JsonPropertyName("contents")]
+    public LiveChatBannerRendererContents? Contents { get; init; }
+
+    [JsonPropertyName("actionId")]
+    public string? ActionId { get; init; }
+
+    [JsonPropertyName("bannerType")]
+    public string? BannerType { get; init; }
+}
+
+public record BannerRendererContainer
+{
+    [JsonPropertyName("liveChatBannerRenderer")]
+    public LiveChatBannerRenderer? LiveChatBannerRenderer { get; init; }
+}
+
+public record AddBannerToLiveChatCommand
+{
+    [JsonPropertyName("bannerRenderer")]
+    public BannerRendererContainer? BannerRenderer { get; init; }
+}
+
+public record RemoveBannerForLiveChatCommand
+{
+    [JsonPropertyName("targetActionId")]
+    public string? TargetActionId { get; init; }
+}
+
 // Polymorphic container for actions
 public record Action
 {
@@ -697,9 +852,23 @@ public record Action
     [JsonPropertyName("signalAction")]
     public SignalAction? SignalAction { get; init; }
 
-    // Add other potential actions (addBanner, markChatItemsByAuthorAsDeletedAction etc.)
     [JsonPropertyName("markChatItemsByAuthorAsDeletedAction")]
-    public RemoveChatItemByAuthorAction? MarkChatItemsByAuthorAsDeletedAction { get; init; } // Similar structure to remove by author
+    public RemoveChatItemByAuthorAction? MarkChatItemsByAuthorAsDeletedAction { get; init; }
+
+    [JsonPropertyName("updateLiveChatPollAction")]
+    public UpdateLiveChatPollAction? UpdateLiveChatPollAction { get; init; }
+
+    [JsonPropertyName("showLiveChatActionPanelAction")]
+    public ShowLiveChatActionPanelAction? ShowLiveChatActionPanelAction { get; init; }
+
+    [JsonPropertyName("closeLiveChatActionPanelAction")]
+    public CloseLiveChatActionPanelAction? CloseLiveChatActionPanelAction { get; init; }
+
+    [JsonPropertyName("addBannerToLiveChatCommand")]
+    public AddBannerToLiveChatCommand? AddBannerToLiveChatCommand { get; init; }
+
+    [JsonPropertyName("removeBannerForLiveChatCommand")]
+    public RemoveBannerForLiveChatCommand? RemoveBannerForLiveChatCommand { get; init; }
 
     // Fallback for unhandled actions
     [JsonExtensionData]
