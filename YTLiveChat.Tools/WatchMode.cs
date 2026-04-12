@@ -93,13 +93,14 @@ internal static class WatchMode
             cts.Cancel();
         };
 
-        // AutoFlush = true causes StreamWriter to flush its internal buffer to the underlying
-        // FileStream after every write, which in turn flushes to the OS file cache.
-        // Each captured event is visible on disk immediately — no batching until stop.
-        using StreamWriter writer = new(outputPath, append: false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)) { AutoFlush = true };
+        // No AutoFlush — let the StreamWriter buffer writes and flush on a 1-second timer.
+        // This avoids a syscall per event (irrelevant at 1/min, wasteful at 10-20/sec)
+        // while still keeping data on disk within a second of capture.
+        using StreamWriter writer = new(outputPath, append: false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
         int[] capturedCount = [0];
         object fileLock = new();
         object consoleLock = new();
+        using Timer flushTimer = new(_ => { lock (fileLock) { writer.Flush(); } }, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
 
         List<(WatchTarget Target, IYTLiveChat Chat, HttpClient HttpClient)> sessions = [];
 
