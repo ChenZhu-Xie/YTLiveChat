@@ -88,6 +88,14 @@ public static class ServiceCollectionExtensions
                     .Value;
                 // Set base address for the HttpClient instance used by YTHttpClient
                 httpClient.BaseAddress = new Uri(ytChatOptions.YoutubeBaseUrl);
+
+                // Add a common User-Agent header to reduce bot detection
+                httpClient.DefaultRequestHeaders.Add(
+                    "User-Agent",
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
+                );
+                // Also add Accept-Language to prefer English/Standard results
+                httpClient.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.9");
             }
         );
 

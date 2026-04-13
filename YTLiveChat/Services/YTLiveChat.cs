@@ -469,7 +469,8 @@ public class YTLiveChat : IYTLiveChat // Changed to public for direct instantiat
     private static bool IsLikelyNoActiveLiveError(InvalidOperationException ex)
     {
         string message = ex.ToString();
-        return message.Contains("Live Stream canonical link not found", StringComparison.Ordinal)
+        return message.Contains("Live Stream canonical link or Video ID not found", StringComparison.Ordinal)
+            || message.Contains("Live Stream canonical link not found", StringComparison.Ordinal)
             || message.Contains("Live Stream ID not found", StringComparison.Ordinal)
             || message.Contains("Initial Continuation token not found", StringComparison.Ordinal)
             || message.Contains("is finished live", StringComparison.Ordinal)
