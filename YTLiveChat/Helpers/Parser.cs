@@ -1455,6 +1455,63 @@ internal static partial class Parser
                 pinnedBy = null;
         }
 
+        // ── Redirect banner (LIVE_CHAT_BANNER_TYPE_CROSS_CHANNEL_REDIRECT) ──
+        LiveChatBannerRedirectRenderer? redirectRenderer =
+            banner.Contents?.LiveChatBannerRedirectRenderer;
+        if (redirectRenderer is not null)
+        {
+            // Extract the bold run as the redirect-target channel name.
+            string? redirectName = null;
+            if (redirectRenderer.BannerMessage?.Runs != null)
+            {
+                foreach (MessageRun run in redirectRenderer.BannerMessage.Runs)
+                {
+                    if (run is MessageText { Bold: true } boldRun && !string.IsNullOrEmpty(boldRun.Text))
+                    {
+                        redirectName = boldRun.Text;
+                        break;
+                    }
+                }
+            }
+
+            // Extract redirect video ID from inlineActionButton.buttonRenderer.command.watchEndpoint.videoId
+            string? redirectVideoId = null;
+            if (redirectRenderer.InlineActionButton.HasValue)
+            {
+                JsonElement btn = redirectRenderer.InlineActionButton.Value;
+                if (
+                    btn.TryGetProperty("buttonRenderer", out JsonElement btnRenderer)
+                    && btnRenderer.TryGetProperty("command", out JsonElement cmd)
+                    && cmd.TryGetProperty("watchEndpoint", out JsonElement watchEp)
+                    && watchEp.TryGetProperty("videoId", out JsonElement videoIdEl)
+                )
+                {
+                    redirectVideoId = videoIdEl.GetString();
+                }
+            }
+
+            Contracts.Models.MessagePart[] redirectMessage =
+                redirectRenderer.BannerMessage?.Runs?.ToMessageParts() ?? [];
+
+            return new Contracts.Models.BannerItem
+            {
+                ActionId = actionId!,
+                BannerType = banner.BannerType,
+                PinnedBy = pinnedBy,
+                Author = new Contracts.Models.Author
+                {
+                    Name = redirectName ?? string.Empty,
+                    ChannelId = string.Empty,
+                    Thumbnail = redirectRenderer.AuthorPhoto?.Thumbnails?.ToImage(redirectName),
+                },
+                Message = redirectMessage,
+                MessageId = string.Empty,
+                Timestamp = DateTimeOffset.UtcNow,
+                RedirectVideoId = redirectVideoId,
+            };
+        }
+
+        // ── Pinned message banner ──────────────────────────────────────────────
         LiveChatTextMessageRenderer? textRenderer = banner.Contents?.LiveChatTextMessageRenderer;
         if (textRenderer is null)
             return null;
@@ -1465,6 +1522,31 @@ internal static partial class Parser
             ChannelId = textRenderer.AuthorExternalChannelId ?? string.Empty,
             Thumbnail = textRenderer.AuthorPhoto?.Thumbnails?.ToImage(textRenderer.AuthorName?.Text),
         };
+
+        bool isVerified = false;
+        bool isModerator = false;
+        bool isOwner = false;
+        if (textRenderer.AuthorBadges != null)
+        {
+            foreach (AuthorBadgeContainer badgeContainer in textRenderer.AuthorBadges)
+            {
+                LiveChatAuthorBadgeRenderer? badge = badgeContainer.LiveChatAuthorBadgeRenderer;
+                if (badge?.CustomThumbnail != null)
+                {
+                    author.Badge ??= new Contracts.Models.Badge
+                    {
+                        Thumbnail = badge.CustomThumbnail.Thumbnails?.ToImage(),
+                        Label =
+                            badge.Tooltip
+                            ?? badge.Accessibility?.AccessibilityData?.Label
+                            ?? "Member",
+                    };
+                }
+                else if (badge?.Icon?.IconType == "VERIFIED") { isVerified = true; }
+                else if (badge?.Icon?.IconType == "MODERATOR") { isModerator = true; }
+                else if (badge?.Icon?.IconType == "OWNER") { isOwner = true; }
+            }
+        }
 
         Contracts.Models.MessagePart[] messageParts =
             textRenderer.Message?.Runs?.ToMessageParts() ?? [];
@@ -1484,7 +1566,45 @@ internal static partial class Parser
             Message = messageParts,
             MessageId = textRenderer.Id ?? string.Empty,
             Timestamp = timestamp,
+            IsVerified = isVerified,
+            IsModerator = isModerator,
+            IsOwner = isOwner,
         };
+    }
+
+    /// <summary>
+    /// Extracts the target item ID and an optional replacement <see cref="Contracts.Models.ChatItem"/>
+    /// from a <c>replaceChatItemAction</c>.
+    /// Returns <c>(null, null)</c> for other action types or when required fields are absent.
+    /// <c>Replacement</c> is null when the replacement renderer type produces no chat item
+    /// (e.g. a placeholder renderer).
+    /// </summary>
+    public static (string? TargetItemId, Contracts.Models.ChatItem? Replacement) ToReplacedChatItem(
+        this Action action
+    )
+    {
+        ReplaceChatItemAction? replace = action.ReplaceChatItemAction;
+        string? targetId = replace?.TargetItemId;
+        if (string.IsNullOrWhiteSpace(targetId))
+            return (null, null);
+
+        ReplacementItem? replacementItem = replace!.ReplacementItem;
+        if (replacementItem is null)
+            return (targetId!, null);
+
+        // Synthesise an addChatItemAction so we can reuse ToChatItem.
+        Action synth = new()
+        {
+            AddChatItemAction = new AddChatItemAction
+            {
+                Item = new AddChatItemActionItem
+                {
+                    LiveChatTextMessageRenderer = replacementItem.LiveChatTextMessageRenderer,
+                    LiveChatPlaceholderItemRenderer = replacementItem.LiveChatPlaceholderItemRenderer,
+                },
+            },
+        };
+        return (targetId!, synth.ToChatItem());
     }
 
     /// <summary>

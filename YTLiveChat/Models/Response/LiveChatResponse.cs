@@ -789,10 +789,25 @@ public record LiveChatBannerHeaderContainer
     public LiveChatBannerHeaderRenderer? LiveChatBannerHeaderRenderer { get; init; }
 }
 
+public record LiveChatBannerRedirectRenderer
+{
+    [JsonPropertyName("bannerMessage")]
+    public Message? BannerMessage { get; init; }
+
+    [JsonPropertyName("authorPhoto")]
+    public AuthorPhoto? AuthorPhoto { get; init; }
+
+    [JsonPropertyName("inlineActionButton")]
+    public JsonElement? InlineActionButton { get; init; }
+}
+
 public record LiveChatBannerRendererContents
 {
     [JsonPropertyName("liveChatTextMessageRenderer")]
     public LiveChatTextMessageRenderer? LiveChatTextMessageRenderer { get; init; }
+
+    [JsonPropertyName("liveChatBannerRedirectRenderer")]
+    public LiveChatBannerRedirectRenderer? LiveChatBannerRedirectRenderer { get; init; }
 }
 
 public record LiveChatBannerRenderer

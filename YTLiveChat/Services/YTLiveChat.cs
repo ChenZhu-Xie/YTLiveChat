@@ -62,6 +62,9 @@ public class YTLiveChat : IYTLiveChat // Changed to public for direct instantiat
     public event EventHandler<BannerRemovedEventArgs>? BannerRemoved;
 
     /// <inheritdoc />
+    public event EventHandler<ChatItemReplacedEventArgs>? ChatItemReplaced;
+
+    /// <inheritdoc />
     public event EventHandler<ErrorOccurredEventArgs>? ErrorOccurred;
 
     private static readonly Random s_random = new();
@@ -1464,8 +1467,9 @@ public class YTLiveChat : IYTLiveChat // Changed to public for direct instantiat
         bool hasDeleteByAuthor = ChatItemsDeletedByAuthor != null;
         bool hasBannerAdd = BannerAdded != null;
         bool hasBannerRemove = BannerRemoved != null;
+        bool hasReplace = ChatItemReplaced != null;
 
-        if (!hasPoll && !hasPollClosed && !hasDelete && !hasDeleteByAuthor && !hasBannerAdd && !hasBannerRemove)
+        if (!hasPoll && !hasPollClosed && !hasDelete && !hasDeleteByAuthor && !hasBannerAdd && !hasBannerRemove && !hasReplace)
             return;
 
         foreach (Models.Response.Action action in actions)
@@ -1510,6 +1514,14 @@ public class YTLiveChat : IYTLiveChat // Changed to public for direct instantiat
                 string? removedId = action.ToRemovedBannerActionId();
                 if (removedId is not null)
                     OnBannerRemoved(new() { TargetActionId = removedId });
+            }
+
+            if (hasReplace)
+            {
+                (string? targetItemId, Contracts.Models.ChatItem? replacement) =
+                    action.ToReplacedChatItem();
+                if (targetItemId is not null)
+                    OnChatItemReplaced(new() { TargetItemId = targetItemId, Replacement = replacement });
             }
         }
     }
@@ -1589,6 +1601,19 @@ public class YTLiveChat : IYTLiveChat // Changed to public for direct instantiat
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error invoking BannerRemoved event handler for target {TargetActionId}.", e.TargetActionId);
+        }
+    }
+
+    /// <summary>Invokes the ChatItemReplaced event.</summary>
+    protected virtual void OnChatItemReplaced(ChatItemReplacedEventArgs e)
+    {
+        try
+        {
+            ChatItemReplaced?.Invoke(this, e);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error invoking ChatItemReplaced event handler for target {TargetItemId}.", e.TargetItemId);
         }
     }
 

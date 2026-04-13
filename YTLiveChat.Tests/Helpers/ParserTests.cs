@@ -1372,13 +1372,39 @@ public class ParserTests
         PollItem? poll = Parser.ToPollItem(action);
 
         Assert.IsNotNull(poll, "ToPollItem should return a non-null PollItem.");
-        Assert.AreEqual("POLL_ID_SHOW_01", poll.PollId);
+        Assert.AreEqual("ChwKGkNNdVFxNWpvNkpNREZaekh3Z1FkelJZTExR", poll.PollId);
         Assert.IsTrue(poll.IsNew, "A showLiveChatActionPanelAction should be marked IsNew.");
-        Assert.AreEqual("@Creator", poll.CreatorHandle);
+        Assert.AreEqual("@holoen_raorapanthera", poll.CreatorHandle);
         Assert.AreEqual(0, poll.TotalVotes);
         Assert.AreEqual(2, poll.Choices.Count);
-        Assert.AreEqual("Yes", poll.Choices[0].Text);
-        Assert.AreEqual("No", poll.Choices[1].Text);
+        Assert.AreEqual("LET IN", poll.Choices[0].Text);
+        Assert.AreEqual("OUT", poll.Choices[1].Text);
+        // Fresh polls have no voteRatio (default 0.0 since the field is not present in JSON)
+        Assert.AreEqual(0.0, poll.Choices[0].VoteRatio);
+        Assert.AreEqual(0.0, poll.Choices[1].VoteRatio);
+    }
+
+    [TestMethod]
+    public void ToPollItem_UpdatePollActionZeroVotes_ReturnsPollItemNotNew()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.UpdatePollActionZeroVotes(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+
+        PollItem? poll = Parser.ToPollItem(action);
+
+        Assert.IsNotNull(poll, "ToPollItem should return a non-null PollItem.");
+        Assert.AreEqual("ChwKGkNNdVFxNWpvNkpNREZaekh3Z1FkelJZTExR", poll.PollId);
+        Assert.IsFalse(poll.IsNew, "An updateLiveChatPollAction should not be marked IsNew.");
+        Assert.AreEqual("@holoen_raorapanthera", poll.CreatorHandle);
+        Assert.AreEqual(0, poll.TotalVotes);
+        Assert.AreEqual(2, poll.Choices.Count);
+        Assert.AreEqual("LET IN", poll.Choices[0].Text);
+        Assert.AreEqual(0.0, poll.Choices[0].VoteRatio, 0.001);
+        Assert.AreEqual("OUT", poll.Choices[1].Text);
+        Assert.AreEqual(0.0, poll.Choices[1].VoteRatio, 0.001);
     }
 
     [TestMethod]
@@ -1448,6 +1474,7 @@ public class ParserTests
 
         Assert.IsNotNull(banner, "ToBannerItem should return a non-null BannerItem.");
         Assert.AreEqual("PINNED_ACTION_ID_01", banner.ActionId);
+        Assert.AreEqual("LIVE_CHAT_BANNER_TYPE_PINNED_MESSAGE", banner.BannerType);
         Assert.AreEqual("Pinned by @Host", banner.PinnedBy);
         Assert.AreEqual("@Host", banner.Author.Name);
         Assert.AreEqual("UC_HOST_01", banner.Author.ChannelId);
@@ -1455,6 +1482,39 @@ public class ParserTests
         Assert.IsInstanceOfType<TextPart>(banner.Message[0]);
         Assert.AreEqual("Pinned message body", ((TextPart)banner.Message[0]).Text);
         Assert.AreEqual("PINNED_TEXT_ID_01", banner.MessageId);
+        // Timestamp from timestampUsec "1776004576422639"
+        Assert.AreNotEqual(default, banner.Timestamp);
+        Assert.IsTrue(banner.Timestamp.Year >= 2026, "Timestamp should be from 2026 or later.");
+        // VERIFIED badge
+        Assert.IsTrue(banner.IsVerified, "Author should be marked verified.");
+        Assert.IsFalse(banner.IsModerator);
+        Assert.IsFalse(banner.IsOwner);
+        Assert.IsNull(banner.RedirectVideoId);
+    }
+
+    [TestMethod]
+    public void ToBannerItem_RedirectBanner_ReturnsBannerItemWithRedirectVideoId()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.AddBannerRedirectCommand(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+
+        BannerItem? banner = Parser.ToBannerItem(action);
+
+        Assert.IsNotNull(banner, "ToBannerItem should return a non-null BannerItem for redirect.");
+        Assert.AreEqual("ChwKGkNKLW1yNjd4NkpNREZhRE5GZ2tkVUFNWUNn", banner.ActionId);
+        Assert.AreEqual("LIVE_CHAT_BANNER_TYPE_CROSS_CHANNEL_REDIRECT", banner.BannerType);
+        Assert.AreEqual("OcULALBAXRA", banner.RedirectVideoId);
+        // Author name extracted from the bold run in bannerMessage
+        Assert.AreEqual("@TakanashiKiara", banner.Author.Name);
+        Assert.IsNotNull(banner.Author.Thumbnail, "Redirect banner should have an author photo.");
+        // Message parts from bannerMessage runs
+        Assert.IsTrue(banner.Message.Length >= 2, "Redirect banner message should have multiple parts.");
+        Assert.IsNull(banner.PinnedBy, "Redirect banner should have no PinnedBy.");
+        Assert.AreEqual(string.Empty, banner.MessageId);
+        Assert.IsFalse(banner.IsVerified);
     }
 
     [TestMethod]
@@ -1507,5 +1567,61 @@ public class ParserTests
         );
         Assert.IsNotNull(action);
         Assert.IsNull(Parser.ToClosedPollId(action));
+    }
+
+    // ── Chat item replacement ─────────────────────────────────────────────────
+
+    [TestMethod]
+    public void ToReplacedChatItem_WithTextReplacement_ReturnsTargetIdAndChatItem()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.ReplaceChatItemWithText(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+
+        (string? targetId, ChatItem? replacement) = Parser.ToReplacedChatItem(action);
+
+        Assert.AreEqual("ChwKGkNQcTJ5X0t3NlpNREZlZkJ3Z1FkUTI4RmJR", targetId);
+        Assert.IsNotNull(replacement, "Replacement should not be null for a text message.");
+        // The replacement id should match the inner renderer id
+        Assert.AreEqual("ChwKGkNQcTJ5X0t3NlpNREZlZkJ3Z1FkUTI4RmJR", replacement.Id);
+        Assert.AreEqual("@asepjulian896", replacement.Author.Name);
+        Assert.AreEqual("UCFIehAvmitLzMf3KDWlW-sA", replacement.Author.ChannelId);
+        Assert.AreEqual(1, replacement.Message.Length);
+        Assert.IsInstanceOfType<TextPart>(replacement.Message[0]);
+        Assert.AreEqual("pagi bokobo", ((TextPart)replacement.Message[0]).Text);
+        // Timestamp from timestampUsec "1776033641718643"
+        Assert.AreNotEqual(default, replacement.Timestamp);
+    }
+
+    [TestMethod]
+    public void ToReplacedChatItem_WithPlaceholderReplacement_ReturnsTargetIdAndNullItem()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.ReplaceChatItemWithPlaceholder(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+
+        (string? targetId, ChatItem? replacement) = Parser.ToReplacedChatItem(action);
+
+        Assert.AreEqual("REPLACE_TARGET_PLACEHOLDER_01", targetId);
+        Assert.IsNull(replacement, "Replacement should be null for a placeholder renderer.");
+    }
+
+    [TestMethod]
+    public void ToReplacedChatItem_UnrelatedAction_ReturnsNullTargetId()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.RemoveChatItem(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+
+        (string? targetId, ChatItem? replacement) = Parser.ToReplacedChatItem(action);
+
+        Assert.IsNull(targetId);
+        Assert.IsNull(replacement);
     }
 }

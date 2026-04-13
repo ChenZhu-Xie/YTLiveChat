@@ -89,6 +89,14 @@ public interface IYTLiveChat : IDisposable
     event EventHandler<BannerRemovedEventArgs>? BannerRemoved;
 
     /// <summary>
+    /// Fires when an existing chat item is replaced with new content (<c>replaceChatItemAction</c>).
+    /// The replacement is typically an updated version of the same message (e.g. after slow-mode
+    /// resolves a pending message). <see cref="ChatItemReplacedEventArgs.Replacement"/> is null
+    /// when the replacement item type produces no <see cref="ChatItem"/> (e.g. placeholder).
+    /// </summary>
+    event EventHandler<ChatItemReplacedEventArgs>? ChatItemReplaced;
+
+    /// <summary>
     /// Fires on any error from backend or within service
     /// </summary>
     event EventHandler<ErrorOccurredEventArgs>? ErrorOccurred;
@@ -304,4 +312,21 @@ public class BannerRemovedEventArgs : EventArgs
     /// The action ID of the banner that was removed (matches <see cref="BannerItem.ActionId"/>).
     /// </summary>
     public required string TargetActionId { get; set; }
+}
+
+/// <summary>
+/// EventArgs for ChatItemReplaced event.
+/// </summary>
+public class ChatItemReplacedEventArgs : EventArgs
+{
+    /// <summary>
+    /// The ID of the chat item that was replaced.
+    /// </summary>
+    public required string TargetItemId { get; set; }
+
+    /// <summary>
+    /// The replacement chat item, or null when the replacement renderer type produces no
+    /// <see cref="ChatItem"/> (e.g. a placeholder renderer).
+    /// </summary>
+    public ChatItem? Replacement { get; set; }
 }

@@ -2,6 +2,7 @@
 virtual YTLiveChat.Services.YTLiveChat.OnBannerAdded(YTLiveChat.Contracts.Services.BannerAddedEventArgs! e) -> void
 virtual YTLiveChat.Services.YTLiveChat.OnBannerRemoved(YTLiveChat.Contracts.Services.BannerRemovedEventArgs! e) -> void
 virtual YTLiveChat.Services.YTLiveChat.OnChatItemDeleted(YTLiveChat.Contracts.Services.ChatItemDeletedEventArgs! e) -> void
+virtual YTLiveChat.Services.YTLiveChat.OnChatItemReplaced(YTLiveChat.Contracts.Services.ChatItemReplacedEventArgs! e) -> void
 virtual YTLiveChat.Services.YTLiveChat.OnChatItemsDeletedByAuthor(YTLiveChat.Contracts.Services.ChatItemsDeletedByAuthorEventArgs! e) -> void
 virtual YTLiveChat.Services.YTLiveChat.OnPollClosed(YTLiveChat.Contracts.Services.PollClosedEventArgs! e) -> void
 virtual YTLiveChat.Services.YTLiveChat.OnPollUpdated(YTLiveChat.Contracts.Services.PollUpdatedEventArgs! e) -> void
@@ -13,12 +14,20 @@ YTLiveChat.Contracts.Models.BannerItem.Author.set -> void
 YTLiveChat.Contracts.Models.BannerItem.BannerItem() -> void
 YTLiveChat.Contracts.Models.BannerItem.BannerType.get -> string?
 YTLiveChat.Contracts.Models.BannerItem.BannerType.set -> void
+YTLiveChat.Contracts.Models.BannerItem.IsModerator.get -> bool
+YTLiveChat.Contracts.Models.BannerItem.IsModerator.set -> void
+YTLiveChat.Contracts.Models.BannerItem.IsOwner.get -> bool
+YTLiveChat.Contracts.Models.BannerItem.IsOwner.set -> void
+YTLiveChat.Contracts.Models.BannerItem.IsVerified.get -> bool
+YTLiveChat.Contracts.Models.BannerItem.IsVerified.set -> void
 YTLiveChat.Contracts.Models.BannerItem.Message.get -> YTLiveChat.Contracts.Models.MessagePart![]!
 YTLiveChat.Contracts.Models.BannerItem.Message.set -> void
 YTLiveChat.Contracts.Models.BannerItem.MessageId.get -> string!
 YTLiveChat.Contracts.Models.BannerItem.MessageId.set -> void
 YTLiveChat.Contracts.Models.BannerItem.PinnedBy.get -> string?
 YTLiveChat.Contracts.Models.BannerItem.PinnedBy.set -> void
+YTLiveChat.Contracts.Models.BannerItem.RedirectVideoId.get -> string?
+YTLiveChat.Contracts.Models.BannerItem.RedirectVideoId.set -> void
 YTLiveChat.Contracts.Models.BannerItem.Timestamp.get -> System.DateTimeOffset
 YTLiveChat.Contracts.Models.BannerItem.Timestamp.set -> void
 YTLiveChat.Contracts.Models.PollChoice
@@ -163,9 +172,26 @@ YTLiveChat.Models.Response.ShowLiveChatActionPanelAction.PanelToShow.init -> voi
 YTLiveChat.Models.Response.UpdateLiveChatPollAction
 YTLiveChat.Models.Response.UpdateLiveChatPollAction.PollToUpdate.get -> YTLiveChat.Models.Response.PollToUpdate?
 YTLiveChat.Models.Response.UpdateLiveChatPollAction.PollToUpdate.init -> void
+YTLiveChat.Contracts.Services.ChatItemReplacedEventArgs
+YTLiveChat.Contracts.Services.ChatItemReplacedEventArgs.ChatItemReplacedEventArgs() -> void
+YTLiveChat.Contracts.Services.ChatItemReplacedEventArgs.Replacement.get -> YTLiveChat.Contracts.Models.ChatItem?
+YTLiveChat.Contracts.Services.ChatItemReplacedEventArgs.Replacement.set -> void
+YTLiveChat.Contracts.Services.ChatItemReplacedEventArgs.TargetItemId.get -> string!
+YTLiveChat.Contracts.Services.ChatItemReplacedEventArgs.TargetItemId.set -> void
+YTLiveChat.Contracts.Services.IYTLiveChat.ChatItemReplaced -> System.EventHandler<YTLiveChat.Contracts.Services.ChatItemReplacedEventArgs!>?
+YTLiveChat.Models.Response.LiveChatBannerRedirectRenderer
+YTLiveChat.Models.Response.LiveChatBannerRedirectRenderer.AuthorPhoto.get -> YTLiveChat.Models.Response.AuthorPhoto?
+YTLiveChat.Models.Response.LiveChatBannerRedirectRenderer.AuthorPhoto.init -> void
+YTLiveChat.Models.Response.LiveChatBannerRedirectRenderer.BannerMessage.get -> YTLiveChat.Models.Response.Message?
+YTLiveChat.Models.Response.LiveChatBannerRedirectRenderer.BannerMessage.init -> void
+YTLiveChat.Models.Response.LiveChatBannerRedirectRenderer.InlineActionButton.get -> System.Text.Json.JsonElement?
+YTLiveChat.Models.Response.LiveChatBannerRedirectRenderer.InlineActionButton.init -> void
+YTLiveChat.Models.Response.LiveChatBannerRendererContents.LiveChatBannerRedirectRenderer.get -> YTLiveChat.Models.Response.LiveChatBannerRedirectRenderer?
+YTLiveChat.Models.Response.LiveChatBannerRendererContents.LiveChatBannerRedirectRenderer.init -> void
 YTLiveChat.Services.YTLiveChat.BannerAdded -> System.EventHandler<YTLiveChat.Contracts.Services.BannerAddedEventArgs!>?
 YTLiveChat.Services.YTLiveChat.BannerRemoved -> System.EventHandler<YTLiveChat.Contracts.Services.BannerRemovedEventArgs!>?
 YTLiveChat.Services.YTLiveChat.ChatItemDeleted -> System.EventHandler<YTLiveChat.Contracts.Services.ChatItemDeletedEventArgs!>?
+YTLiveChat.Services.YTLiveChat.ChatItemReplaced -> System.EventHandler<YTLiveChat.Contracts.Services.ChatItemReplacedEventArgs!>?
 YTLiveChat.Services.YTLiveChat.ChatItemsDeletedByAuthor -> System.EventHandler<YTLiveChat.Contracts.Services.ChatItemsDeletedByAuthorEventArgs!>?
 YTLiveChat.Services.YTLiveChat.PollClosed -> System.EventHandler<YTLiveChat.Contracts.Services.PollClosedEventArgs!>?
 YTLiveChat.Services.YTLiveChat.PollUpdated -> System.EventHandler<YTLiveChat.Contracts.Services.PollUpdatedEventArgs!>?

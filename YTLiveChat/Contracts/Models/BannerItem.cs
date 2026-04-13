@@ -39,4 +39,19 @@ public class BannerItem
     /// The timestamp of the pinned message.
     /// </summary>
     public DateTimeOffset Timestamp { get; set; }
+
+    /// <summary>Whether the author of the pinned message is a verified channel.</summary>
+    public bool IsVerified { get; set; }
+
+    /// <summary>Whether the author of the pinned message is a chat moderator.</summary>
+    public bool IsModerator { get; set; }
+
+    /// <summary>Whether the author of the pinned message is the channel owner.</summary>
+    public bool IsOwner { get; set; }
+
+    /// <summary>
+    /// For cross-channel redirect banners (<c>LIVE_CHAT_BANNER_TYPE_CROSS_CHANNEL_REDIRECT</c>),
+    /// the video ID of the stream being redirected to. Null for regular pinned-message banners.
+    /// </summary>
+    public string? RedirectVideoId { get; set; }
 }
