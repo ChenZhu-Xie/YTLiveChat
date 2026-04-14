@@ -77,6 +77,13 @@ public record ThumbnailList
 {
     [JsonPropertyName("thumbnails")]
     public List<Thumbnail>? Thumbnails { get; init; }
+
+    /// <summary>
+    /// Accessibility label present on some thumbnail containers (e.g. authorPhoto in ticker items).
+    /// On ticker paid-message outer renderers the label carries the author's @handle.
+    /// </summary>
+    [JsonPropertyName("accessibility")]
+    public Accessibility? Accessibility { get; init; }
 }
 
 public record WebCommandMetadata
@@ -465,6 +472,12 @@ public record LiveChatMembershipItemRenderer : MessageRendererBase
 
     [JsonPropertyName("message")]
     public Message? Message { get; init; }
+
+    /// <summary>
+    /// True on milestone membership items that carry no message body (observed on ~3.7% of instances).
+    /// </summary>
+    [JsonPropertyName("empty")]
+    public bool Empty { get; init; }
 }
 
 public record SponsorshipsHeaderContainer
