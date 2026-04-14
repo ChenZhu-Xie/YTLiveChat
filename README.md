@@ -33,8 +33,8 @@ dotnet add package Agash.YTLiveChat.DependencyInjection
 - Chat messages (`ChatReceived`) — text, emoji, images
 - Super Chats / Super Stickers with parsed amount + currency
 - Membership events — new join, milestone, gift purchase, gift redemption (`MembershipDetails.EventType`)
-- Ticker support (`addLiveChatTickerItemAction`) — paid messages, membership items, gift purchase announcements
-- Viewer leaderboard rank extraction (YouTube points crown tags like `#1`)
+- Ticker support (`addLiveChatTickerItemAction`) — paid messages, membership items, gift purchase announcements; ticker items include author channel ID, author thumbnail, and `Author.ChannelHandle` (the `@handle`) when available
+- Viewer leaderboard rank extraction via `ChatItem.ViewerLeaderboardRank` (YouTube points crown tags like `#1`)
 
 **Moderation & lifecycle**
 - Message deleted (`ChatItemDeleted`) — single item removed
@@ -140,7 +140,8 @@ public sealed class ChatWorker(IYTLiveChat chat) : IHostedService
 
     private static void HandleChat(ChatItem item)
     {
-        // inspect item.Superchat / item.MembershipDetails / item.ViewerLeaderboardRank / item.IsTicker
+        // inspect item.Superchat, item.MembershipDetails, item.ViewerLeaderboardRank, item.IsTicker
+        // for ticker events: item.Author.ChannelId, item.Author.Thumbnail, item.Author.ChannelHandle
     }
 }
 ```

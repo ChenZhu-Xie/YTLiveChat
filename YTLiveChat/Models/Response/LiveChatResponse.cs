@@ -73,7 +73,7 @@ public record Thumbnail
     public int Height { get; init; }
 }
 
-public record AuthorPhoto
+public record ThumbnailList
 {
     [JsonPropertyName("thumbnails")]
     public List<Thumbnail>? Thumbnails { get; init; }
@@ -327,7 +327,7 @@ public record MessageRendererBase
     public SimpleText? AuthorName { get; init; }
 
     [JsonPropertyName("authorPhoto")]
-    public AuthorPhoto? AuthorPhoto { get; init; }
+    public ThumbnailList? AuthorPhoto { get; init; }
 
     [JsonPropertyName("authorBadges")]
     public List<AuthorBadgeContainer>? AuthorBadges { get; init; }
@@ -493,7 +493,7 @@ public record LiveChatSponsorshipsHeaderRenderer // Used within Gift Purchase
     public SimpleText? AuthorName { get; init; }
 
     [JsonPropertyName("authorPhoto")]
-    public AuthorPhoto? AuthorPhoto { get; init; }
+    public ThumbnailList? AuthorPhoto { get; init; }
 
     [JsonPropertyName("primaryText")]
     public HeaderText? PrimaryText { get; init; }
@@ -521,7 +521,7 @@ public record LiveChatSponsorshipsGiftPurchaseAnnouncementRenderer : MessageRend
 
 public record LiveChatSponsorshipsGiftRedemptionAnnouncementRenderer : MessageRendererBase
 {
-    // ID, Timestamp, AuthorChannelId, AuthorName, AuthorPhoto, Badges, ContextMenu in base
+    // ID, Timestamp, AuthorChannelId, AuthorName, ThumbnailList, Badges, ContextMenu in base
     [JsonPropertyName("message")]
     public Message? Message { get; init; } // The "Welcome!" message
 }
@@ -621,12 +621,11 @@ public record LiveChatTickerPaidMessageItemRenderer
     [JsonPropertyName("showItemEndpoint")]
     public TickerShowItemEndpoint? ShowItemEndpoint { get; init; }
 
-    // Fields observed in the wild but absent from the original model
     [JsonPropertyName("authorExternalChannelId")]
     public string? AuthorExternalChannelId { get; init; }
 
     [JsonPropertyName("authorPhoto")]
-    public AuthorPhoto? AuthorPhoto { get; init; }
+    public ThumbnailList? AuthorPhoto { get; init; }
 
     /// <summary>The @handle of the author, e.g. "@TurtleCubes".</summary>
     [JsonPropertyName("authorUsername")]
@@ -660,13 +659,12 @@ public record LiveChatTickerSponsorItemRenderer
     [JsonPropertyName("showItemEndpoint")]
     public TickerShowItemEndpoint? ShowItemEndpoint { get; init; }
 
-    // Fields observed in the wild but absent from the original model
     [JsonPropertyName("authorExternalChannelId")]
     public string? AuthorExternalChannelId { get; init; }
 
-    /// <summary>Thumbnail of the member's profile photo shown in the ticker bar.</summary>
+    /// <summary>Profile photo of the member shown in the ticker bar.</summary>
     [JsonPropertyName("sponsorPhoto")]
-    public AuthorPhoto? SponsorPhoto { get; init; }
+    public ThumbnailList? SponsorPhoto { get; init; }
 
     /// <summary>Detail text, e.g. "Member" or "sent 10 Gift Memberships".</summary>
     [JsonPropertyName("detailText")]
@@ -704,20 +702,15 @@ public record LiveChatTickerPaidStickerItemRenderer
     [JsonPropertyName("showItemEndpoint")]
     public TickerShowItemEndpoint? ShowItemEndpoint { get; init; }
 
-    // Fields observed in the wild but absent from the original model
     [JsonPropertyName("authorExternalChannelId")]
     public string? AuthorExternalChannelId { get; init; }
 
     [JsonPropertyName("authorPhoto")]
-    public AuthorPhoto? AuthorPhoto { get; init; }
+    public ThumbnailList? AuthorPhoto { get; init; }
 
-    /// <summary>
-    /// Sticker image(s) shown directly in the ticker bar.
-    /// Reuses <see cref="AuthorPhoto"/> for its <c>{ thumbnails: [...] }</c> shape —
-    /// the thumbnails here are sticker images, not author photos.
-    /// </summary>
+    /// <summary>Sticker image(s) shown directly in the ticker bar.</summary>
     [JsonPropertyName("tickerThumbnails")]
-    public List<AuthorPhoto>? TickerThumbnails { get; init; }
+    public List<ThumbnailList>? TickerThumbnails { get; init; }
 
     [JsonPropertyName("startBackgroundColor")]
     public long StartBackgroundColor { get; init; }
@@ -814,7 +807,7 @@ public record PollHeaderRenderer
     public Message? PollQuestion { get; init; }
 
     [JsonPropertyName("thumbnail")]
-    public AuthorPhoto? Thumbnail { get; init; }
+    public ThumbnailList? Thumbnail { get; init; }
 
     [JsonPropertyName("metadataText")]
     public Message? MetadataText { get; init; }
@@ -911,7 +904,7 @@ public record LiveChatBannerRedirectRenderer
     public Message? BannerMessage { get; init; }
 
     [JsonPropertyName("authorPhoto")]
-    public AuthorPhoto? AuthorPhoto { get; init; }
+    public ThumbnailList? AuthorPhoto { get; init; }
 
     [JsonPropertyName("inlineActionButton")]
     public JsonElement? InlineActionButton { get; init; }
@@ -1147,7 +1140,7 @@ public record LiveChatParticipantRenderer
     public SimpleText? AuthorName { get; init; }
 
     [JsonPropertyName("authorPhoto")]
-    public AuthorPhoto? AuthorPhoto { get; init; }
+    public ThumbnailList? AuthorPhoto { get; init; }
 
     [JsonPropertyName("authorBadges")]
     public List<AuthorBadgeContainer>? AuthorBadges { get; init; }

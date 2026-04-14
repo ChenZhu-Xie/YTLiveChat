@@ -165,7 +165,7 @@ YTLiveChat.Models.Response.PollHeaderRenderer.MetadataText.get -> YTLiveChat.Mod
 YTLiveChat.Models.Response.PollHeaderRenderer.MetadataText.init -> void
 YTLiveChat.Models.Response.PollHeaderRenderer.PollQuestion.get -> YTLiveChat.Models.Response.Message?
 YTLiveChat.Models.Response.PollHeaderRenderer.PollQuestion.init -> void
-YTLiveChat.Models.Response.PollHeaderRenderer.Thumbnail.get -> YTLiveChat.Models.Response.AuthorPhoto?
+YTLiveChat.Models.Response.PollHeaderRenderer.Thumbnail.get -> YTLiveChat.Models.Response.ThumbnailList?
 YTLiveChat.Models.Response.PollHeaderRenderer.Thumbnail.init -> void
 YTLiveChat.Models.Response.PollRenderer
 YTLiveChat.Models.Response.PollRenderer.Choices.get -> System.Collections.Generic.List<YTLiveChat.Models.Response.PollChoice!>?
@@ -194,7 +194,7 @@ YTLiveChat.Contracts.Services.ChatItemReplacedEventArgs.TargetItemId.get -> stri
 YTLiveChat.Contracts.Services.ChatItemReplacedEventArgs.TargetItemId.set -> void
 YTLiveChat.Contracts.Services.IYTLiveChat.ChatItemReplaced -> System.EventHandler<YTLiveChat.Contracts.Services.ChatItemReplacedEventArgs!>?
 YTLiveChat.Models.Response.LiveChatBannerRedirectRenderer
-YTLiveChat.Models.Response.LiveChatBannerRedirectRenderer.AuthorPhoto.get -> YTLiveChat.Models.Response.AuthorPhoto?
+YTLiveChat.Models.Response.LiveChatBannerRedirectRenderer.AuthorPhoto.get -> YTLiveChat.Models.Response.ThumbnailList?
 YTLiveChat.Models.Response.LiveChatBannerRedirectRenderer.AuthorPhoto.init -> void
 YTLiveChat.Models.Response.LiveChatBannerRedirectRenderer.BannerMessage.get -> YTLiveChat.Models.Response.Message?
 YTLiveChat.Models.Response.LiveChatBannerRedirectRenderer.BannerMessage.init -> void
@@ -235,6 +235,18 @@ YTLiveChat.Services.YTLiveChat.EngagementMessageReceived -> System.EventHandler<
 YTLiveChat.Services.YTLiveChat.PollClosed -> System.EventHandler<YTLiveChat.Contracts.Services.PollClosedEventArgs!>?
 YTLiveChat.Services.YTLiveChat.PollUpdated -> System.EventHandler<YTLiveChat.Contracts.Services.PollUpdatedEventArgs!>?
 virtual YTLiveChat.Services.YTLiveChat.OnEngagementMessageReceived(YTLiveChat.Contracts.Services.EngagementMessageReceivedEventArgs! e) -> void
+*REMOVED*YTLiveChat.Models.Response.AuthorPhoto
+*REMOVED*YTLiveChat.Models.Response.AuthorPhoto.Thumbnails.get -> System.Collections.Generic.List<YTLiveChat.Models.Response.Thumbnail!>?
+*REMOVED*YTLiveChat.Models.Response.AuthorPhoto.Thumbnails.init -> void
+*REMOVED*YTLiveChat.Models.Response.LiveChatParticipantRenderer.AuthorPhoto.get -> YTLiveChat.Models.Response.AuthorPhoto?
+*REMOVED*YTLiveChat.Models.Response.LiveChatSponsorshipsHeaderRenderer.AuthorPhoto.get -> YTLiveChat.Models.Response.AuthorPhoto?
+*REMOVED*YTLiveChat.Models.Response.MessageRendererBase.AuthorPhoto.get -> YTLiveChat.Models.Response.AuthorPhoto?
+YTLiveChat.Models.Response.ThumbnailList
+YTLiveChat.Models.Response.ThumbnailList.Thumbnails.get -> System.Collections.Generic.List<YTLiveChat.Models.Response.Thumbnail!>?
+YTLiveChat.Models.Response.ThumbnailList.Thumbnails.init -> void
+YTLiveChat.Models.Response.LiveChatParticipantRenderer.AuthorPhoto.get -> YTLiveChat.Models.Response.ThumbnailList?
+YTLiveChat.Models.Response.LiveChatSponsorshipsHeaderRenderer.AuthorPhoto.get -> YTLiveChat.Models.Response.ThumbnailList?
+YTLiveChat.Models.Response.MessageRendererBase.AuthorPhoto.get -> YTLiveChat.Models.Response.ThumbnailList?
 YTLiveChat.Contracts.Models.Author.ChannelHandle.get -> string?
 YTLiveChat.Contracts.Models.Author.ChannelHandle.set -> void
 YTLiveChat.Models.Response.LeaderboardBadge
@@ -249,7 +261,7 @@ YTLiveChat.Models.Response.LiveChatTickerPaidMessageItemRenderer.AmountTextColor
 YTLiveChat.Models.Response.LiveChatTickerPaidMessageItemRenderer.AmountTextColor.init -> void
 YTLiveChat.Models.Response.LiveChatTickerPaidMessageItemRenderer.AuthorExternalChannelId.get -> string?
 YTLiveChat.Models.Response.LiveChatTickerPaidMessageItemRenderer.AuthorExternalChannelId.init -> void
-YTLiveChat.Models.Response.LiveChatTickerPaidMessageItemRenderer.AuthorPhoto.get -> YTLiveChat.Models.Response.AuthorPhoto?
+YTLiveChat.Models.Response.LiveChatTickerPaidMessageItemRenderer.AuthorPhoto.get -> YTLiveChat.Models.Response.ThumbnailList?
 YTLiveChat.Models.Response.LiveChatTickerPaidMessageItemRenderer.AuthorPhoto.init -> void
 YTLiveChat.Models.Response.LiveChatTickerPaidMessageItemRenderer.AuthorUsername.get -> YTLiveChat.Models.Response.SimpleText?
 YTLiveChat.Models.Response.LiveChatTickerPaidMessageItemRenderer.AuthorUsername.init -> void
@@ -265,7 +277,7 @@ YTLiveChat.Models.Response.LiveChatTickerPaidMessageItemRenderer.TrackingParams.
 YTLiveChat.Models.Response.LiveChatTickerPaidMessageItemRenderer.TrackingParams.init -> void
 YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.AuthorExternalChannelId.get -> string?
 YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.AuthorExternalChannelId.init -> void
-YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.AuthorPhoto.get -> YTLiveChat.Models.Response.AuthorPhoto?
+YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.AuthorPhoto.get -> YTLiveChat.Models.Response.ThumbnailList?
 YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.AuthorPhoto.init -> void
 YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.DurationSec.get -> int
 YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.DurationSec.init -> void
@@ -275,7 +287,7 @@ YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.FullDurationSec
 YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.FullDurationSec.init -> void
 YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.StartBackgroundColor.get -> long
 YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.StartBackgroundColor.init -> void
-YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.TickerThumbnails.get -> System.Collections.Generic.List<YTLiveChat.Models.Response.AuthorPhoto!>?
+YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.TickerThumbnails.get -> System.Collections.Generic.List<YTLiveChat.Models.Response.ThumbnailList!>?
 YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.TickerThumbnails.init -> void
 YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.TrackingParams.get -> string?
 YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.TrackingParams.init -> void
@@ -293,7 +305,7 @@ YTLiveChat.Models.Response.LiveChatTickerSponsorItemRenderer.EndBackgroundColor.
 YTLiveChat.Models.Response.LiveChatTickerSponsorItemRenderer.EndBackgroundColor.init -> void
 YTLiveChat.Models.Response.LiveChatTickerSponsorItemRenderer.FullDurationSec.get -> int
 YTLiveChat.Models.Response.LiveChatTickerSponsorItemRenderer.FullDurationSec.init -> void
-YTLiveChat.Models.Response.LiveChatTickerSponsorItemRenderer.SponsorPhoto.get -> YTLiveChat.Models.Response.AuthorPhoto?
+YTLiveChat.Models.Response.LiveChatTickerSponsorItemRenderer.SponsorPhoto.get -> YTLiveChat.Models.Response.ThumbnailList?
 YTLiveChat.Models.Response.LiveChatTickerSponsorItemRenderer.SponsorPhoto.init -> void
 YTLiveChat.Models.Response.LiveChatTickerSponsorItemRenderer.StartBackgroundColor.get -> long
 YTLiveChat.Models.Response.LiveChatTickerSponsorItemRenderer.StartBackgroundColor.init -> void

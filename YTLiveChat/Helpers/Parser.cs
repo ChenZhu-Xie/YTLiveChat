@@ -788,7 +788,7 @@ internal static partial class Parser
             tickerOuterItem?.LiveChatTickerPaidMessageItemRenderer?.AuthorExternalChannelId
             ?? tickerOuterItem?.LiveChatTickerSponsorItemRenderer?.AuthorExternalChannelId
             ?? tickerOuterItem?.LiveChatTickerPaidStickerItemRenderer?.AuthorExternalChannelId;
-        AuthorPhoto? tickerAuthorPhoto =
+        ThumbnailList? tickerThumbnailList =
             tickerOuterItem?.LiveChatTickerPaidMessageItemRenderer?.AuthorPhoto
             ?? tickerOuterItem?.LiveChatTickerSponsorItemRenderer?.SponsorPhoto
             ?? tickerOuterItem?.LiveChatTickerPaidStickerItemRenderer?.AuthorPhoto;
@@ -802,7 +802,7 @@ internal static partial class Parser
                 ?? string.Empty,
             Thumbnail =
                 baseRenderer.AuthorPhoto?.Thumbnails?.ToImage(baseRenderer.AuthorName?.Text)
-                ?? tickerAuthorPhoto?.Thumbnails?.ToImage(baseRenderer.AuthorName?.Text),
+                ?? tickerThumbnailList?.Thumbnails?.ToImage(baseRenderer.AuthorName?.Text),
             ChannelHandle = tickerChannelHandle,
         };
 

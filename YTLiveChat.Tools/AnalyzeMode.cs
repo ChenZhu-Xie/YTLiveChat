@@ -43,6 +43,7 @@ internal static class AnalyzeMode
                 "timestampColor",
                 "isV2Style",
                 "textInputBackgroundColor",
+                "leaderboardBadge",
             ],
             ["liveChatPaidStickerRenderer"] =
             [
@@ -97,25 +98,50 @@ internal static class AnalyzeMode
             ],
 
             // ── addLiveChatTickerItemAction outer item renderers ──────────────
-            // Currently severely under-modeled: only id + showItemEndpoint are in the C# model.
-            // Everything else should surface as NEW.
             ["liveChatTickerPaidMessageItemRenderer"] =
             [
                 "id",
                 "showItemEndpoint",
                 "clickTrackingParams",
+                "trackingParams",
+                "authorExternalChannelId",
+                "authorPhoto",
+                "authorUsername",
+                "startBackgroundColor",
+                "endBackgroundColor",
+                "amountTextColor",
+                "durationSec",
+                "fullDurationSec",
             ],
             ["liveChatTickerSponsorItemRenderer"] =
             [
                 "id",
                 "showItemEndpoint",
                 "clickTrackingParams",
+                "trackingParams",
+                "authorExternalChannelId",
+                "sponsorPhoto",
+                "detailText",
+                "detailTextColor",
+                "detailIcon",
+                "startBackgroundColor",
+                "endBackgroundColor",
+                "durationSec",
+                "fullDurationSec",
             ],
             ["liveChatTickerPaidStickerItemRenderer"] =
             [
                 "id",
                 "showItemEndpoint",
                 "clickTrackingParams",
+                "trackingParams",
+                "authorExternalChannelId",
+                "authorPhoto",
+                "tickerThumbnails",
+                "startBackgroundColor",
+                "endBackgroundColor",
+                "durationSec",
+                "fullDurationSec",
             ],
         };
 

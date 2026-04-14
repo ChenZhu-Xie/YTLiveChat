@@ -37,7 +37,7 @@ namespace YTLiveChat.Helpers;
 [JsonSerializable(typeof(Emoji))]
 [JsonSerializable(typeof(EmojiImage))]
 [JsonSerializable(typeof(Thumbnail))]
-[JsonSerializable(typeof(AuthorPhoto))]
+[JsonSerializable(typeof(ThumbnailList))]
 [JsonSerializable(typeof(Accessibility))]
 [JsonSerializable(typeof(AccessibilityData))]
 [JsonSerializable(typeof(Icon))]
