@@ -376,14 +376,38 @@ internal class ChatMonitorService : IHostedService, IDisposable
             WriteSourceTag(session.SourceTag);
             WriteTag(poll.IsNew ? "POLL NEW" : "POLL UPD", poll.IsNew ? ConsoleColor.Cyan : ConsoleColor.DarkCyan);
             Console.Write(' ');
+
+            // Question + creator header
+            if (!string.IsNullOrWhiteSpace(poll.Question))
+            {
+                Console.ForegroundColor = ConsoleColor.White;
+                string q = poll.Question.Length > 50 ? poll.Question[..50] + "…" : poll.Question;
+                Console.Write($"\"{q}\"");
+            }
+
+            if (!string.IsNullOrWhiteSpace(poll.CreatorHandle))
+            {
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+                Console.Write($" by {poll.CreatorHandle}");
+            }
+
+            Console.Write(' ');
+
+            // Choices — mark selected with bullet, show vote % on updates
             Console.ForegroundColor = ConsoleColor.Gray;
             string choicesSummary = string.Join(" | ", poll.Choices.Select(c =>
-                poll.IsNew ? c.Text : $"{c.Text} {c.VoteRatio * 100:0}%"));
-            Console.Write($"[{poll.PollId[..Math.Min(8, poll.PollId.Length)]}…] {choicesSummary}");
+            {
+                string prefix = c.IsSelected ? "• " : "";
+                return poll.IsNew ? $"{prefix}{c.Text}" : $"{prefix}{c.Text} {c.VoteRatio * 100:0}%";
+            }));
+            Console.Write(choicesSummary);
+
             if (poll.TotalVotes.HasValue)
             {
-                Console.Write($" ({poll.TotalVotes} votes)");
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+                Console.Write($" ({poll.TotalVotes:N0} votes)");
             }
+
             Console.ResetColor();
             Console.WriteLine();
         }
@@ -420,14 +444,47 @@ internal class ChatMonitorService : IHostedService, IDisposable
                 Console.Write(redirect.RedirectChannelHandle);
                 if (redirect.RedirectVideoId is not null)
                 {
-                    Console.ForegroundColor = ConsoleColor.Gray;
+                    Console.ForegroundColor = ConsoleColor.DarkGray;
                     Console.Write($" → {redirect.RedirectVideoId}");
+                }
+
+                // Banner message text (e.g. "Don't miss out! People are going to watch @Channel")
+                string bannerText = string.Concat(redirect.BannerMessage.OfType<TextPart>().Select(p => p.Text)).Trim();
+                if (!string.IsNullOrEmpty(bannerText))
+                {
+                    Console.ForegroundColor = ConsoleColor.DarkGray;
+                    Console.Write($"  \"{bannerText}\"");
                 }
             }
             else if (e.Banner is PinnedMessageBannerItem pinned)
             {
                 WriteTag("PIN", ConsoleColor.Yellow);
+
+                // Author role flags
+                if (pinned.IsOwner)
+                {
+                    WriteTag("OWNER", ConsoleColor.Red);
+                }
+                else
+                {
+                    if (pinned.IsModerator) WriteTag("MOD", ConsoleColor.Blue);
+                    if (pinned.IsVerified) WriteTag("VERIFIED", ConsoleColor.Cyan);
+                }
+
+                // Author name
                 Console.Write(' ');
+                Console.ForegroundColor = pinned.IsOwner ? ConsoleColor.Red : ConsoleColor.White;
+                Console.Write(pinned.Author.Name);
+
+                // Pinned-by attribution
+                if (!string.IsNullOrWhiteSpace(pinned.PinnedBy))
+                {
+                    Console.ForegroundColor = ConsoleColor.DarkGray;
+                    Console.Write($" (pinned by {pinned.PinnedBy})");
+                }
+
+                Console.ResetColor();
+                Console.Write(": ");
                 Console.ForegroundColor = ConsoleColor.Gray;
                 string text = string.Concat(pinned.Message.OfType<TextPart>().Select(p => p.Text));
                 Console.Write(text);
@@ -523,8 +580,15 @@ internal class ChatMonitorService : IHostedService, IDisposable
                 Console.ForegroundColor = ConsoleColor.DarkGray;
                 // Trim newlines for single-line console rendering
                 Console.Write(engagement.Message.Replace('\n', ' ').Trim());
-                Console.ResetColor();
             }
+
+            if (!string.IsNullOrWhiteSpace(engagement.LearnMoreUrl))
+            {
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+                Console.Write(" [?]");
+            }
+
+            Console.ResetColor();
             Console.WriteLine();
         }
     }
@@ -742,30 +806,51 @@ internal class ChatMonitorService : IHostedService, IDisposable
 
     private static void WriteSuperchatTag(Superchat superchat)
     {
+        ConsoleColor tierColor = SuperchatTierColor(superchat.BodyBackgroundColor);
+        string prefix = superchat.Sticker != null ? "STICKER" : "SC";
         Console.Write(' ');
-        Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.Write("[SC ");
-        Console.ForegroundColor = ConsoleColor.DarkYellow;
-        Console.Write(superchat.Currency);
-        Console.ForegroundColor = ConsoleColor.Green;
-        Console.Write(' ');
-        Console.Write(superchat.AmountValue.ToString("0.##"));
-        Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.Write(']');
+        Console.ForegroundColor = tierColor;
+        Console.Write($"[{prefix} {superchat.Currency} {superchat.AmountValue:0.##}]");
         Console.ResetColor();
+    }
+
+    /// <summary>
+    /// Maps a superchat body background hex color (RRGGBB) to an approximate console tier color.
+    /// YouTube's tiers run blue → cyan → green → yellow → orange → magenta → red with rising amounts.
+    /// </summary>
+    private static ConsoleColor SuperchatTierColor(string? hexColor)
+    {
+        if (hexColor == null || hexColor.Length < 6)
+            return ConsoleColor.Yellow;
+
+        string hex = hexColor.Length > 6 ? hexColor[^6..] : hexColor;
+        if (!int.TryParse(hex[0..2], System.Globalization.NumberStyles.HexNumber, null, out int r) ||
+            !int.TryParse(hex[2..4], System.Globalization.NumberStyles.HexNumber, null, out int g) ||
+            !int.TryParse(hex[4..6], System.Globalization.NumberStyles.HexNumber, null, out int b))
+            return ConsoleColor.Yellow;
+
+        if (r > 180 && g < 60 && b < 60)  return ConsoleColor.Red;       // ~$100+ (deep red)
+        if (r > 150 && g < 80 && b > 60)  return ConsoleColor.Magenta;   // ~$50–$99 (pink/magenta)
+        if (r > 200 && g > 80 && b < 50)  return ConsoleColor.DarkYellow; // ~$20–$49 (orange)
+        if (r > 200 && g > 160 && b < 80) return ConsoleColor.Yellow;    // ~$10–$19 (yellow)
+        if (g > 150 && b > 100 && r < 50) return ConsoleColor.Cyan;      // ~$2–$9 (cyan/green)
+        if (b > 150 && r < 80)            return ConsoleColor.Blue;       // ~$1–$1.99 (blue)
+
+        return ConsoleColor.Yellow;
     }
 
     private static void WriteMembershipTag(MembershipDetails membership)
     {
         string text = membership.EventType switch
         {
-            MembershipEventType.New => $"JOIN {membership.LevelName ?? "Member"}",
-            MembershipEventType.Milestone => (membership.MilestoneMonths is int months
-                ? $"MILESTONE {months}m"
-                : "MILESTONE") + $" (levelName: {membership.LevelName})",
-            MembershipEventType.GiftPurchase => membership.GiftCount is int giftCount
-                ? $"GIFT x{giftCount}"
-                : "GIFT",
+            MembershipEventType.New =>
+                membership.LevelName is string lvl && lvl != "Member"
+                    ? $"JOIN {lvl}"
+                    : "JOIN",
+            MembershipEventType.Milestone =>
+                membership.MilestoneMonths is int months ? $"MILESTONE {months}m" : "MILESTONE",
+            MembershipEventType.GiftPurchase =>
+                membership.GiftCount is int n ? $"GIFT x{n}" : "GIFT",
             MembershipEventType.GiftRedemption => "GIFTED",
             _ => "MEM",
         };
@@ -780,6 +865,24 @@ internal class ChatMonitorService : IHostedService, IDisposable
         };
 
         WriteTag(text, color);
+
+        // Secondary attribution — gifter for redemptions, recipient channel for gift purchases
+        string? attribution = membership.EventType switch
+        {
+            MembershipEventType.GiftPurchase when !string.IsNullOrWhiteSpace(membership.GifterUsername)
+                => null, // gifter is the ChatItem.Author, no need to repeat
+            MembershipEventType.GiftRedemption when !string.IsNullOrWhiteSpace(membership.GifterUsername)
+                => $"from {membership.GifterUsername}",
+            _ => null,
+        };
+
+        if (attribution != null)
+        {
+            Console.Write(' ');
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.Write(attribution);
+            Console.ResetColor();
+        }
     }
 
     private static void WriteMessageParts(MessagePart[] parts)
