@@ -2,31 +2,221 @@ namespace YTLiveChat.Tests.TestData;
 
 internal static class ActionTestData
 {
-    public static string ViewerEngagementSubscribersOnly()
-    {
-        long ts = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() * 1000L;
-        return $$"""
+    /// <summary>
+    /// Subscribers-only mode engagement message (5 minutes).
+    /// Real data from dump_engagement.json (first entry).
+    /// </summary>
+    public static string ViewerEngagementSubscribersOnly() => """
             {
               "addChatItemAction": {
                 "item": {
                   "liveChatViewerEngagementMessageRenderer": {
-                    "id": "VE_MSG_TEST_01",
-                    "timestampUsec": "{{ts}}",
-                    "icon": { "iconType": "YOUTUBE_ROUND" },
+                    "id": "Ci0KK1NVQlNDUklCRVJTX09OTFlfVkVNMjAyNi8wNC8xMS0wNDo1NjowNC41Nzk%3D",
+                    "timestampUsec": "1775908564579677",
+                    "icon": {
+                      "iconType": "YOUTUBE_ROUND"
+                    },
                     "message": {
                       "runs": [
-                        { "text": "Subscribers-only mode. Messages that appear are from people who've subscribed to this channel for " },
-                        { "text": "10 minutes" },
+                        { "text": "Subscribers-only mode. Messages that appear are from people who\u2019ve subscribed to this channel for " },
+                        { "text": "5 minutes" },
                         { "text": " or longer." }
                       ]
-                    }
+                    },
+                    "actionButton": {
+                      "buttonRenderer": {
+                        "style": "STYLE_BLUE_TEXT",
+                        "size": "SIZE_DEFAULT",
+                        "isDisabled": false,
+                        "text": {
+                          "simpleText": "Learn more"
+                        },
+                        "navigationEndpoint": {
+                          "clickTrackingParams": "CB0Q8FsiEwih2ZL53uWTAxVTlvQHHQeDCorKAQQ1LYS7",
+                          "commandMetadata": {
+                            "webCommandMetadata": {
+                              "url": "//support.google.com/youtube/?p=subs_only_chat_viewer\u0026hl=en",
+                              "webPageType": "WEB_PAGE_TYPE_UNKNOWN",
+                              "rootVe": 83769
+                            }
+                          },
+                          "urlEndpoint": {
+                            "url": "//support.google.com/youtube/?p=subs_only_chat_viewer\u0026hl=en",
+                            "target": "TARGET_NEW_WINDOW"
+                          }
+                        },
+                        "trackingParams": "CB0Q8FsiEwih2ZL53uWTAxVTlvQHHQeDCoo=",
+                        "accessibilityData": {
+                          "accessibilityData": {
+                            "label": "Learn more"
+                          }
+                        }
+                      }
+                    },
+                    "trackingParams": "CAEQl98BIhMIodmS-d7lkwMVU5b0Bx0HgwqK"
                   }
-                },
-                "clientId": "TEST_CLIENT_ID_VE_01"
+                }
               }
             }
             """;
-    }
+
+    /// <summary>
+    /// Subscribers-only mode engagement message (20 minutes).
+    /// Real data from dump_engagement.json (second entry).
+    /// </summary>
+    public static string ViewerEngagementSubscribersOnly20Min() => """
+            {
+              "addChatItemAction": {
+                "item": {
+                  "liveChatViewerEngagementMessageRenderer": {
+                    "id": "Ci0KK1NVQlNDUklCRVJTX09OTFlfVkVNMjAyNi8wNC8xMS0wNDo1NjowNC41NTM%3D",
+                    "timestampUsec": "1775908564553221",
+                    "icon": {
+                      "iconType": "YOUTUBE_ROUND"
+                    },
+                    "message": {
+                      "runs": [
+                        { "text": "Subscribers-only mode. Messages that appear are from people who\u2019ve subscribed to this channel for " },
+                        { "text": "20 minutes" },
+                        { "text": " or longer." }
+                      ]
+                    },
+                    "actionButton": {
+                      "buttonRenderer": {
+                        "style": "STYLE_BLUE_TEXT",
+                        "size": "SIZE_DEFAULT",
+                        "isDisabled": false,
+                        "text": {
+                          "simpleText": "Learn more"
+                        },
+                        "navigationEndpoint": {
+                          "clickTrackingParams": "CB4Q8FsiEwi6m5H53uWTAxWsjPQHHQfUBYXKAQQKZYme",
+                          "commandMetadata": {
+                            "webCommandMetadata": {
+                              "url": "//support.google.com/youtube/?p=subs_only_chat_viewer\u0026hl=en",
+                              "webPageType": "WEB_PAGE_TYPE_UNKNOWN",
+                              "rootVe": 83769
+                            }
+                          },
+                          "urlEndpoint": {
+                            "url": "//support.google.com/youtube/?p=subs_only_chat_viewer\u0026hl=en",
+                            "target": "TARGET_NEW_WINDOW"
+                          }
+                        },
+                        "trackingParams": "CB4Q8FsiEwi6m5H53uWTAxWsjPQHHQfUBYU=",
+                        "accessibilityData": {
+                          "accessibilityData": {
+                            "label": "Learn more"
+                          }
+                        }
+                      }
+                    },
+                    "trackingParams": "CAEQl98BIhMIupuR-d7lkwMVrIz0Bx0H1AWF"
+                  }
+                }
+              }
+            }
+            """;
+
+    /// <summary>
+    /// Community guidelines reminder engagement message.
+    /// Real data from dump_engagement.json (third entry).
+    /// </summary>
+    public static string ViewerEngagementCommunityGuidelines() => """
+            {
+              "addChatItemAction": {
+                "item": {
+                  "liveChatViewerEngagementMessageRenderer": {
+                    "id": "CjEKL0NPTU1VTklUWV9HVUlERUxJTkVTX1ZFTTIwMjYvMDQvMTEtMDQ6NTY6MDQuNjEx",
+                    "timestampUsec": "1775908564612021",
+                    "icon": {
+                      "iconType": "YOUTUBE_ROUND"
+                    },
+                    "message": {
+                      "runs": [
+                        { "text": "Welcome to live chat! Remember to guard your privacy and abide by our community guidelines." }
+                      ]
+                    },
+                    "actionButton": {
+                      "buttonRenderer": {
+                        "style": "STYLE_BLUE_TEXT",
+                        "size": "SIZE_DEFAULT",
+                        "isDisabled": false,
+                        "text": {
+                          "simpleText": "Learn more"
+                        },
+                        "navigationEndpoint": {
+                          "clickTrackingParams": "CB4Q8FsiEwiNvpT53uWTAxV7enoFHbYxBibKAQT1hpv_",
+                          "commandMetadata": {
+                            "webCommandMetadata": {
+                              "url": "//support.google.com/youtube/answer/2853856?hl=en#safe",
+                              "webPageType": "WEB_PAGE_TYPE_UNKNOWN",
+                              "rootVe": 83769
+                            }
+                          },
+                          "urlEndpoint": {
+                            "url": "//support.google.com/youtube/answer/2853856?hl=en#safe",
+                            "target": "TARGET_NEW_WINDOW"
+                          }
+                        },
+                        "trackingParams": "CB4Q8FsiEwiNvpT53uWTAxV7enoFHbYxBiY=",
+                        "accessibilityData": {
+                          "accessibilityData": {
+                            "label": "Learn more"
+                          }
+                        }
+                      }
+                    },
+                    "trackingParams": "CAEQl98BIhMIjb6U-d7lkwMVe3p6BR22MQYm"
+                  }
+                }
+              }
+            }
+            """;
+
+    /// <summary>
+    /// Poll result summary engagement message (POLL icon, no timestamp, no actionButton).
+    /// Real data from dump_engagement.json (seventh entry).
+    /// </summary>
+    public static string ViewerEngagementPollResult() => """
+            {
+              "addChatItemAction": {
+                "item": {
+                  "liveChatViewerEngagementMessageRenderer": {
+                    "id": "ChwKGkNNS082cVdsNXBNREZicGJUQWdkME1VN2x3",
+                    "icon": {
+                      "iconType": "POLL"
+                    },
+                    "message": {
+                      "runs": [
+                        { "text": "DIG (70%)" },
+                        { "text": "\n" },
+                        { "text": "ZZZZZ (30%)" },
+                        { "text": "\n" },
+                        { "text": "\n" },
+                        { "text": "Poll complete: 1.3K votes" }
+                      ]
+                    },
+                    "contextMenuEndpoint": {
+                      "commandMetadata": {
+                        "webCommandMetadata": {
+                          "ignoreNavigation": true
+                        }
+                      },
+                      "liveChatItemContextMenuEndpoint": {
+                        "params": "Q2g0S0hBb2FRMDFMVHpaeFYydzFjRTFFUm1Kd1lsUkJaMlF3VFZVM2JIY2FLU29uQ2hoVlEyUnVOVUpSTURaWWNXZFliMEY0U1doaWNYYzFVbWNTQzNodmFtTkhWVTFhVGxvMElBRW9CRElhQ2hoVlEyUnVOVUpSTURaWWNXZFliMEY0U1doaWNYYzFVbWM0QWtnQVVCWSUzRA=="
+                      }
+                    },
+                    "contextMenuAccessibility": {
+                      "accessibilityData": {
+                        "label": "Chat actions"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            """;
 
     public static string AddBannerPinnedMessage() => """
             {
@@ -118,6 +308,68 @@ internal static class ActionTestData
                     "bannerType": "LIVE_CHAT_BANNER_TYPE_CROSS_CHANNEL_REDIRECT",
                     "targetId": "live-chat-banner"
                   }
+                }
+              }
+            }
+            """;
+
+    /// <summary>
+    /// Cross-channel redirect banner with a "Learn more" button (no watchEndpoint/videoId).
+    /// This variant appears when a channel's viewers join via Squad streaming.
+    /// Real data from dump_banner_new.json entry 6 (@holoen_ceciliaimmergreen).
+    /// Banner type: LIVE_CHAT_BANNER_TYPE_CROSS_CHANNEL_REDIRECT
+    /// </summary>
+    public static string AddBannerRedirectLearnMore() => """
+            {
+              "addBannerToLiveChatCommand": {
+                "bannerRenderer": {
+                  "liveChatBannerRenderer": {
+                    "contents": {
+                      "liveChatBannerRedirectRenderer": {
+                        "bannerMessage": {
+                          "runs": [
+                            { "text": "@holoen_ceciliaimmergreen", "bold": true, "fontFace": "FONT_FACE_ROBOTO_REGULAR" },
+                            { "text": " and their viewers just joined. Say hello!", "fontFace": "FONT_FACE_ROBOTO_REGULAR" }
+                          ]
+                        },
+                        "authorPhoto": {
+                          "thumbnails": [
+                            { "url": "https://yt4.ggpht.com/sSuJylnDA4Si69bKWVzwUhrOhgIkBCzGE6DHgDyHCJux8TKi7WU8GyKaKZHEN0a3QG7s2yJ399g=s32-c-k-c0x00ffffff-no-rj", "width": 32, "height": 32 },
+                            { "url": "https://yt4.ggpht.com/sSuJylnDA4Si69bKWVzwUhrOhgIkBCzGE6DHgDyHCJux8TKi7WU8GyKaKZHEN0a3QG7s2yJ399g=s64-c-k-c0x00ffffff-no-rj", "width": 64, "height": 64 }
+                          ]
+                        },
+                        "inlineActionButton": {
+                          "buttonRenderer": {
+                            "style": "STYLE_DEFAULT",
+                            "size": "SIZE_DEFAULT",
+                            "isDisabled": false,
+                            "text": { "runs": [{ "text": "Learn more" }] },
+                            "command": {
+                              "commandMetadata": {
+                                "webCommandMetadata": {
+                                  "url": "https://support.google.com/youtube/answer/10359590?hl=en",
+                                  "webPageType": "WEB_PAGE_TYPE_UNKNOWN",
+                                  "rootVe": 83769
+                                }
+                              },
+                              "urlEndpoint": {
+                                "url": "https://support.google.com/youtube/answer/10359590?hl=en",
+                                "target": "TARGET_NEW_WINDOW"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "actionId": "ChwKGkNPNzM0NEdnNlpNREZUUFFsQWtkM25ZN3NR",
+                    "targetId": "live-chat-banner",
+                    "isStackable": true,
+                    "bannerType": "LIVE_CHAT_BANNER_TYPE_CROSS_CHANNEL_REDIRECT"
+                  }
+                },
+                "bannerProperties": {
+                  "isEphemeral": true,
+                  "bannerTimeoutMs": "20000"
                 }
               }
             }

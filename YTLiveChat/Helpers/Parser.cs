@@ -752,6 +752,7 @@ internal static partial class Parser
 
         bool isTickerAction = false;
         string? tickerOuterId = null;
+        AddLiveChatTickerItemActionItem? tickerOuterItem = null;
         AddChatItemActionItem? item = action.AddChatItemAction?.Item;
         if (item == null)
         {
@@ -759,11 +760,11 @@ internal static partial class Parser
             isTickerAction = item != null;
             if (isTickerAction)
             {
-                AddLiveChatTickerItemActionItem? tickerItem = action.AddLiveChatTickerItemAction?.Item;
+                tickerOuterItem = action.AddLiveChatTickerItemAction?.Item;
                 tickerOuterId =
-                    tickerItem?.LiveChatTickerSponsorItemRenderer?.Id
-                    ?? tickerItem?.LiveChatTickerPaidMessageItemRenderer?.Id
-                    ?? tickerItem?.LiveChatTickerPaidStickerItemRenderer?.Id;
+                    tickerOuterItem?.LiveChatTickerSponsorItemRenderer?.Id
+                    ?? tickerOuterItem?.LiveChatTickerPaidMessageItemRenderer?.Id
+                    ?? tickerOuterItem?.LiveChatTickerPaidStickerItemRenderer?.Id;
             }
         }
 
@@ -779,13 +780,30 @@ internal static partial class Parser
         }
 
         // --- Author & Badges ---
+        // For ticker items the outer renderer carries extra author fields not present
+        // on the nested show-item renderer, so we resolve them as fallbacks.
+        string? tickerChannelHandle =
+            tickerOuterItem?.LiveChatTickerPaidMessageItemRenderer?.AuthorUsername?.Text;
+        string? tickerChannelId =
+            tickerOuterItem?.LiveChatTickerPaidMessageItemRenderer?.AuthorExternalChannelId
+            ?? tickerOuterItem?.LiveChatTickerSponsorItemRenderer?.AuthorExternalChannelId
+            ?? tickerOuterItem?.LiveChatTickerPaidStickerItemRenderer?.AuthorExternalChannelId;
+        AuthorPhoto? tickerAuthorPhoto =
+            tickerOuterItem?.LiveChatTickerPaidMessageItemRenderer?.AuthorPhoto
+            ?? tickerOuterItem?.LiveChatTickerSponsorItemRenderer?.SponsorPhoto
+            ?? tickerOuterItem?.LiveChatTickerPaidStickerItemRenderer?.AuthorPhoto;
+
         Contracts.Models.Author author = new() // Use contract type
         {
             Name = baseRenderer.AuthorName?.Text ?? "Unknown Author",
-            ChannelId = baseRenderer.AuthorExternalChannelId ?? string.Empty,
-            Thumbnail = baseRenderer.AuthorPhoto?.Thumbnails?.ToImage(
-                baseRenderer.AuthorName?.Text
-            ),
+            ChannelId =
+                baseRenderer.AuthorExternalChannelId
+                ?? tickerChannelId
+                ?? string.Empty,
+            Thumbnail =
+                baseRenderer.AuthorPhoto?.Thumbnails?.ToImage(baseRenderer.AuthorName?.Text)
+                ?? tickerAuthorPhoto?.Thumbnails?.ToImage(baseRenderer.AuthorName?.Text),
+            ChannelHandle = tickerChannelHandle,
         };
 
         bool isMembershipBadge = false;
@@ -863,6 +881,21 @@ internal static partial class Parser
         else if (item.LiveChatPaidMessageRenderer?.Message?.Runs != null) // Paid message content
         {
             messageParts = item.LiveChatPaidMessageRenderer.Message.Runs.ToMessageParts();
+        }
+
+        // Leaderboard rank from paid message's leaderboardBadge field (e.g. "#1").
+        // This is a direct rank string, present on ~5% of super chats.
+        if (viewerLeaderboardRank == null)
+        {
+            string? badgeTitle = item.LiveChatPaidMessageRenderer?.LeaderboardBadge?.ButtonViewModel?.Title;
+            if (
+                badgeTitle is not null
+                && badgeTitle.StartsWith("#", StringComparison.Ordinal)
+                && int.TryParse(badgeTitle.Substring(1), out int badgeRank)
+            )
+            {
+                viewerLeaderboardRank = badgeRank;
+            }
         }
 
         // --- Super Chat / Sticker Details ---
@@ -1460,21 +1493,22 @@ internal static partial class Parser
             banner.Contents?.LiveChatBannerRedirectRenderer;
         if (redirectRenderer is not null)
         {
-            // Extract the bold run as the redirect-target channel name.
-            string? redirectName = null;
+            // Extract the bold run as the redirect-target channel @handle.
+            string? redirectHandle = null;
             if (redirectRenderer.BannerMessage?.Runs != null)
             {
                 foreach (MessageRun run in redirectRenderer.BannerMessage.Runs)
                 {
                     if (run is MessageText { Bold: true } boldRun && !string.IsNullOrEmpty(boldRun.Text))
                     {
-                        redirectName = boldRun.Text;
+                        redirectHandle = boldRun.Text;
                         break;
                     }
                 }
             }
 
-            // Extract redirect video ID from inlineActionButton.buttonRenderer.command.watchEndpoint.videoId
+            // Extract redirect video ID from inlineActionButton.buttonRenderer.command.watchEndpoint.videoId.
+            // Null when the button is a "Learn more" link (urlEndpoint) rather than a "Go now" watchEndpoint.
             string? redirectVideoId = null;
             if (redirectRenderer.InlineActionButton.HasValue)
             {
@@ -1493,21 +1527,14 @@ internal static partial class Parser
             Contracts.Models.MessagePart[] redirectMessage =
                 redirectRenderer.BannerMessage?.Runs?.ToMessageParts() ?? [];
 
-            return new Contracts.Models.BannerItem
+            return new Contracts.Models.CrossChannelRedirectBannerItem
             {
                 ActionId = actionId!,
-                BannerType = banner.BannerType,
-                PinnedBy = pinnedBy,
-                Author = new Contracts.Models.Author
-                {
-                    Name = redirectName ?? string.Empty,
-                    ChannelId = string.Empty,
-                    Thumbnail = redirectRenderer.AuthorPhoto?.Thumbnails?.ToImage(redirectName),
-                },
-                Message = redirectMessage,
-                MessageId = string.Empty,
-                Timestamp = DateTimeOffset.UtcNow,
+                BannerType = Contracts.Models.BannerType.CrossChannelRedirect,
+                RedirectChannelHandle = redirectHandle ?? string.Empty,
                 RedirectVideoId = redirectVideoId,
+                ChannelPhoto = redirectRenderer.AuthorPhoto?.Thumbnails?.ToImage(redirectHandle),
+                BannerMessage = redirectMessage,
             };
         }
 
@@ -1557,10 +1584,10 @@ internal static partial class Parser
             timestamp = DateTimeOffset.FromUnixTimeMilliseconds(tsUsec / 1000);
         }
 
-        return new Contracts.Models.BannerItem
+        return new Contracts.Models.PinnedMessageBannerItem
         {
             ActionId = actionId!,
-            BannerType = banner.BannerType,
+            BannerType = Contracts.Models.BannerType.PinnedMessage,
             PinnedBy = pinnedBy,
             Author = author,
             Message = messageParts,
@@ -1612,6 +1639,73 @@ internal static partial class Parser
     /// </summary>
     public static string? ToRemovedBannerActionId(this Action action) =>
         action.RemoveBannerForLiveChatCommand?.TargetActionId;
+
+    /// <summary>
+    /// Extracts a <see cref="Contracts.Models.EngagementItem"/> from a
+    /// <c>liveChatViewerEngagementMessageRenderer</c> inside an <c>addChatItemAction</c>.
+    /// Returns null for other action types or when required fields are absent.
+    /// </summary>
+    public static Contracts.Models.EngagementItem? ToEngagementItem(this Action action)
+    {
+        System.Text.Json.Nodes.JsonObject? obj =
+            action.AddChatItemAction?.Item?.LiveChatViewerEngagementMessageRenderer;
+        if (obj is null)
+            return null;
+
+        string? id = obj["id"]?.GetValue<string>();
+        if (string.IsNullOrWhiteSpace(id))
+            return null;
+
+        DateTimeOffset timestamp = DateTimeOffset.UtcNow;
+        if (long.TryParse(obj["timestampUsec"]?.GetValue<string>(), out long usec))
+            timestamp = DateTimeOffset.FromUnixTimeMilliseconds(usec / 1000);
+
+        string? iconType = obj["icon"]?["iconType"]?.GetValue<string>();
+
+        // Extract URL from actionButton.buttonRenderer.navigationEndpoint.urlEndpoint.url
+        string? learnMoreUrl = obj["actionButton"]?["buttonRenderer"]?
+            ["navigationEndpoint"]?["urlEndpoint"]?["url"]?.GetValue<string>();
+
+        Contracts.Models.EngagementMessageType msgType = iconType switch
+        {
+            "POLL" => Contracts.Models.EngagementMessageType.PollResult,
+            "YOUTUBE_ROUND" when learnMoreUrl?.Contains("subs_only_chat_viewer") == true
+                => Contracts.Models.EngagementMessageType.SubscribersOnly,
+            "YOUTUBE_ROUND" when learnMoreUrl?.Contains("2853856") == true
+                => Contracts.Models.EngagementMessageType.CommunityGuidelines,
+            _ => Contracts.Models.EngagementMessageType.Unknown,
+        };
+
+        // Build message parts from runs
+        List<Contracts.Models.MessagePart> parts = [];
+        System.Text.Json.Nodes.JsonArray? runs = obj["message"]?["runs"]?.AsArray();
+        if (runs is not null)
+        {
+            foreach (System.Text.Json.Nodes.JsonNode? run in runs)
+            {
+                if (run is null)
+                    continue;
+                string? text = run["text"]?.GetValue<string>();
+                if (text is not null)
+                    parts.Add(new Contracts.Models.TextPart { Text = text });
+            }
+        }
+
+        Contracts.Models.MessagePart[] messageParts = [.. parts];
+        string messageText = string.Concat(
+            parts.OfType<Contracts.Models.TextPart>().Select(p => p.Text)
+        );
+
+        return new Contracts.Models.EngagementItem
+        {
+            Id = id!,
+            Timestamp = timestamp,
+            MessageType = msgType,
+            Message = messageText,
+            MessageParts = messageParts,
+            LearnMoreUrl = learnMoreUrl,
+        };
+    }
 
     /// <summary>
     /// Parses a vote-count run string like "1,234 votes" or "0 votes" into an integer.

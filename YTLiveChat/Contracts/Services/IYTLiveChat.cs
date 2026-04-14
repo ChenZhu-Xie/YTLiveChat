@@ -55,15 +55,32 @@ public interface IYTLiveChat : IDisposable
     event EventHandler<RawActionReceivedEventArgs>? RawActionReceived;
 
     /// <summary>
-    /// Fires when a poll is opened or its vote counts change.
-    /// Produced by both <c>showLiveChatActionPanelAction</c> (new poll) and
-    /// <c>updateLiveChatPollAction</c> (vote-count update).
+    /// Fires when a poll opens or its live vote counts change.
+    /// Produced by <c>showLiveChatActionPanelAction</c> (initial open) and
+    /// <c>updateLiveChatPollAction</c> (periodic vote-count refresh).
+    /// <para>
+    /// Poll lifecycle — subscribe to events in this order:
+    /// <list type="number">
+    ///   <item><description><see cref="PollUpdated"/> where <see cref="PollItem.IsNew"/> is <see langword="true"/> — a new poll just opened; choices have 0 votes.</description></item>
+    ///   <item><description><see cref="PollUpdated"/> where <see cref="PollItem.IsNew"/> is <see langword="false"/> — live vote-count updates; use <see cref="PollItem.PollId"/> to correlate.</description></item>
+    ///   <item><description><see cref="PollClosed"/> — the poll panel was dismissed and the poll is over.</description></item>
+    ///   <item><description><see cref="EngagementMessageReceived"/> with <see cref="EngagementMessageType.PollResult"/> — a formatted text summary (e.g. "DIG (70%) … Poll complete: 1.3K votes") appears in the chat feed shortly after <see cref="PollClosed"/>. This is a chat-level visual and is <em>not</em> required to track poll lifecycle.</description></item>
+    /// </list>
+    /// </para>
     /// </summary>
     event EventHandler<PollUpdatedEventArgs>? PollUpdated;
 
     /// <summary>
     /// Fires when the poll panel is dismissed (<c>closeLiveChatActionPanelAction</c>).
-    /// The <see cref="PollClosedEventArgs.PollId"/> matches the poll opened by <see cref="PollUpdated"/>.
+    /// This is the authoritative signal that a poll has ended.
+    /// <see cref="PollClosedEventArgs.PollId"/> matches the <see cref="PollItem.PollId"/> from
+    /// the preceding <see cref="PollUpdated"/> events.
+    /// <para>
+    /// Shortly after this event, <see cref="EngagementMessageReceived"/> fires with
+    /// <see cref="EngagementMessageType.PollResult"/> carrying the formatted result text visible in chat.
+    /// You do <em>not</em> need to subscribe to that engagement event to know the poll ended —
+    /// <see cref="PollClosed"/> alone is sufficient.
+    /// </para>
     /// </summary>
     event EventHandler<PollClosedEventArgs>? PollClosed;
 
@@ -79,7 +96,24 @@ public interface IYTLiveChat : IDisposable
     event EventHandler<ChatItemsDeletedByAuthorEventArgs>? ChatItemsDeletedByAuthor;
 
     /// <summary>
-    /// Fires when a banner (pinned message) is added (<c>addBannerToLiveChatCommand</c>).
+    /// Fires when a banner is added (<c>addBannerToLiveChatCommand</c>).
+    /// The <see cref="BannerAddedEventArgs.Banner"/> property is one of two concrete subclasses —
+    /// pattern-match to access type-specific properties:
+    /// <list type="bullet">
+    ///   <item><description>
+    ///     <see cref="Models.PinnedMessageBannerItem"/> — a pinned chat message; carries <c>Author</c>,
+    ///     <c>Message</c>, <c>PinnedBy</c>, <c>Timestamp</c>, and role flags
+    ///     (<c>IsOwner</c>, <c>IsModerator</c>, <c>IsVerified</c>).
+    ///   </description></item>
+    ///   <item><description>
+    ///     <see cref="Models.CrossChannelRedirectBannerItem"/> — a cross-channel stream redirect; carries
+    ///     <c>RedirectChannelHandle</c> (the <c>@handle</c>) and <c>RedirectVideoId</c>
+    ///     (null when no specific video is indicated, e.g. Squad streaming join notifications).
+    ///     Pass either to <c>IYTLiveChat.Start</c> to follow the redirect.
+    ///   </description></item>
+    /// </list>
+    /// Use <see cref="BannerRemovedEventArgs.TargetActionId"/> in the subsequent <see cref="BannerRemoved"/>
+    /// event to correlate with <see cref="Models.BannerItem.ActionId"/>.
     /// </summary>
     event EventHandler<BannerAddedEventArgs>? BannerAdded;
 
@@ -95,6 +129,20 @@ public interface IYTLiveChat : IDisposable
     /// when the replacement item type produces no <see cref="ChatItem"/> (e.g. placeholder).
     /// </summary>
     event EventHandler<ChatItemReplacedEventArgs>? ChatItemReplaced;
+
+    /// <summary>
+    /// Fires when a viewer engagement system message is received
+    /// (<c>liveChatViewerEngagementMessageRenderer</c>). These are YouTube-generated notices
+    /// that appear in the chat feed but are not user messages. Inspect
+    /// <see cref="EngagementItem.MessageType"/> to distinguish variants:
+    /// <list type="bullet">
+    ///   <item><description><see cref="EngagementMessageType.CommunityGuidelines"/> — "Welcome to live chat! Remember to guard your privacy…" shown at stream start.</description></item>
+    ///   <item><description><see cref="EngagementMessageType.SubscribersOnly"/> — subscribers-only mode notice, shown when the channel restricts chat participation.</description></item>
+    ///   <item><description><see cref="EngagementMessageType.PollResult"/> — formatted poll result text (e.g. "Option A (70%)\nOption B (30%)\nPoll complete: 1.3K votes") that appears in chat after a poll closes. This is the chat-level visual; subscribe to <see cref="PollClosed"/> to know when a poll ended.</description></item>
+    ///   <item><description><see cref="EngagementMessageType.Unknown"/> — unrecognized engagement message type; <see cref="EngagementItem.Message"/> still contains the concatenated text.</description></item>
+    /// </list>
+    /// </summary>
+    event EventHandler<EngagementMessageReceivedEventArgs>? EngagementMessageReceived;
 
     /// <summary>
     /// Fires on any error from backend or within service
@@ -329,4 +377,15 @@ public class ChatItemReplacedEventArgs : EventArgs
     /// <see cref="ChatItem"/> (e.g. a placeholder renderer).
     /// </summary>
     public ChatItem? Replacement { get; set; }
+}
+
+/// <summary>
+/// EventArgs for EngagementMessageReceived event.
+/// </summary>
+public class EngagementMessageReceivedEventArgs : EventArgs
+{
+    /// <summary>
+    /// The viewer engagement message that was received.
+    /// </summary>
+    public required EngagementItem Engagement { get; set; }
 }

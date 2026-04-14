@@ -7,29 +7,43 @@ virtual YTLiveChat.Services.YTLiveChat.OnChatItemsDeletedByAuthor(YTLiveChat.Con
 virtual YTLiveChat.Services.YTLiveChat.OnPollClosed(YTLiveChat.Contracts.Services.PollClosedEventArgs! e) -> void
 virtual YTLiveChat.Services.YTLiveChat.OnPollUpdated(YTLiveChat.Contracts.Services.PollUpdatedEventArgs! e) -> void
 YTLiveChat.Contracts.Models.BannerItem
+YTLiveChat.Contracts.Models.BannerItem.BannerItem() -> void
 YTLiveChat.Contracts.Models.BannerItem.ActionId.get -> string!
 YTLiveChat.Contracts.Models.BannerItem.ActionId.set -> void
-YTLiveChat.Contracts.Models.BannerItem.Author.get -> YTLiveChat.Contracts.Models.Author!
-YTLiveChat.Contracts.Models.BannerItem.Author.set -> void
-YTLiveChat.Contracts.Models.BannerItem.BannerItem() -> void
-YTLiveChat.Contracts.Models.BannerItem.BannerType.get -> string?
+YTLiveChat.Contracts.Models.BannerItem.BannerType.get -> YTLiveChat.Contracts.Models.BannerType
 YTLiveChat.Contracts.Models.BannerItem.BannerType.set -> void
-YTLiveChat.Contracts.Models.BannerItem.IsModerator.get -> bool
-YTLiveChat.Contracts.Models.BannerItem.IsModerator.set -> void
-YTLiveChat.Contracts.Models.BannerItem.IsOwner.get -> bool
-YTLiveChat.Contracts.Models.BannerItem.IsOwner.set -> void
-YTLiveChat.Contracts.Models.BannerItem.IsVerified.get -> bool
-YTLiveChat.Contracts.Models.BannerItem.IsVerified.set -> void
-YTLiveChat.Contracts.Models.BannerItem.Message.get -> YTLiveChat.Contracts.Models.MessagePart![]!
-YTLiveChat.Contracts.Models.BannerItem.Message.set -> void
-YTLiveChat.Contracts.Models.BannerItem.MessageId.get -> string!
-YTLiveChat.Contracts.Models.BannerItem.MessageId.set -> void
-YTLiveChat.Contracts.Models.BannerItem.PinnedBy.get -> string?
-YTLiveChat.Contracts.Models.BannerItem.PinnedBy.set -> void
-YTLiveChat.Contracts.Models.BannerItem.RedirectVideoId.get -> string?
-YTLiveChat.Contracts.Models.BannerItem.RedirectVideoId.set -> void
-YTLiveChat.Contracts.Models.BannerItem.Timestamp.get -> System.DateTimeOffset
-YTLiveChat.Contracts.Models.BannerItem.Timestamp.set -> void
+YTLiveChat.Contracts.Models.BannerType
+YTLiveChat.Contracts.Models.BannerType.CrossChannelRedirect = 2 -> YTLiveChat.Contracts.Models.BannerType
+YTLiveChat.Contracts.Models.BannerType.PinnedMessage = 1 -> YTLiveChat.Contracts.Models.BannerType
+YTLiveChat.Contracts.Models.BannerType.Unknown = 0 -> YTLiveChat.Contracts.Models.BannerType
+YTLiveChat.Contracts.Models.CrossChannelRedirectBannerItem
+YTLiveChat.Contracts.Models.CrossChannelRedirectBannerItem.BannerMessage.get -> YTLiveChat.Contracts.Models.MessagePart![]!
+YTLiveChat.Contracts.Models.CrossChannelRedirectBannerItem.BannerMessage.set -> void
+YTLiveChat.Contracts.Models.CrossChannelRedirectBannerItem.ChannelPhoto.get -> YTLiveChat.Contracts.Models.ImagePart?
+YTLiveChat.Contracts.Models.CrossChannelRedirectBannerItem.ChannelPhoto.set -> void
+YTLiveChat.Contracts.Models.CrossChannelRedirectBannerItem.CrossChannelRedirectBannerItem() -> void
+YTLiveChat.Contracts.Models.CrossChannelRedirectBannerItem.RedirectChannelHandle.get -> string!
+YTLiveChat.Contracts.Models.CrossChannelRedirectBannerItem.RedirectChannelHandle.set -> void
+YTLiveChat.Contracts.Models.CrossChannelRedirectBannerItem.RedirectVideoId.get -> string?
+YTLiveChat.Contracts.Models.CrossChannelRedirectBannerItem.RedirectVideoId.set -> void
+YTLiveChat.Contracts.Models.PinnedMessageBannerItem
+YTLiveChat.Contracts.Models.PinnedMessageBannerItem.Author.get -> YTLiveChat.Contracts.Models.Author!
+YTLiveChat.Contracts.Models.PinnedMessageBannerItem.Author.set -> void
+YTLiveChat.Contracts.Models.PinnedMessageBannerItem.IsModerator.get -> bool
+YTLiveChat.Contracts.Models.PinnedMessageBannerItem.IsModerator.set -> void
+YTLiveChat.Contracts.Models.PinnedMessageBannerItem.IsOwner.get -> bool
+YTLiveChat.Contracts.Models.PinnedMessageBannerItem.IsOwner.set -> void
+YTLiveChat.Contracts.Models.PinnedMessageBannerItem.IsVerified.get -> bool
+YTLiveChat.Contracts.Models.PinnedMessageBannerItem.IsVerified.set -> void
+YTLiveChat.Contracts.Models.PinnedMessageBannerItem.Message.get -> YTLiveChat.Contracts.Models.MessagePart![]!
+YTLiveChat.Contracts.Models.PinnedMessageBannerItem.Message.set -> void
+YTLiveChat.Contracts.Models.PinnedMessageBannerItem.MessageId.get -> string!
+YTLiveChat.Contracts.Models.PinnedMessageBannerItem.MessageId.set -> void
+YTLiveChat.Contracts.Models.PinnedMessageBannerItem.PinnedBy.get -> string?
+YTLiveChat.Contracts.Models.PinnedMessageBannerItem.PinnedBy.set -> void
+YTLiveChat.Contracts.Models.PinnedMessageBannerItem.PinnedMessageBannerItem() -> void
+YTLiveChat.Contracts.Models.PinnedMessageBannerItem.Timestamp.get -> System.DateTimeOffset
+YTLiveChat.Contracts.Models.PinnedMessageBannerItem.Timestamp.set -> void
 YTLiveChat.Contracts.Models.PollChoice
 YTLiveChat.Contracts.Models.PollChoice.IsSelected.get -> bool
 YTLiveChat.Contracts.Models.PollChoice.IsSelected.set -> void
@@ -188,10 +202,100 @@ YTLiveChat.Models.Response.LiveChatBannerRedirectRenderer.InlineActionButton.get
 YTLiveChat.Models.Response.LiveChatBannerRedirectRenderer.InlineActionButton.init -> void
 YTLiveChat.Models.Response.LiveChatBannerRendererContents.LiveChatBannerRedirectRenderer.get -> YTLiveChat.Models.Response.LiveChatBannerRedirectRenderer?
 YTLiveChat.Models.Response.LiveChatBannerRendererContents.LiveChatBannerRedirectRenderer.init -> void
+YTLiveChat.Contracts.Models.EngagementItem
+YTLiveChat.Contracts.Models.EngagementItem.EngagementItem() -> void
+YTLiveChat.Contracts.Models.EngagementItem.Id.get -> string!
+YTLiveChat.Contracts.Models.EngagementItem.Id.set -> void
+YTLiveChat.Contracts.Models.EngagementItem.LearnMoreUrl.get -> string?
+YTLiveChat.Contracts.Models.EngagementItem.LearnMoreUrl.set -> void
+YTLiveChat.Contracts.Models.EngagementItem.Message.get -> string?
+YTLiveChat.Contracts.Models.EngagementItem.Message.set -> void
+YTLiveChat.Contracts.Models.EngagementItem.MessageParts.get -> YTLiveChat.Contracts.Models.MessagePart![]!
+YTLiveChat.Contracts.Models.EngagementItem.MessageParts.set -> void
+YTLiveChat.Contracts.Models.EngagementItem.MessageType.get -> YTLiveChat.Contracts.Models.EngagementMessageType
+YTLiveChat.Contracts.Models.EngagementItem.MessageType.set -> void
+YTLiveChat.Contracts.Models.EngagementItem.Timestamp.get -> System.DateTimeOffset
+YTLiveChat.Contracts.Models.EngagementItem.Timestamp.set -> void
+YTLiveChat.Contracts.Models.EngagementMessageType
+YTLiveChat.Contracts.Models.EngagementMessageType.CommunityGuidelines = 1 -> YTLiveChat.Contracts.Models.EngagementMessageType
+YTLiveChat.Contracts.Models.EngagementMessageType.PollResult = 3 -> YTLiveChat.Contracts.Models.EngagementMessageType
+YTLiveChat.Contracts.Models.EngagementMessageType.SubscribersOnly = 2 -> YTLiveChat.Contracts.Models.EngagementMessageType
+YTLiveChat.Contracts.Models.EngagementMessageType.Unknown = 0 -> YTLiveChat.Contracts.Models.EngagementMessageType
+YTLiveChat.Contracts.Services.EngagementMessageReceivedEventArgs
+YTLiveChat.Contracts.Services.EngagementMessageReceivedEventArgs.Engagement.get -> YTLiveChat.Contracts.Models.EngagementItem!
+YTLiveChat.Contracts.Services.EngagementMessageReceivedEventArgs.Engagement.set -> void
+YTLiveChat.Contracts.Services.EngagementMessageReceivedEventArgs.EngagementMessageReceivedEventArgs() -> void
+YTLiveChat.Contracts.Services.IYTLiveChat.EngagementMessageReceived -> System.EventHandler<YTLiveChat.Contracts.Services.EngagementMessageReceivedEventArgs!>?
 YTLiveChat.Services.YTLiveChat.BannerAdded -> System.EventHandler<YTLiveChat.Contracts.Services.BannerAddedEventArgs!>?
 YTLiveChat.Services.YTLiveChat.BannerRemoved -> System.EventHandler<YTLiveChat.Contracts.Services.BannerRemovedEventArgs!>?
 YTLiveChat.Services.YTLiveChat.ChatItemDeleted -> System.EventHandler<YTLiveChat.Contracts.Services.ChatItemDeletedEventArgs!>?
 YTLiveChat.Services.YTLiveChat.ChatItemReplaced -> System.EventHandler<YTLiveChat.Contracts.Services.ChatItemReplacedEventArgs!>?
 YTLiveChat.Services.YTLiveChat.ChatItemsDeletedByAuthor -> System.EventHandler<YTLiveChat.Contracts.Services.ChatItemsDeletedByAuthorEventArgs!>?
+YTLiveChat.Services.YTLiveChat.EngagementMessageReceived -> System.EventHandler<YTLiveChat.Contracts.Services.EngagementMessageReceivedEventArgs!>?
 YTLiveChat.Services.YTLiveChat.PollClosed -> System.EventHandler<YTLiveChat.Contracts.Services.PollClosedEventArgs!>?
 YTLiveChat.Services.YTLiveChat.PollUpdated -> System.EventHandler<YTLiveChat.Contracts.Services.PollUpdatedEventArgs!>?
+virtual YTLiveChat.Services.YTLiveChat.OnEngagementMessageReceived(YTLiveChat.Contracts.Services.EngagementMessageReceivedEventArgs! e) -> void
+YTLiveChat.Contracts.Models.Author.ChannelHandle.get -> string?
+YTLiveChat.Contracts.Models.Author.ChannelHandle.set -> void
+YTLiveChat.Models.Response.LeaderboardBadge
+YTLiveChat.Models.Response.LeaderboardBadge.ButtonViewModel.get -> YTLiveChat.Models.Response.LeaderboardBadgeButtonViewModel?
+YTLiveChat.Models.Response.LeaderboardBadge.ButtonViewModel.init -> void
+YTLiveChat.Models.Response.LeaderboardBadgeButtonViewModel
+YTLiveChat.Models.Response.LeaderboardBadgeButtonViewModel.Title.get -> string?
+YTLiveChat.Models.Response.LeaderboardBadgeButtonViewModel.Title.init -> void
+YTLiveChat.Models.Response.LiveChatPaidMessageRenderer.LeaderboardBadge.get -> YTLiveChat.Models.Response.LeaderboardBadge?
+YTLiveChat.Models.Response.LiveChatPaidMessageRenderer.LeaderboardBadge.init -> void
+YTLiveChat.Models.Response.LiveChatTickerPaidMessageItemRenderer.AmountTextColor.get -> long
+YTLiveChat.Models.Response.LiveChatTickerPaidMessageItemRenderer.AmountTextColor.init -> void
+YTLiveChat.Models.Response.LiveChatTickerPaidMessageItemRenderer.AuthorExternalChannelId.get -> string?
+YTLiveChat.Models.Response.LiveChatTickerPaidMessageItemRenderer.AuthorExternalChannelId.init -> void
+YTLiveChat.Models.Response.LiveChatTickerPaidMessageItemRenderer.AuthorPhoto.get -> YTLiveChat.Models.Response.AuthorPhoto?
+YTLiveChat.Models.Response.LiveChatTickerPaidMessageItemRenderer.AuthorPhoto.init -> void
+YTLiveChat.Models.Response.LiveChatTickerPaidMessageItemRenderer.AuthorUsername.get -> YTLiveChat.Models.Response.SimpleText?
+YTLiveChat.Models.Response.LiveChatTickerPaidMessageItemRenderer.AuthorUsername.init -> void
+YTLiveChat.Models.Response.LiveChatTickerPaidMessageItemRenderer.DurationSec.get -> int
+YTLiveChat.Models.Response.LiveChatTickerPaidMessageItemRenderer.DurationSec.init -> void
+YTLiveChat.Models.Response.LiveChatTickerPaidMessageItemRenderer.EndBackgroundColor.get -> long
+YTLiveChat.Models.Response.LiveChatTickerPaidMessageItemRenderer.EndBackgroundColor.init -> void
+YTLiveChat.Models.Response.LiveChatTickerPaidMessageItemRenderer.FullDurationSec.get -> int
+YTLiveChat.Models.Response.LiveChatTickerPaidMessageItemRenderer.FullDurationSec.init -> void
+YTLiveChat.Models.Response.LiveChatTickerPaidMessageItemRenderer.StartBackgroundColor.get -> long
+YTLiveChat.Models.Response.LiveChatTickerPaidMessageItemRenderer.StartBackgroundColor.init -> void
+YTLiveChat.Models.Response.LiveChatTickerPaidMessageItemRenderer.TrackingParams.get -> string?
+YTLiveChat.Models.Response.LiveChatTickerPaidMessageItemRenderer.TrackingParams.init -> void
+YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.AuthorExternalChannelId.get -> string?
+YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.AuthorExternalChannelId.init -> void
+YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.AuthorPhoto.get -> YTLiveChat.Models.Response.AuthorPhoto?
+YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.AuthorPhoto.init -> void
+YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.DurationSec.get -> int
+YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.DurationSec.init -> void
+YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.EndBackgroundColor.get -> long
+YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.EndBackgroundColor.init -> void
+YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.FullDurationSec.get -> int
+YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.FullDurationSec.init -> void
+YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.StartBackgroundColor.get -> long
+YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.StartBackgroundColor.init -> void
+YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.TickerThumbnails.get -> System.Collections.Generic.List<YTLiveChat.Models.Response.AuthorPhoto!>?
+YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.TickerThumbnails.init -> void
+YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.TrackingParams.get -> string?
+YTLiveChat.Models.Response.LiveChatTickerPaidStickerItemRenderer.TrackingParams.init -> void
+YTLiveChat.Models.Response.LiveChatTickerSponsorItemRenderer.AuthorExternalChannelId.get -> string?
+YTLiveChat.Models.Response.LiveChatTickerSponsorItemRenderer.AuthorExternalChannelId.init -> void
+YTLiveChat.Models.Response.LiveChatTickerSponsorItemRenderer.DetailIcon.get -> YTLiveChat.Models.Response.Icon?
+YTLiveChat.Models.Response.LiveChatTickerSponsorItemRenderer.DetailIcon.init -> void
+YTLiveChat.Models.Response.LiveChatTickerSponsorItemRenderer.DetailText.get -> YTLiveChat.Models.Response.HeaderText?
+YTLiveChat.Models.Response.LiveChatTickerSponsorItemRenderer.DetailText.init -> void
+YTLiveChat.Models.Response.LiveChatTickerSponsorItemRenderer.DetailTextColor.get -> long
+YTLiveChat.Models.Response.LiveChatTickerSponsorItemRenderer.DetailTextColor.init -> void
+YTLiveChat.Models.Response.LiveChatTickerSponsorItemRenderer.DurationSec.get -> int
+YTLiveChat.Models.Response.LiveChatTickerSponsorItemRenderer.DurationSec.init -> void
+YTLiveChat.Models.Response.LiveChatTickerSponsorItemRenderer.EndBackgroundColor.get -> long
+YTLiveChat.Models.Response.LiveChatTickerSponsorItemRenderer.EndBackgroundColor.init -> void
+YTLiveChat.Models.Response.LiveChatTickerSponsorItemRenderer.FullDurationSec.get -> int
+YTLiveChat.Models.Response.LiveChatTickerSponsorItemRenderer.FullDurationSec.init -> void
+YTLiveChat.Models.Response.LiveChatTickerSponsorItemRenderer.SponsorPhoto.get -> YTLiveChat.Models.Response.AuthorPhoto?
+YTLiveChat.Models.Response.LiveChatTickerSponsorItemRenderer.SponsorPhoto.init -> void
+YTLiveChat.Models.Response.LiveChatTickerSponsorItemRenderer.StartBackgroundColor.get -> long
+YTLiveChat.Models.Response.LiveChatTickerSponsorItemRenderer.StartBackgroundColor.init -> void
+YTLiveChat.Models.Response.LiveChatTickerSponsorItemRenderer.TrackingParams.get -> string?
+YTLiveChat.Models.Response.LiveChatTickerSponsorItemRenderer.TrackingParams.init -> void

@@ -404,9 +404,16 @@ public record LiveChatPaidMessageRenderer : MessageRendererBase
     [JsonPropertyName("textInputBackgroundColor")]
     public long TextInputBackgroundColor { get; init; }
 
-    // [JsonPropertyName("creatorHeartButton")]
-    // public CreatorHeartButton? CreatorHeartButton { get; init; } // Include if needed
-    // [JsonPropertyName("replyButton")] public PdgReplyButton? ReplyButton { get; init; } // Include if needed
+    /// <summary>
+    /// Viewer leaderboard rank badge shown on super chats by top-ranking channel-point holders
+    /// (e.g. title "#1"). Present on ~5% of paid messages. Use <see cref="LeaderboardBadgeButtonViewModel.Title"/>
+    /// to extract the rank string.
+    /// </summary>
+    [JsonPropertyName("leaderboardBadge")]
+    public LeaderboardBadge? LeaderboardBadge { get; init; }
+
+    // Interactive client-side UI buttons (creatorHeartButton, replyButton, pdgLikeButton)
+    // are intentionally not modelled — they carry no read-only data for consumers.
 }
 
 public record Sticker
@@ -593,6 +600,19 @@ public record TickerShowItemEndpoint
     public ShowLiveChatItemEndpoint? ShowLiveChatItemEndpoint { get; init; }
 }
 
+public record LeaderboardBadgeButtonViewModel
+{
+    /// <summary>Rank string, e.g. "#1".</summary>
+    [JsonPropertyName("title")]
+    public string? Title { get; init; }
+}
+
+public record LeaderboardBadge
+{
+    [JsonPropertyName("buttonViewModel")]
+    public LeaderboardBadgeButtonViewModel? ButtonViewModel { get; init; }
+}
+
 public record LiveChatTickerPaidMessageItemRenderer
 {
     [JsonPropertyName("id")]
@@ -600,6 +620,36 @@ public record LiveChatTickerPaidMessageItemRenderer
 
     [JsonPropertyName("showItemEndpoint")]
     public TickerShowItemEndpoint? ShowItemEndpoint { get; init; }
+
+    // Fields observed in the wild but absent from the original model
+    [JsonPropertyName("authorExternalChannelId")]
+    public string? AuthorExternalChannelId { get; init; }
+
+    [JsonPropertyName("authorPhoto")]
+    public AuthorPhoto? AuthorPhoto { get; init; }
+
+    /// <summary>The @handle of the author, e.g. "@TurtleCubes".</summary>
+    [JsonPropertyName("authorUsername")]
+    public SimpleText? AuthorUsername { get; init; }
+
+    [JsonPropertyName("startBackgroundColor")]
+    public long StartBackgroundColor { get; init; }
+
+    [JsonPropertyName("endBackgroundColor")]
+    public long EndBackgroundColor { get; init; }
+
+    [JsonPropertyName("amountTextColor")]
+    public long AmountTextColor { get; init; }
+
+    /// <summary>Ticker bar display duration in seconds (int, distinct from the action's string durationSec).</summary>
+    [JsonPropertyName("durationSec")]
+    public int DurationSec { get; init; }
+
+    [JsonPropertyName("fullDurationSec")]
+    public int FullDurationSec { get; init; }
+
+    [JsonPropertyName("trackingParams")]
+    public string? TrackingParams { get; init; }
 }
 
 public record LiveChatTickerSponsorItemRenderer
@@ -609,6 +659,41 @@ public record LiveChatTickerSponsorItemRenderer
 
     [JsonPropertyName("showItemEndpoint")]
     public TickerShowItemEndpoint? ShowItemEndpoint { get; init; }
+
+    // Fields observed in the wild but absent from the original model
+    [JsonPropertyName("authorExternalChannelId")]
+    public string? AuthorExternalChannelId { get; init; }
+
+    /// <summary>Thumbnail of the member's profile photo shown in the ticker bar.</summary>
+    [JsonPropertyName("sponsorPhoto")]
+    public AuthorPhoto? SponsorPhoto { get; init; }
+
+    /// <summary>Detail text, e.g. "Member" or "sent 10 Gift Memberships".</summary>
+    [JsonPropertyName("detailText")]
+    public HeaderText? DetailText { get; init; }
+
+    [JsonPropertyName("detailTextColor")]
+    public long DetailTextColor { get; init; }
+
+    /// <summary>Optional icon beside the detail text (e.g. STAR_CIRCLE_RIBBON for gift purchases).</summary>
+    [JsonPropertyName("detailIcon")]
+    public Icon? DetailIcon { get; init; }
+
+    [JsonPropertyName("startBackgroundColor")]
+    public long StartBackgroundColor { get; init; }
+
+    [JsonPropertyName("endBackgroundColor")]
+    public long EndBackgroundColor { get; init; }
+
+    /// <summary>Ticker bar display duration in seconds.</summary>
+    [JsonPropertyName("durationSec")]
+    public int DurationSec { get; init; }
+
+    [JsonPropertyName("fullDurationSec")]
+    public int FullDurationSec { get; init; }
+
+    [JsonPropertyName("trackingParams")]
+    public string? TrackingParams { get; init; }
 }
 
 public record LiveChatTickerPaidStickerItemRenderer
@@ -618,6 +703,37 @@ public record LiveChatTickerPaidStickerItemRenderer
 
     [JsonPropertyName("showItemEndpoint")]
     public TickerShowItemEndpoint? ShowItemEndpoint { get; init; }
+
+    // Fields observed in the wild but absent from the original model
+    [JsonPropertyName("authorExternalChannelId")]
+    public string? AuthorExternalChannelId { get; init; }
+
+    [JsonPropertyName("authorPhoto")]
+    public AuthorPhoto? AuthorPhoto { get; init; }
+
+    /// <summary>
+    /// Sticker image(s) shown directly in the ticker bar.
+    /// Reuses <see cref="AuthorPhoto"/> for its <c>{ thumbnails: [...] }</c> shape —
+    /// the thumbnails here are sticker images, not author photos.
+    /// </summary>
+    [JsonPropertyName("tickerThumbnails")]
+    public List<AuthorPhoto>? TickerThumbnails { get; init; }
+
+    [JsonPropertyName("startBackgroundColor")]
+    public long StartBackgroundColor { get; init; }
+
+    [JsonPropertyName("endBackgroundColor")]
+    public long EndBackgroundColor { get; init; }
+
+    /// <summary>Ticker bar display duration in seconds.</summary>
+    [JsonPropertyName("durationSec")]
+    public int DurationSec { get; init; }
+
+    [JsonPropertyName("fullDurationSec")]
+    public int FullDurationSec { get; init; }
+
+    [JsonPropertyName("trackingParams")]
+    public string? TrackingParams { get; init; }
 }
 
 public record AddLiveChatTickerItemActionItem

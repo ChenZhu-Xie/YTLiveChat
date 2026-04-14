@@ -65,6 +65,9 @@ public class YTLiveChat : IYTLiveChat // Changed to public for direct instantiat
     public event EventHandler<ChatItemReplacedEventArgs>? ChatItemReplaced;
 
     /// <inheritdoc />
+    public event EventHandler<EngagementMessageReceivedEventArgs>? EngagementMessageReceived;
+
+    /// <inheritdoc />
     public event EventHandler<ErrorOccurredEventArgs>? ErrorOccurred;
 
     private static readonly Random s_random = new();
@@ -1468,8 +1471,9 @@ public class YTLiveChat : IYTLiveChat // Changed to public for direct instantiat
         bool hasBannerAdd = BannerAdded != null;
         bool hasBannerRemove = BannerRemoved != null;
         bool hasReplace = ChatItemReplaced != null;
+        bool hasEngagement = EngagementMessageReceived != null;
 
-        if (!hasPoll && !hasPollClosed && !hasDelete && !hasDeleteByAuthor && !hasBannerAdd && !hasBannerRemove && !hasReplace)
+        if (!hasPoll && !hasPollClosed && !hasDelete && !hasDeleteByAuthor && !hasBannerAdd && !hasBannerRemove && !hasReplace && !hasEngagement)
             return;
 
         foreach (Models.Response.Action action in actions)
@@ -1522,6 +1526,13 @@ public class YTLiveChat : IYTLiveChat // Changed to public for direct instantiat
                     action.ToReplacedChatItem();
                 if (targetItemId is not null)
                     OnChatItemReplaced(new() { TargetItemId = targetItemId, Replacement = replacement });
+            }
+
+            if (hasEngagement)
+            {
+                Contracts.Models.EngagementItem? engagement = action.ToEngagementItem();
+                if (engagement is not null)
+                    OnEngagementMessageReceived(new() { Engagement = engagement });
             }
         }
     }
@@ -1614,6 +1625,19 @@ public class YTLiveChat : IYTLiveChat // Changed to public for direct instantiat
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error invoking ChatItemReplaced event handler for target {TargetItemId}.", e.TargetItemId);
+        }
+    }
+
+    /// <summary>Invokes the EngagementMessageReceived event.</summary>
+    protected virtual void OnEngagementMessageReceived(EngagementMessageReceivedEventArgs e)
+    {
+        try
+        {
+            EngagementMessageReceived?.Invoke(this, e);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error invoking EngagementMessageReceived event handler for engagement {Id}.", e.Engagement?.Id);
         }
     }
 

@@ -159,6 +159,14 @@ internal class ChatMonitorService : IHostedService, IDisposable
 #pragma warning restore CS0618
         session.ChatReceivedHandler = (_, e) => OnChatReceived(session, e);
         session.RawActionReceivedHandler = (_, e) => OnRawActionReceived(session, e);
+        session.PollUpdatedHandler = (_, e) => OnPollUpdated(session, e);
+        session.PollClosedHandler = (_, e) => OnPollClosed(session, e);
+        session.BannerAddedHandler = (_, e) => OnBannerAdded(session, e);
+        session.BannerRemovedHandler = (_, e) => OnBannerRemoved(session, e);
+        session.ChatItemDeletedHandler = (_, e) => OnChatItemDeleted(session, e);
+        session.ChatItemsDeletedByAuthorHandler = (_, e) => OnChatItemsDeletedByAuthor(session, e);
+        session.ChatItemReplacedHandler = (_, e) => OnChatItemReplaced(session, e);
+        session.EngagementMessageReceivedHandler = (_, e) => OnEngagementMessageReceived(session, e);
         session.ChatStoppedHandler = (_, e) => OnChatStopped(session, e);
         session.ErrorOccurredHandler = (_, e) => OnErrorOccurred(session, e);
 
@@ -170,6 +178,14 @@ internal class ChatMonitorService : IHostedService, IDisposable
 #pragma warning restore CS0618
         session.Chat.ChatReceived += session.ChatReceivedHandler;
         session.Chat.RawActionReceived += session.RawActionReceivedHandler;
+        session.Chat.PollUpdated += session.PollUpdatedHandler;
+        session.Chat.PollClosed += session.PollClosedHandler;
+        session.Chat.BannerAdded += session.BannerAddedHandler;
+        session.Chat.BannerRemoved += session.BannerRemovedHandler;
+        session.Chat.ChatItemDeleted += session.ChatItemDeletedHandler;
+        session.Chat.ChatItemsDeletedByAuthor += session.ChatItemsDeletedByAuthorHandler;
+        session.Chat.ChatItemReplaced += session.ChatItemReplacedHandler;
+        session.Chat.EngagementMessageReceived += session.EngagementMessageReceivedHandler;
         session.Chat.ChatStopped += session.ChatStoppedHandler;
         session.Chat.ErrorOccurred += session.ErrorOccurredHandler;
     }
@@ -206,6 +222,46 @@ internal class ChatMonitorService : IHostedService, IDisposable
         if (session.RawActionReceivedHandler != null)
         {
             session.Chat.RawActionReceived -= session.RawActionReceivedHandler;
+        }
+
+        if (session.PollUpdatedHandler != null)
+        {
+            session.Chat.PollUpdated -= session.PollUpdatedHandler;
+        }
+
+        if (session.PollClosedHandler != null)
+        {
+            session.Chat.PollClosed -= session.PollClosedHandler;
+        }
+
+        if (session.BannerAddedHandler != null)
+        {
+            session.Chat.BannerAdded -= session.BannerAddedHandler;
+        }
+
+        if (session.BannerRemovedHandler != null)
+        {
+            session.Chat.BannerRemoved -= session.BannerRemovedHandler;
+        }
+
+        if (session.ChatItemDeletedHandler != null)
+        {
+            session.Chat.ChatItemDeleted -= session.ChatItemDeletedHandler;
+        }
+
+        if (session.ChatItemsDeletedByAuthorHandler != null)
+        {
+            session.Chat.ChatItemsDeletedByAuthor -= session.ChatItemsDeletedByAuthorHandler;
+        }
+
+        if (session.ChatItemReplacedHandler != null)
+        {
+            session.Chat.ChatItemReplaced -= session.ChatItemReplacedHandler;
+        }
+
+        if (session.EngagementMessageReceivedHandler != null)
+        {
+            session.Chat.EngagementMessageReceived -= session.EngagementMessageReceivedHandler;
         }
 
         if (session.ChatStoppedHandler != null)
@@ -307,6 +363,168 @@ internal class ChatMonitorService : IHostedService, IDisposable
             Console.ForegroundColor = ConsoleColor.DarkYellow;
             Console.Write(actionKind);
             Console.ResetColor();
+            Console.WriteLine();
+        }
+    }
+
+    private static void OnPollUpdated(MonitorSession session, PollUpdatedEventArgs e)
+    {
+        PollItem poll = e.Poll;
+        lock (s_consoleLock)
+        {
+            WriteTimestamp(DateTimeOffset.UtcNow);
+            WriteSourceTag(session.SourceTag);
+            WriteTag(poll.IsNew ? "POLL NEW" : "POLL UPD", poll.IsNew ? ConsoleColor.Cyan : ConsoleColor.DarkCyan);
+            Console.Write(' ');
+            Console.ForegroundColor = ConsoleColor.Gray;
+            string choicesSummary = string.Join(" | ", poll.Choices.Select(c =>
+                poll.IsNew ? c.Text : $"{c.Text} {c.VoteRatio * 100:0}%"));
+            Console.Write($"[{poll.PollId[..Math.Min(8, poll.PollId.Length)]}…] {choicesSummary}");
+            if (poll.TotalVotes.HasValue)
+            {
+                Console.Write($" ({poll.TotalVotes} votes)");
+            }
+            Console.ResetColor();
+            Console.WriteLine();
+        }
+    }
+
+    private static void OnPollClosed(MonitorSession session, PollClosedEventArgs e)
+    {
+        lock (s_consoleLock)
+        {
+            WriteTimestamp(DateTimeOffset.UtcNow);
+            WriteSourceTag(session.SourceTag);
+            WriteTag("POLL END", ConsoleColor.DarkCyan);
+            Console.Write(' ');
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.Write(e.PollId[..Math.Min(8, e.PollId.Length)]);
+            Console.Write('…');
+            Console.ResetColor();
+            Console.WriteLine();
+        }
+    }
+
+    private static void OnBannerAdded(MonitorSession session, BannerAddedEventArgs e)
+    {
+        lock (s_consoleLock)
+        {
+            WriteTimestamp(DateTimeOffset.UtcNow);
+            WriteSourceTag(session.SourceTag);
+
+            if (e.Banner is CrossChannelRedirectBannerItem redirect)
+            {
+                WriteTag("REDIRECT", ConsoleColor.Magenta);
+                Console.Write(' ');
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.Write(redirect.RedirectChannelHandle);
+                if (redirect.RedirectVideoId is not null)
+                {
+                    Console.ForegroundColor = ConsoleColor.Gray;
+                    Console.Write($" → {redirect.RedirectVideoId}");
+                }
+            }
+            else if (e.Banner is PinnedMessageBannerItem pinned)
+            {
+                WriteTag("PIN", ConsoleColor.Yellow);
+                Console.Write(' ');
+                Console.ForegroundColor = ConsoleColor.Gray;
+                string text = string.Concat(pinned.Message.OfType<TextPart>().Select(p => p.Text));
+                Console.Write(text);
+            }
+
+            Console.ResetColor();
+            Console.WriteLine();
+        }
+    }
+
+    private static void OnBannerRemoved(MonitorSession session, BannerRemovedEventArgs e)
+    {
+        lock (s_consoleLock)
+        {
+            WriteTimestamp(DateTimeOffset.UtcNow);
+            WriteSourceTag(session.SourceTag);
+            WriteTag("UNPIN", ConsoleColor.DarkYellow);
+            Console.WriteLine();
+        }
+    }
+
+    private static void OnChatItemDeleted(MonitorSession session, ChatItemDeletedEventArgs e)
+    {
+        lock (s_consoleLock)
+        {
+            WriteTimestamp(DateTimeOffset.UtcNow);
+            WriteSourceTag(session.SourceTag);
+            WriteTag("DEL", ConsoleColor.DarkRed);
+            Console.Write(' ');
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.Write(e.TargetId);
+            Console.ResetColor();
+            Console.WriteLine();
+        }
+    }
+
+    private static void OnChatItemsDeletedByAuthor(MonitorSession session, ChatItemsDeletedByAuthorEventArgs e)
+    {
+        lock (s_consoleLock)
+        {
+            WriteTimestamp(DateTimeOffset.UtcNow);
+            WriteSourceTag(session.SourceTag);
+            WriteTag("BAN", ConsoleColor.DarkRed);
+            Console.Write(' ');
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.Write(e.ChannelId);
+            Console.ResetColor();
+            Console.WriteLine();
+        }
+    }
+
+    private static void OnChatItemReplaced(MonitorSession session, ChatItemReplacedEventArgs e)
+    {
+        if (e.Replacement == null)
+        {
+            return; // placeholder replacement — no visible content
+        }
+
+        lock (s_consoleLock)
+        {
+            WriteTimestamp(e.Replacement.Timestamp);
+            WriteSourceTag(session.SourceTag);
+            WriteTag("EDIT", ConsoleColor.DarkGray);
+            Console.Write(' ');
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.Write(e.Replacement.Author.Name);
+            Console.ResetColor();
+            Console.Write(": ");
+            WriteMessageParts(e.Replacement.Message);
+            Console.WriteLine();
+        }
+    }
+
+    private static void OnEngagementMessageReceived(MonitorSession session, EngagementMessageReceivedEventArgs e)
+    {
+        EngagementItem engagement = e.Engagement;
+        (string label, ConsoleColor color) = engagement.MessageType switch
+        {
+            EngagementMessageType.CommunityGuidelines => ("GUIDELINES", ConsoleColor.DarkGray),
+            EngagementMessageType.SubscribersOnly => ("SUBS ONLY", ConsoleColor.DarkGray),
+            EngagementMessageType.PollResult => ("POLL RESULT", ConsoleColor.DarkCyan),
+            _ => ("SYSTEM", ConsoleColor.DarkGray),
+        };
+
+        lock (s_consoleLock)
+        {
+            WriteTimestamp(engagement.Timestamp);
+            WriteSourceTag(session.SourceTag);
+            WriteTag(label, color);
+            if (!string.IsNullOrWhiteSpace(engagement.Message))
+            {
+                Console.Write(' ');
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+                // Trim newlines for single-line console rendering
+                Console.Write(engagement.Message.Replace('\n', ' ').Trim());
+                Console.ResetColor();
+            }
             Console.WriteLine();
         }
     }
@@ -642,6 +860,14 @@ internal class ChatMonitorService : IHostedService, IDisposable
         public EventHandler<LivestreamInaccessibleEventArgs>? LivestreamInaccessibleHandler { get; set; }
         public EventHandler<ChatReceivedEventArgs>? ChatReceivedHandler { get; set; }
         public EventHandler<RawActionReceivedEventArgs>? RawActionReceivedHandler { get; set; }
+        public EventHandler<PollUpdatedEventArgs>? PollUpdatedHandler { get; set; }
+        public EventHandler<PollClosedEventArgs>? PollClosedHandler { get; set; }
+        public EventHandler<BannerAddedEventArgs>? BannerAddedHandler { get; set; }
+        public EventHandler<BannerRemovedEventArgs>? BannerRemovedHandler { get; set; }
+        public EventHandler<ChatItemDeletedEventArgs>? ChatItemDeletedHandler { get; set; }
+        public EventHandler<ChatItemsDeletedByAuthorEventArgs>? ChatItemsDeletedByAuthorHandler { get; set; }
+        public EventHandler<ChatItemReplacedEventArgs>? ChatItemReplacedHandler { get; set; }
+        public EventHandler<EngagementMessageReceivedEventArgs>? EngagementMessageReceivedHandler { get; set; }
         public EventHandler<ChatStoppedEventArgs>? ChatStoppedHandler { get; set; }
         public EventHandler<ErrorOccurredEventArgs>? ErrorOccurredHandler { get; set; }
     }

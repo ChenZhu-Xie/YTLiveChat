@@ -1462,7 +1462,7 @@ public class ParserTests
     // ── Banner parsing ────────────────────────────────────────────────────────
 
     [TestMethod]
-    public void ToBannerItem_AddBannerPinnedMessage_ReturnsBannerItem()
+    public void ToBannerItem_AddBannerPinnedMessage_ReturnsPinnedMessageBannerItem()
     {
         Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
             ActionTestData.AddBannerPinnedMessage(),
@@ -1473,27 +1473,29 @@ public class ParserTests
         BannerItem? banner = Parser.ToBannerItem(action);
 
         Assert.IsNotNull(banner, "ToBannerItem should return a non-null BannerItem.");
-        Assert.AreEqual("PINNED_ACTION_ID_01", banner.ActionId);
-        Assert.AreEqual("LIVE_CHAT_BANNER_TYPE_PINNED_MESSAGE", banner.BannerType);
-        Assert.AreEqual("Pinned by @Host", banner.PinnedBy);
-        Assert.AreEqual("@Host", banner.Author.Name);
-        Assert.AreEqual("UC_HOST_01", banner.Author.ChannelId);
-        Assert.AreEqual(1, banner.Message.Length);
-        Assert.IsInstanceOfType<TextPart>(banner.Message[0]);
-        Assert.AreEqual("Pinned message body", ((TextPart)banner.Message[0]).Text);
-        Assert.AreEqual("PINNED_TEXT_ID_01", banner.MessageId);
+        Assert.IsInstanceOfType<PinnedMessageBannerItem>(banner, "Pinned message must be PinnedMessageBannerItem.");
+        PinnedMessageBannerItem pinned = (PinnedMessageBannerItem)banner;
+
+        Assert.AreEqual("PINNED_ACTION_ID_01", pinned.ActionId);
+        Assert.AreEqual(BannerType.PinnedMessage, pinned.BannerType);
+        Assert.AreEqual("Pinned by @Host", pinned.PinnedBy);
+        Assert.AreEqual("@Host", pinned.Author.Name);
+        Assert.AreEqual("UC_HOST_01", pinned.Author.ChannelId);
+        Assert.AreEqual(1, pinned.Message.Length);
+        Assert.IsInstanceOfType<TextPart>(pinned.Message[0]);
+        Assert.AreEqual("Pinned message body", ((TextPart)pinned.Message[0]).Text);
+        Assert.AreEqual("PINNED_TEXT_ID_01", pinned.MessageId);
         // Timestamp from timestampUsec "1776004576422639"
-        Assert.AreNotEqual(default, banner.Timestamp);
-        Assert.IsTrue(banner.Timestamp.Year >= 2026, "Timestamp should be from 2026 or later.");
+        Assert.AreNotEqual(default, pinned.Timestamp);
+        Assert.IsTrue(pinned.Timestamp.Year >= 2026, "Timestamp should be from 2026 or later.");
         // VERIFIED badge
-        Assert.IsTrue(banner.IsVerified, "Author should be marked verified.");
-        Assert.IsFalse(banner.IsModerator);
-        Assert.IsFalse(banner.IsOwner);
-        Assert.IsNull(banner.RedirectVideoId);
+        Assert.IsTrue(pinned.IsVerified, "Author should be marked verified.");
+        Assert.IsFalse(pinned.IsModerator);
+        Assert.IsFalse(pinned.IsOwner);
     }
 
     [TestMethod]
-    public void ToBannerItem_RedirectBanner_ReturnsBannerItemWithRedirectVideoId()
+    public void ToBannerItem_RedirectBannerWithVideoId_ReturnsCrossChannelRedirectBannerItem()
     {
         Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
             ActionTestData.AddBannerRedirectCommand(),
@@ -1504,17 +1506,37 @@ public class ParserTests
         BannerItem? banner = Parser.ToBannerItem(action);
 
         Assert.IsNotNull(banner, "ToBannerItem should return a non-null BannerItem for redirect.");
-        Assert.AreEqual("ChwKGkNKLW1yNjd4NkpNREZhRE5GZ2tkVUFNWUNn", banner.ActionId);
-        Assert.AreEqual("LIVE_CHAT_BANNER_TYPE_CROSS_CHANNEL_REDIRECT", banner.BannerType);
-        Assert.AreEqual("OcULALBAXRA", banner.RedirectVideoId);
-        // Author name extracted from the bold run in bannerMessage
-        Assert.AreEqual("@TakanashiKiara", banner.Author.Name);
-        Assert.IsNotNull(banner.Author.Thumbnail, "Redirect banner should have an author photo.");
-        // Message parts from bannerMessage runs
-        Assert.IsTrue(banner.Message.Length >= 2, "Redirect banner message should have multiple parts.");
-        Assert.IsNull(banner.PinnedBy, "Redirect banner should have no PinnedBy.");
-        Assert.AreEqual(string.Empty, banner.MessageId);
-        Assert.IsFalse(banner.IsVerified);
+        Assert.IsInstanceOfType<CrossChannelRedirectBannerItem>(banner, "Redirect must be CrossChannelRedirectBannerItem.");
+        CrossChannelRedirectBannerItem redirect = (CrossChannelRedirectBannerItem)banner;
+
+        Assert.AreEqual("ChwKGkNKLW1yNjd4NkpNREZhRE5GZ2tkVUFNWUNn", redirect.ActionId);
+        Assert.AreEqual(BannerType.CrossChannelRedirect, redirect.BannerType);
+        Assert.AreEqual("@TakanashiKiara", redirect.RedirectChannelHandle);
+        Assert.AreEqual("OcULALBAXRA", redirect.RedirectVideoId);
+        Assert.IsNotNull(redirect.ChannelPhoto, "Redirect banner should have a ChannelPhoto.");
+        Assert.IsTrue(redirect.BannerMessage.Length >= 2, "Redirect banner message should have multiple parts.");
+    }
+
+    [TestMethod]
+    public void ToBannerItem_RedirectBannerLearnMore_ReturnsCrossChannelRedirectBannerItemWithNullVideoId()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.AddBannerRedirectLearnMore(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+
+        BannerItem? banner = Parser.ToBannerItem(action);
+
+        Assert.IsNotNull(banner, "ToBannerItem should return a non-null BannerItem for learn-more redirect.");
+        Assert.IsInstanceOfType<CrossChannelRedirectBannerItem>(banner, "Learn-more redirect must be CrossChannelRedirectBannerItem.");
+        CrossChannelRedirectBannerItem redirect = (CrossChannelRedirectBannerItem)banner;
+
+        Assert.AreEqual("ChwKGkNPNzM0NEdnNlpNREZUUFFsQWtkM25ZN3NR", redirect.ActionId);
+        Assert.AreEqual(BannerType.CrossChannelRedirect, redirect.BannerType);
+        Assert.AreEqual("@holoen_ceciliaimmergreen", redirect.RedirectChannelHandle);
+        Assert.IsNull(redirect.RedirectVideoId, "Learn-more redirect should have no RedirectVideoId.");
+        Assert.IsNotNull(redirect.ChannelPhoto, "Learn-more redirect banner should have a ChannelPhoto.");
     }
 
     [TestMethod]
@@ -1623,5 +1645,118 @@ public class ParserTests
 
         Assert.IsNull(targetId);
         Assert.IsNull(replacement);
+    }
+
+    // ── Viewer engagement messages ────────────────────────────────────────────
+
+    [TestMethod]
+    public void ToEngagementItem_SubscribersOnly5Min_ReturnsCorrectItem()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.ViewerEngagementSubscribersOnly(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+
+        EngagementItem? item = Parser.ToEngagementItem(action);
+
+        Assert.IsNotNull(item);
+        Assert.AreEqual(
+            "Ci0KK1NVQlNDUklCRVJTX09OTFlfVkVNMjAyNi8wNC8xMS0wNDo1NjowNC41Nzk%3D",
+            item.Id
+        );
+        Assert.AreEqual(EngagementMessageType.SubscribersOnly, item.MessageType);
+        // Timestamp from timestampUsec "1775908564579677"
+        Assert.AreNotEqual(default, item.Timestamp);
+        Assert.AreEqual(3, item.MessageParts.Length);
+        Assert.IsInstanceOfType<TextPart>(item.MessageParts[0]);
+        Assert.AreEqual("5 minutes", ((TextPart)item.MessageParts[1]).Text);
+        Assert.AreEqual(
+            "//support.google.com/youtube/?p=subs_only_chat_viewer&hl=en",
+            item.LearnMoreUrl
+        );
+        StringAssert.Contains(item.Message, "5 minutes");
+        StringAssert.Contains(item.Message, "Subscribers-only mode");
+    }
+
+    [TestMethod]
+    public void ToEngagementItem_SubscribersOnly20Min_ReturnsCorrectItem()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.ViewerEngagementSubscribersOnly20Min(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+
+        EngagementItem? item = Parser.ToEngagementItem(action);
+
+        Assert.IsNotNull(item);
+        Assert.AreEqual(
+            "Ci0KK1NVQlNDUklCRVJTX09OTFlfVkVNMjAyNi8wNC8xMS0wNDo1NjowNC41NTM%3D",
+            item.Id
+        );
+        Assert.AreEqual(EngagementMessageType.SubscribersOnly, item.MessageType);
+        Assert.AreEqual(3, item.MessageParts.Length);
+        Assert.AreEqual("20 minutes", ((TextPart)item.MessageParts[1]).Text);
+        StringAssert.Contains(item.Message, "20 minutes");
+    }
+
+    [TestMethod]
+    public void ToEngagementItem_CommunityGuidelines_ReturnsCorrectItem()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.ViewerEngagementCommunityGuidelines(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+
+        EngagementItem? item = Parser.ToEngagementItem(action);
+
+        Assert.IsNotNull(item);
+        Assert.AreEqual(
+            "CjEKL0NPTU1VTklUWV9HVUlERUxJTkVTX1ZFTTIwMjYvMDQvMTEtMDQ6NTY6MDQuNjEx",
+            item.Id
+        );
+        Assert.AreEqual(EngagementMessageType.CommunityGuidelines, item.MessageType);
+        Assert.AreEqual(1, item.MessageParts.Length);
+        StringAssert.Contains(item.Message, "community guidelines");
+        Assert.AreEqual(
+            "//support.google.com/youtube/answer/2853856?hl=en#safe",
+            item.LearnMoreUrl
+        );
+    }
+
+    [TestMethod]
+    public void ToEngagementItem_PollResult_ReturnsCorrectItem()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.ViewerEngagementPollResult(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+
+        EngagementItem? item = Parser.ToEngagementItem(action);
+
+        Assert.IsNotNull(item);
+        Assert.AreEqual("ChwKGkNNS082cVdsNXBNREZicGJUQWdkME1VN2x3", item.Id);
+        Assert.AreEqual(EngagementMessageType.PollResult, item.MessageType);
+        Assert.AreEqual(6, item.MessageParts.Length);
+        Assert.IsNull(item.LearnMoreUrl);
+        StringAssert.Contains(item.Message, "Poll complete");
+        StringAssert.Contains(item.Message, "DIG (70%)");
+    }
+
+    [TestMethod]
+    public void ToEngagementItem_UnrelatedAction_ReturnsNull()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.RemoveChatItem(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+
+        EngagementItem? item = Parser.ToEngagementItem(action);
+
+        Assert.IsNull(item);
     }
 }

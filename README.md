@@ -29,15 +29,37 @@ dotnet add package Agash.YTLiveChat.DependencyInjection
 
 ## What You Get
 
-- Chat messages (`liveChatTextMessageRenderer`)
+**Chat messages**
+- Chat messages (`ChatReceived`) — text, emoji, images
 - Super Chats / Super Stickers with parsed amount + currency
-- Membership events (new/milestone/gift purchase/gift redemption)
-- Ticker support (`addLiveChatTickerItemAction`) including:
-  - ticker paid messages
-  - ticker membership items
-  - ticker gift purchase announcements
+- Membership events — new join, milestone, gift purchase, gift redemption (`MembershipDetails.EventType`)
+- Ticker support (`addLiveChatTickerItemAction`) — paid messages, membership items, gift purchase announcements
 - Viewer leaderboard rank extraction (YouTube points crown tags like `#1`)
-- Raw InnerTube action access (`RawActionReceived`) including unsupported actions
+
+**Moderation & lifecycle**
+- Message deleted (`ChatItemDeleted`) — single item removed
+- Author banned/cleared (`ChatItemsDeletedByAuthor`) — all messages from a channel removed
+- Message replaced (`ChatItemReplaced`) — slow-mode or placeholder resolution
+
+**Polls**
+- `PollUpdated` — fires when a new poll opens (`Poll.IsNew == true`) and on every vote-count update (`IsNew == false`); carries structured choices and vote ratios
+- `PollClosed` — fires when the poll panel is dismissed; use `PollId` to correlate with the preceding `PollUpdated` events
+- After `PollClosed`, `EngagementMessageReceived` fires with `MessageType == PollResult` carrying the final text summary that appears in chat (not required for poll lifecycle tracking)
+
+**Banners**
+- `BannerAdded` — fires with a `BannerItem` subclass; pattern-match to distinguish:
+  - `PinnedMessageBannerItem` — pinned chat message; carries `Author`, `Message`, `PinnedBy`, `Timestamp`, and role flags (`IsOwner`, `IsModerator`, `IsVerified`)
+  - `CrossChannelRedirectBannerItem` — redirect to another stream; carries `RedirectChannelHandle` (the `@handle`) and `RedirectVideoId` (null when no specific video is provided, e.g. Squad streaming join notifications)
+- `BannerRemoved` — banner dismissed; `TargetActionId` matches the preceding `BannerAdded`'s `ActionId`
+
+**System / engagement messages**
+- `EngagementMessageReceived` — YouTube-generated notices in the chat feed:
+  - `CommunityGuidelines` — welcome/guidelines reminder at stream start
+  - `SubscribersOnly` — subscribers-only mode notice
+  - `PollResult` — formatted poll result summary (see Polls above)
+
+**Raw access**
+- `RawActionReceived` — every InnerTube action including unsupported ones
 - Async streaming APIs (`StreamChatItemsAsync`, `StreamRawActionsAsync`)
 
 ## Important Caveats
@@ -171,8 +193,8 @@ The file is written as a valid JSON array, so it is directly parseable by tools/
 
 ## Current Schema Coverage Gaps
 
-- Poll update/action-panel payloads are captured in tests as raw fixtures, but not yet projected into first-class contracts.
 - Creator goals are not mapped yet (awaiting enough stable raw samples).
+- Membership tier upgrades are not mapped yet (observed in the wild but shape is not confirmed).
 
 ## Contributing
 
