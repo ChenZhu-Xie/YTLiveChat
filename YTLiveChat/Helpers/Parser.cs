@@ -782,8 +782,11 @@ internal static partial class Parser
         // --- Author & Badges ---
         // For ticker items the outer renderer carries extra author fields not present
         // on the nested show-item renderer, so we resolve them as fallbacks.
+        // authorUsername is the primary source; authorPhoto.accessibility.accessibilityData.label
+        // carries the same @handle as a secondary path (observed on all ticker paid-message outer items).
         string? tickerChannelHandle =
-            tickerOuterItem?.LiveChatTickerPaidMessageItemRenderer?.AuthorUsername?.Text;
+            tickerOuterItem?.LiveChatTickerPaidMessageItemRenderer?.AuthorUsername?.Text
+            ?? tickerOuterItem?.LiveChatTickerPaidMessageItemRenderer?.AuthorPhoto?.Accessibility?.AccessibilityData?.Label;
         string? tickerChannelId =
             tickerOuterItem?.LiveChatTickerPaidMessageItemRenderer?.AuthorExternalChannelId
             ?? tickerOuterItem?.LiveChatTickerSponsorItemRenderer?.AuthorExternalChannelId
