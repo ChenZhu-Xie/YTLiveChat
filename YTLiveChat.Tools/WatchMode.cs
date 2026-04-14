@@ -49,18 +49,27 @@ internal static class WatchMode
     private static readonly HashSet<string> s_knownSkippedActionTypes =
         new(s_parsedDedicatedEventActionTypes.Concat(s_silentActionTypes), StringComparer.Ordinal);
 
-    // addChatItemAction item renderers that produce no ChatItem but are handled by the library
-    // (either intentionally discarded or routed to a dedicated event).
-    // These are NOT unknown — filtering them avoids noise in the default capture mode.
-    private static readonly HashSet<string> s_knownSkippedRendererTypes = new(StringComparer.Ordinal)
+    // addChatItemAction item renderers that are fully parsed and fire a dedicated public event
+    // but do NOT produce a ChatItem. NOT unknown. Labeled "parsed" in --all-events mode.
+    private static readonly HashSet<string> s_parsedDedicatedEventRendererTypes = new(StringComparer.Ordinal)
     {
-        // Intentionally discarded (pending message slot, no user-visible data).
-        "liveChatPlaceholderItemRenderer",
         // Fires EngagementMessageReceived (CommunityGuidelines, SubscribersOnly, PollResult).
         "liveChatViewerEngagementMessageRenderer",
+    };
+
+    // addChatItemAction item renderers the library recognizes but intentionally discards
+    // with no public event. NOT unknown. Labeled "known" in --all-events mode.
+    private static readonly HashSet<string> s_silentRendererTypes = new(StringComparer.Ordinal)
+    {
+        // Pending message slot — no user-visible data.
+        "liveChatPlaceholderItemRenderer",
         // Mode-change notification (subscribers-only on/off) — no dedicated event yet.
         "liveChatModeChangeMessageRenderer",
     };
+
+    // Combined set for the "is this renderer known?" gate in default capture mode.
+    private static readonly HashSet<string> s_knownSkippedRendererTypes =
+        new(s_parsedDedicatedEventRendererTypes.Concat(s_silentRendererTypes), StringComparer.Ordinal);
 
     // For --all-events: high-volume renderers that add no analytical value. Everything
     // NOT in this list (and not tracking-only) is captured.
@@ -225,9 +234,10 @@ internal static class WatchMode
                     return;
                 }
 
-                reason = !hasItem && s_parsedDedicatedEventActionTypes.Contains(actionType)
-                    ? "parsed"   // fires a dedicated public event (ChatItemDeleted, BannerAdded, PollUpdated, etc.)
-                    : !hasItem && (s_silentActionTypes.Contains(actionType) || s_knownSkippedRendererTypes.Contains(rendererKey))
+                reason =
+                    !hasItem && (s_parsedDedicatedEventActionTypes.Contains(actionType) || s_parsedDedicatedEventRendererTypes.Contains(rendererKey))
+                    ? "parsed"   // fires a dedicated public event (ChatItemDeleted, BannerAdded, PollUpdated, EngagementMessage, etc.)
+                    : !hasItem && (s_silentActionTypes.Contains(actionType) || s_silentRendererTypes.Contains(rendererKey))
                     ? "known"    // recognized, intentionally discarded with no public event
                     : hasMembership ? isUnknownMembership ? "unknown-membership" : "membership"
                     : hasItem ? "parsed" : "unknown";
