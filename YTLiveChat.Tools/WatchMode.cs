@@ -72,7 +72,7 @@ internal static class WatchMode
         string? outputDir = Path.GetDirectoryName(outputPath);
         if (!string.IsNullOrEmpty(outputDir))
         {
-            Directory.CreateDirectory(outputDir);
+            _ = Directory.CreateDirectory(outputDir);
         }
 
         Console.WriteLine($"Watch mode — output: {outputPath}");
@@ -213,22 +213,9 @@ internal static class WatchMode
                     return;
                 }
 
-                if (!hasItem && (s_knownSkippedActionTypes.Contains(actionType) || s_knownSkippedRendererTypes.Contains(rendererKey)))
-                {
-                    reason = "known";
-                }
-                else if (hasMembership)
-                {
-                    reason = isUnknownMembership ? "unknown-membership" : "membership";
-                }
-                else if (hasItem)
-                {
-                    reason = "parsed";
-                }
-                else
-                {
-                    reason = "unknown";
-                }
+                reason = !hasItem && (s_knownSkippedActionTypes.Contains(actionType) || s_knownSkippedRendererTypes.Contains(rendererKey))
+                    ? "known"
+                    : hasMembership ? isUnknownMembership ? "unknown-membership" : "membership" : hasItem ? "parsed" : "unknown";
             }
             else
             {
@@ -497,17 +484,11 @@ internal static class WatchMode
 
     private static WatchTarget ParseTarget(string identifier)
     {
-        if (identifier.StartsWith("@", StringComparison.Ordinal))
-        {
-            return new WatchTarget(identifier, Handle: identifier, ChannelId: null, LiveId: null, IsHandleOrChannel: true);
-        }
-
-        if (identifier.StartsWith("UC", StringComparison.OrdinalIgnoreCase))
-        {
-            return new WatchTarget(identifier, Handle: null, ChannelId: identifier, LiveId: null, IsHandleOrChannel: true);
-        }
-
-        return new WatchTarget(identifier, Handle: null, ChannelId: null, LiveId: identifier, IsHandleOrChannel: false);
+        return identifier.StartsWith("@", StringComparison.Ordinal)
+            ? new WatchTarget(identifier, Handle: identifier, ChannelId: null, LiveId: null, IsHandleOrChannel: true)
+            : identifier.StartsWith("UC", StringComparison.OrdinalIgnoreCase)
+            ? new WatchTarget(identifier, Handle: null, ChannelId: identifier, LiveId: null, IsHandleOrChannel: true)
+            : new WatchTarget(identifier, Handle: null, ChannelId: null, LiveId: identifier, IsHandleOrChannel: false);
     }
 
     private static void PrintWatchUsage()

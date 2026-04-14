@@ -1473,7 +1473,7 @@ public class ParserTests
         BannerItem? banner = Parser.ToBannerItem(action);
 
         Assert.IsNotNull(banner, "ToBannerItem should return a non-null BannerItem.");
-        Assert.IsInstanceOfType<PinnedMessageBannerItem>(banner, "Pinned message must be PinnedMessageBannerItem.");
+        _ = Assert.IsInstanceOfType<PinnedMessageBannerItem>(banner, "Pinned message must be PinnedMessageBannerItem.");
         PinnedMessageBannerItem pinned = (PinnedMessageBannerItem)banner;
 
         Assert.AreEqual("PINNED_ACTION_ID_01", pinned.ActionId);
@@ -1482,7 +1482,7 @@ public class ParserTests
         Assert.AreEqual("@Host", pinned.Author.Name);
         Assert.AreEqual("UC_HOST_01", pinned.Author.ChannelId);
         Assert.AreEqual(1, pinned.Message.Length);
-        Assert.IsInstanceOfType<TextPart>(pinned.Message[0]);
+        _ = Assert.IsInstanceOfType<TextPart>(pinned.Message[0]);
         Assert.AreEqual("Pinned message body", ((TextPart)pinned.Message[0]).Text);
         Assert.AreEqual("PINNED_TEXT_ID_01", pinned.MessageId);
         // Timestamp from timestampUsec "1776004576422639"
@@ -1506,7 +1506,7 @@ public class ParserTests
         BannerItem? banner = Parser.ToBannerItem(action);
 
         Assert.IsNotNull(banner, "ToBannerItem should return a non-null BannerItem for redirect.");
-        Assert.IsInstanceOfType<CrossChannelRedirectBannerItem>(banner, "Redirect must be CrossChannelRedirectBannerItem.");
+        _ = Assert.IsInstanceOfType<CrossChannelRedirectBannerItem>(banner, "Redirect must be CrossChannelRedirectBannerItem.");
         CrossChannelRedirectBannerItem redirect = (CrossChannelRedirectBannerItem)banner;
 
         Assert.AreEqual("ChwKGkNKLW1yNjd4NkpNREZhRE5GZ2tkVUFNWUNn", redirect.ActionId);
@@ -1529,7 +1529,7 @@ public class ParserTests
         BannerItem? banner = Parser.ToBannerItem(action);
 
         Assert.IsNotNull(banner, "ToBannerItem should return a non-null BannerItem for learn-more redirect.");
-        Assert.IsInstanceOfType<CrossChannelRedirectBannerItem>(banner, "Learn-more redirect must be CrossChannelRedirectBannerItem.");
+        _ = Assert.IsInstanceOfType<CrossChannelRedirectBannerItem>(banner, "Learn-more redirect must be CrossChannelRedirectBannerItem.");
         CrossChannelRedirectBannerItem redirect = (CrossChannelRedirectBannerItem)banner;
 
         Assert.AreEqual("ChwKGkNPNzM0NEdnNlpNREZUUFFsQWtkM25ZN3NR", redirect.ActionId);
@@ -1611,7 +1611,7 @@ public class ParserTests
         Assert.AreEqual("@asepjulian896", replacement.Author.Name);
         Assert.AreEqual("UCFIehAvmitLzMf3KDWlW-sA", replacement.Author.ChannelId);
         Assert.AreEqual(1, replacement.Message.Length);
-        Assert.IsInstanceOfType<TextPart>(replacement.Message[0]);
+        _ = Assert.IsInstanceOfType<TextPart>(replacement.Message[0]);
         Assert.AreEqual("pagi bokobo", ((TextPart)replacement.Message[0]).Text);
         // Timestamp from timestampUsec "1776033641718643"
         Assert.AreNotEqual(default, replacement.Timestamp);
@@ -1669,7 +1669,7 @@ public class ParserTests
         // Timestamp from timestampUsec "1775908564579677"
         Assert.AreNotEqual(default, item.Timestamp);
         Assert.AreEqual(3, item.MessageParts.Length);
-        Assert.IsInstanceOfType<TextPart>(item.MessageParts[0]);
+        _ = Assert.IsInstanceOfType<TextPart>(item.MessageParts[0]);
         Assert.AreEqual("5 minutes", ((TextPart)item.MessageParts[1]).Text);
         Assert.AreEqual(
             "//support.google.com/youtube/?p=subs_only_chat_viewer&hl=en",

@@ -662,10 +662,7 @@ internal class ChatMonitorService : IHostedService, IDisposable
         }
     }
 
-    private void OnApplicationStopping()
-    {
-        _logger.LogInformation("Application stopping. Stopping monitor sessions.");
-    }
+    private void OnApplicationStopping() => _logger.LogInformation("Application stopping. Stopping monitor sessions.");
 
     public void Dispose()
     {
@@ -827,14 +824,16 @@ internal class ChatMonitorService : IHostedService, IDisposable
         if (!int.TryParse(hex[0..2], System.Globalization.NumberStyles.HexNumber, null, out int r) ||
             !int.TryParse(hex[2..4], System.Globalization.NumberStyles.HexNumber, null, out int g) ||
             !int.TryParse(hex[4..6], System.Globalization.NumberStyles.HexNumber, null, out int b))
+        {
             return ConsoleColor.Yellow;
+        }
 
-        if (r > 180 && g < 60 && b < 60)  return ConsoleColor.Red;       // ~$100+ (deep red)
-        if (r > 150 && g < 80 && b > 60)  return ConsoleColor.Magenta;   // ~$50–$99 (pink/magenta)
-        if (r > 200 && g > 80 && b < 50)  return ConsoleColor.DarkYellow; // ~$20–$49 (orange)
+        if (r > 180 && g < 60 && b < 60) return ConsoleColor.Red;       // ~$100+ (deep red)
+        if (r > 150 && g < 80 && b > 60) return ConsoleColor.Magenta;   // ~$50–$99 (pink/magenta)
+        if (r > 200 && g > 80 && b < 50) return ConsoleColor.DarkYellow; // ~$20–$49 (orange)
         if (r > 200 && g > 160 && b < 80) return ConsoleColor.Yellow;    // ~$10–$19 (yellow)
         if (g > 150 && b > 100 && r < 50) return ConsoleColor.Cyan;      // ~$2–$9 (cyan/green)
-        if (b > 150 && r < 80)            return ConsoleColor.Blue;       // ~$1–$1.99 (blue)
+        if (b > 150 && r < 80) return ConsoleColor.Blue;       // ~$1–$1.99 (blue)
 
         return ConsoleColor.Yellow;
     }

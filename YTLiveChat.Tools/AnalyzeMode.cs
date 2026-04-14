@@ -181,11 +181,13 @@ internal static class AnalyzeMode
                 verbose = true;
                 continue;
             }
+
             if (arg.Equals("--help", StringComparison.OrdinalIgnoreCase))
             {
                 PrintUsage();
                 return 0;
             }
+
             paths.Add(arg);
         }
 
@@ -370,10 +372,12 @@ internal static class AnalyzeMode
                 Console.WriteLine();
             }
         }
+
         if (!anyUnknown)
         {
             Console.WriteLine("  (none)");
         }
+
         Console.WriteLine();
 
         if (parseErrors.Count > 0)
@@ -397,11 +401,15 @@ internal static class AnalyzeMode
     {
         if (!action.TryGetProperty("addChatItemAction", out JsonElement addChat) ||
             !addChat.TryGetProperty("item", out JsonElement item))
+        {
             return;
+        }
 
         if (!LogReader.TryGetSingleRenderer(item, out string? rendererType, out JsonElement rendererValue) ||
             rendererType == null)
+        {
             return;
+        }
 
         ObserveRenderer("addChatItemAction", rendererType, rendererValue, stats, unknownRendererTypes);
     }
@@ -413,7 +421,9 @@ internal static class AnalyzeMode
     {
         if (!action.TryGetProperty("addLiveChatTickerItemAction", out JsonElement tickerAction) ||
             !tickerAction.TryGetProperty("item", out JsonElement tickerItem))
+        {
             return;
+        }
 
         // Outer item renderer (the ticker bar entry itself)
         if (LogReader.TryGetSingleRenderer(tickerItem, out string? outerRenderer, out JsonElement outerValue) &&
@@ -445,6 +455,7 @@ internal static class AnalyzeMode
             rs = new RendererStats { Location = location, RendererType = rendererType };
             stats[key] = rs;
         }
+
         rs.TotalCount++;
 
         if (!Baselines.ContainsKey(rendererType))
@@ -463,6 +474,7 @@ internal static class AnalyzeMode
                 };
                 rs.Fields[prop.Name] = entry;
             }
+
             entry.Count++;
 
             // Track badge composition from authorBadges

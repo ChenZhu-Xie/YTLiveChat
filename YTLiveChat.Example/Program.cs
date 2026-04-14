@@ -108,14 +108,7 @@ while (true)
         runOptions.EnableJsonLogging = true;
         Console.Write("Log file path (leave empty for auto path): ");
         string? pathInput = Console.ReadLine();
-        if (!string.IsNullOrWhiteSpace(pathInput))
-        {
-            runOptions.DebugLogPath = Path.GetFullPath(pathInput.Trim());
-        }
-        else
-        {
-            runOptions.DebugLogPath = BuildDefaultLogPath(runOptions.SourceTag);
-        }
+        runOptions.DebugLogPath = !string.IsNullOrWhiteSpace(pathInput) ? Path.GetFullPath(pathInput.Trim()) : BuildDefaultLogPath(runOptions.SourceTag);
     }
 
     runOptionsList.Add(runOptions);
@@ -137,7 +130,7 @@ foreach (ExampleRunOptions options in runOptionsList)
     Console.Write($"[{options.SourceTag}] ");
     Console.ResetColor();
     Console.WriteLine(
-        $"{(options.Handle ?? options.ChannelId ?? options.LiveId)} | monitor={options.EnableContinuousMonitor} | rawLog={options.EnableJsonLogging}"
+        $"{options.Handle ?? options.ChannelId ?? options.LiveId} | monitor={options.EnableContinuousMonitor} | rawLog={options.EnableJsonLogging}"
     );
 }
 

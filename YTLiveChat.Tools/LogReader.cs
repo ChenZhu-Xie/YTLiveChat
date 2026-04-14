@@ -53,8 +53,10 @@ internal static class LogReader
             if (root.ValueKind == JsonValueKind.Array)
             {
                 foreach (JsonElement element in root.EnumerateArray())
+                {
                     foreach (JsonElement action in ExtractActions(element))
                         yield return action.Clone();
+                }
             }
 
             yield break;
@@ -74,6 +76,7 @@ internal static class LogReader
             foreach (JsonElement action in ExtractActions(doc.RootElement))
                 concatenatedActions.Add(action.Clone());
         }
+
         foreach (JsonElement action in concatenatedActions)
             yield return action;
     }
@@ -97,7 +100,9 @@ internal static class LogReader
                 prop.Name.EndsWith("Action", StringComparison.Ordinal)
                 || prop.Name.EndsWith("Command", StringComparison.Ordinal)
             )
+            {
                 return prop.Name;
+            }
 
             if (prop.Name != "clickTrackingParams")
                 fallback ??= prop.Name;
@@ -112,15 +117,12 @@ internal static class LogReader
     public static string GetRendererKey(JsonElement action)
     {
         // addChatItemAction.item.<rendererKey>
-        if (
-            action.TryGetProperty("addChatItemAction", out JsonElement addChat)
+        return action.TryGetProperty("addChatItemAction", out JsonElement addChat)
             && addChat.TryGetProperty("item", out JsonElement item)
             && TryGetSingleRenderer(item, out string? r, out _)
             && r != null
-        )
-            return r;
-
-        return string.Empty;
+            ? r
+            : string.Empty;
     }
 
     /// <summary>
@@ -128,14 +130,11 @@ internal static class LogReader
     /// </summary>
     public static string? GetRendererTypeFromItem(JsonElement action)
     {
-        if (
-            action.TryGetProperty("addChatItemAction", out JsonElement addChat)
+        return action.TryGetProperty("addChatItemAction", out JsonElement addChat)
             && addChat.TryGetProperty("item", out JsonElement item)
             && TryGetSingleRenderer(item, out string? r, out _)
-        )
-            return r;
-
-        return null;
+            ? r
+            : null;
     }
 
     /// <summary>
@@ -188,7 +187,9 @@ internal static class LogReader
                 || !showLive.TryGetProperty("renderer", out JsonElement rendererObj)
                 || rendererObj.ValueKind != JsonValueKind.Object
             )
+            {
                 continue;
+            }
 
             if (TryGetSingleRenderer(rendererObj, out rendererName, out rendererValue))
                 return true;
@@ -212,13 +213,15 @@ internal static class LogReader
             || !richText.TryGetProperty("runs", out JsonElement runs)
             || runs.ValueKind != JsonValueKind.Array
         )
+        {
             return null;
+        }
 
-        var sb = new StringBuilder();
+        StringBuilder sb = new();
         foreach (JsonElement run in runs.EnumerateArray())
         {
             if (run.TryGetProperty("text", out JsonElement text))
-                sb.Append(text.GetString());
+                _ = sb.Append(text.GetString());
         }
 
         return sb.Length > 0 ? sb.ToString() : null;
@@ -284,7 +287,9 @@ internal static class LogReader
                 prop.Name.EndsWith("Action", StringComparison.Ordinal)
                 || prop.Name.EndsWith("Command", StringComparison.Ordinal)
             )
+            {
                 return true;
+            }
         }
 
         return false;

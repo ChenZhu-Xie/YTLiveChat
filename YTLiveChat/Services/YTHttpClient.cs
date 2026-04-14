@@ -1,5 +1,5 @@
-using System.Text.Json;
 using System.Net;
+using System.Text.Json;
 
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -57,7 +57,7 @@ public class YTHttpClient(HttpClient httpClient, ILogger<YTHttpClient>? logger =
         string? rawJson = null;
         try
         {
-            var payload = new LiveChatRequest
+            LiveChatRequest payload = new()
             {
                 Context = new RequestContext
                 {
@@ -217,15 +217,14 @@ public class YTHttpClient(HttpClient httpClient, ILogger<YTHttpClient>? logger =
         return fallbackHtml;
     }
 
-    private async Task<string> GetStringAsync(string urlPath, CancellationToken cancellationToken)
-    {
+    private async Task<string> GetStringAsync(string urlPath, CancellationToken cancellationToken) =>
         // HttpClient.GetStringAsync will combine BaseAddress and urlPath.
 #if NETSTANDARD2_1 || NETSTANDARD2_0
-        return await _httpClient.GetStringAsync(urlPath).ConfigureAwait(false);
+        await _httpClient.GetStringAsync(urlPath).ConfigureAwait(false);
 #else
-        return await _httpClient.GetStringAsync(urlPath, cancellationToken).ConfigureAwait(false);
+        await _httpClient.GetStringAsync(urlPath, cancellationToken).ConfigureAwait(false);
 #endif
-    }
+
 
     private async Task<string> GetStringStatelessAsync(
         string urlPath,

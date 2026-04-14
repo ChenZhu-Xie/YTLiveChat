@@ -672,7 +672,7 @@ public class YTLiveChatServiceTests
 #pragma warning disable CS0618
         _service.LivestreamInaccessible += (_, e) =>
         {
-            Interlocked.Increment(ref inaccessibleEventCount);
+            _ = Interlocked.Increment(ref inaccessibleEventCount);
             _ = inaccessibleTcs.TrySetResult(e);
         };
 #pragma warning restore CS0618
