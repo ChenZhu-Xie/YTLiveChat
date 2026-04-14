@@ -6,6 +6,11 @@ if (args.Length > 0 && args[0].Equals("watch", StringComparison.OrdinalIgnoreCas
     return await WatchMode.RunAsync(args[1..]);
 }
 
+if (args.Length > 0 && args[0].Equals("analyze", StringComparison.OrdinalIgnoreCase))
+{
+    return AnalyzeMode.Run(args[1..]);
+}
+
 Options options = ParseOptions(args);
 if (options.Paths.Count == 0)
 {
@@ -86,9 +91,9 @@ foreach (string path in options.Paths)
 
     try
     {
-        foreach (JsonElement action in ReadActionsFromLog(path))
+        foreach (JsonElement action in LogReader.ReadActions(path))
         {
-            string? actionType = GetActionType(action);
+            string? actionType = LogReader.GetActionType(action);
             if (actionType == null)
             {
                 // No action/command property — tracking-only entry (e.g. only clickTrackingParams).
@@ -105,7 +110,7 @@ foreach (string path in options.Paths)
                 && action.TryGetProperty("addChatItemAction", out JsonElement addChat)
                 && addChat.TryGetProperty("item", out JsonElement item)
                 && item.ValueKind == JsonValueKind.Object
-                && TryGetSingleRenderer(item, out string? rendererType, out JsonElement rendererValue)
+                && LogReader.TryGetSingleRenderer(item, out string? rendererType, out JsonElement rendererValue)
             )
             {
                 Increment(rendererCounts, rendererType!);
@@ -132,13 +137,13 @@ foreach (string path in options.Paths)
                 && tickerItem.ValueKind == JsonValueKind.Object
             )
             {
-                if (TryGetSingleRenderer(tickerItem, out string? tickerRenderer, out _))
+                if (LogReader.TryGetSingleRenderer(tickerItem, out string? tickerRenderer, out _))
                 {
                     Increment(tickerRendererCounts, tickerRenderer!);
                 }
 
                 if (
-                    TryGetNestedShowRenderer(
+                    LogReader.TryGetNestedShowRenderer(
                         tickerItem,
                         out string? nestedRenderer,
                         out JsonElement nestedRendererValue
@@ -316,10 +321,10 @@ static void TryDumpRenderer(
 
     if (options.FilterSubtext != null)
     {
-        string? headerSubtext = TryGetSimpleText(rendererValue, "headerSubtext")
-            ?? TryGetRunsAsPlainText(rendererValue, "headerSubtext")
-            ?? TryGetSimpleText(rendererValue, "headerPrimaryText")
-            ?? TryGetRunsAsPlainText(rendererValue, "headerPrimaryText");
+        string? headerSubtext = LogReader.TryGetSimpleText(rendererValue, "headerSubtext")
+            ?? LogReader.TryGetRunsAsPlainText(rendererValue, "headerSubtext")
+            ?? LogReader.TryGetSimpleText(rendererValue, "headerPrimaryText")
+            ?? LogReader.TryGetRunsAsPlainText(rendererValue, "headerPrimaryText");
 
         if (
             headerSubtext == null
@@ -331,29 +336,6 @@ static void TryDumpRenderer(
     }
 
     dumpedRenderers.Add(rendererValue.Clone());
-}
-
-static string? TryGetRunsAsPlainText(JsonElement container, string propertyName)
-{
-    if (
-        !container.TryGetProperty(propertyName, out JsonElement richText)
-        || !richText.TryGetProperty("runs", out JsonElement runs)
-        || runs.ValueKind != JsonValueKind.Array
-    )
-    {
-        return null;
-    }
-
-    StringBuilder sb = new();
-    foreach (JsonElement run in runs.EnumerateArray())
-    {
-        if (run.TryGetProperty("text", out JsonElement text))
-        {
-            sb.Append(text.GetString());
-        }
-    }
-
-    return sb.Length > 0 ? sb.ToString() : null;
 }
 
 static void AnalyzeRenderer(
@@ -574,73 +556,17 @@ static void PrintUsage()
     );
 }
 
-static bool TryGetNestedShowRenderer(
-    JsonElement tickerItem,
-    out string? rendererName,
-    out JsonElement rendererValue
-)
-{
-    rendererName = null;
-    rendererValue = default;
-
-    foreach (JsonProperty tickerProperty in tickerItem.EnumerateObject())
-    {
-        JsonElement value = tickerProperty.Value;
-        if (
-            !value.TryGetProperty("showItemEndpoint", out JsonElement showItemEndpoint)
-            || !showItemEndpoint.TryGetProperty("showLiveChatItemEndpoint", out JsonElement showLive)
-            || !showLive.TryGetProperty("renderer", out JsonElement rendererObj)
-            || rendererObj.ValueKind != JsonValueKind.Object
-        )
-        {
-            continue;
-        }
-
-        if (TryGetSingleRenderer(rendererObj, out rendererName, out rendererValue))
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-static bool TryGetSingleRenderer(
-    JsonElement container,
-    out string? rendererName,
-    out JsonElement rendererValue
-)
-{
-    rendererName = null;
-    rendererValue = default;
-
-    if (container.ValueKind != JsonValueKind.Object)
-    {
-        return false;
-    }
-
-    JsonProperty first = container.EnumerateObject().FirstOrDefault();
-    if (string.IsNullOrWhiteSpace(first.Name))
-    {
-        return false;
-    }
-
-    rendererName = first.Name;
-    rendererValue = first.Value;
-    return true;
-}
-
 static string BuildVariantSignature(string rendererType, JsonElement renderer, string source)
 {
     List<string> parts = [$"src={source}", $"renderer={rendererType}", $"shape={BuildShapeSignature(renderer)}"];
 
-    string? purchaseAmount = TryGetSimpleText(renderer, "purchaseAmountText");
+    string? purchaseAmount = LogReader.TryGetSimpleText(renderer, "purchaseAmountText");
     if (!string.IsNullOrWhiteSpace(purchaseAmount))
     {
         parts.Add($"purchase={NormalizeText(purchaseAmount)}");
     }
 
-    string? detailText = TryGetSimpleText(renderer, "detailText");
+    string? detailText = LogReader.TryGetSimpleText(renderer, "detailText");
     if (!string.IsNullOrWhiteSpace(detailText))
     {
         parts.Add($"detail={NormalizeText(detailText)}");
@@ -670,7 +596,7 @@ static string BuildVariantSignature(string rendererType, JsonElement renderer, s
         parts.Add($"messageRuns={messageRuns}");
     }
 
-    string? stickerLabel = TryGetPathText(
+    string? stickerLabel = LogReader.TryGetPathText(
         renderer,
         "sticker",
         "accessibility",
@@ -771,7 +697,7 @@ static string? TryGetRunsTemplate(JsonElement container, string richTextProperty
 
         if (run.TryGetProperty("emoji", out JsonElement emoji))
         {
-            string? shortcut = TryGetPathText(emoji, "shortcuts", "0");
+            string? shortcut = LogReader.TryGetPathText(emoji, "shortcuts", "0");
             tokens.Add(shortcut == null ? "<emoji>" : $"<emoji:{NormalizeText(shortcut)}>");
             continue;
         }
@@ -793,44 +719,6 @@ static string? TryGetRunsTemplate(JsonElement container, string richTextProperty
     }
 
     return $"{tokens.Count}:{string.Join('+', tokens)}";
-}
-
-static string? TryGetSimpleText(JsonElement container, string propertyName)
-{
-    return container.TryGetProperty(propertyName, out JsonElement value)
-        && value.TryGetProperty("simpleText", out JsonElement simpleText)
-        ? simpleText.GetString()
-        : null;
-}
-
-static string? TryGetPathText(JsonElement root, params string[] path)
-{
-    JsonElement current = root;
-    foreach (string segment in path)
-    {
-        if (current.ValueKind == JsonValueKind.Array)
-        {
-            if (!int.TryParse(segment, out int index))
-            {
-                return null;
-            }
-
-            if (index < 0 || index >= current.GetArrayLength())
-            {
-                return null;
-            }
-
-            current = current[index];
-            continue;
-        }
-
-        if (current.ValueKind != JsonValueKind.Object || !current.TryGetProperty(segment, out current))
-        {
-            return null;
-        }
-    }
-
-    return current.ValueKind == JsonValueKind.String ? current.GetString() : null;
 }
 
 static string NormalizeText(string value)
@@ -859,150 +747,6 @@ static void RecordVariant(
     }
 
     variantSamples[key] = json;
-}
-
-static string? GetActionType(JsonElement action)
-{
-    if (action.ValueKind != JsonValueKind.Object)
-    {
-        return null;
-    }
-
-    string? nonTrackingFallback = null;
-    foreach (JsonProperty property in action.EnumerateObject())
-    {
-        // Prefer an explicit Action/Command-suffixed key.
-        if (
-            property.Name.EndsWith("Action", StringComparison.Ordinal)
-            || property.Name.EndsWith("Command", StringComparison.Ordinal)
-        )
-        {
-            return property.Name;
-        }
-
-        // Track the first non-tracking property as a fallback so that a new top-level
-        // key that doesn't follow the Action/Command naming convention is still surfaced
-        // (e.g. a hypothetical future "liveChatGoalRenderer" at the top level).
-        if (property.Name != "clickTrackingParams")
-        {
-            nonTrackingFallback ??= property.Name;
-        }
-    }
-
-    // Return any non-tracking property we found so unknown structures are not silently dropped.
-    // Returns null only when the object is purely clickTrackingParams with no payload.
-    return nonTrackingFallback;
-}
-
-static List<JsonElement> ReadActionsFromLog(string path)
-{
-    List<JsonElement> actionsOut = [];
-
-    // JSONL format: one compact action JSON per line (produced by watch mode)
-    if (path.EndsWith(".jsonl", StringComparison.OrdinalIgnoreCase))
-    {
-        foreach (string line in File.ReadLines(path, Encoding.UTF8))
-        {
-            string trimmedLine = line.Trim();
-            if (string.IsNullOrWhiteSpace(trimmedLine))
-            {
-                continue;
-            }
-
-            using JsonDocument doc = JsonDocument.Parse(trimmedLine, new JsonDocumentOptions { AllowTrailingCommas = true });
-            foreach (JsonElement action in ExtractActions(doc.RootElement))
-            {
-                actionsOut.Add(action.Clone());
-            }
-        }
-
-        return actionsOut;
-    }
-
-    string json = File.ReadAllText(path, Encoding.UTF8);
-    if (string.IsNullOrWhiteSpace(json))
-    {
-        return actionsOut;
-    }
-
-    string trimmed = json.TrimStart();
-    if (trimmed.StartsWith('['))
-    {
-        using JsonDocument document = JsonDocument.Parse(json);
-        JsonElement root = document.RootElement;
-
-        if (root.ValueKind == JsonValueKind.Array)
-        {
-            foreach (JsonElement response in root.EnumerateArray())
-            {
-                foreach (JsonElement action in ExtractActions(response))
-                {
-                    actionsOut.Add(action.Clone());
-                }
-            }
-        }
-
-        return actionsOut;
-    }
-
-    byte[] utf8 = Encoding.UTF8.GetBytes(json);
-    Utf8JsonReader reader = new(utf8, new JsonReaderOptions { AllowTrailingCommas = true });
-    while (reader.Read())
-    {
-        if (reader.TokenType != JsonTokenType.StartObject)
-        {
-            continue;
-        }
-
-        using JsonDocument doc = JsonDocument.ParseValue(ref reader);
-        foreach (JsonElement action in ExtractActions(doc.RootElement))
-        {
-            actionsOut.Add(action.Clone());
-        }
-    }
-
-    return actionsOut;
-}
-
-static IEnumerable<JsonElement> ExtractActions(JsonElement response)
-{
-    // Normal InnerTube response path
-    if (
-        response.TryGetProperty("continuationContents", out JsonElement continuationContents)
-        && continuationContents.TryGetProperty("liveChatContinuation", out JsonElement liveChat)
-        && liveChat.TryGetProperty("actions", out JsonElement actions)
-        && actions.ValueKind == JsonValueKind.Array
-    )
-    {
-        foreach (JsonElement action in actions.EnumerateArray())
-        {
-            yield return action;
-        }
-
-        yield break;
-    }
-
-    // Direct action object — from watch mode JSONL capture files
-    if (response.ValueKind == JsonValueKind.Object && IsDirectAction(response))
-    {
-        yield return response;
-    }
-}
-
-static bool IsDirectAction(JsonElement element)
-{
-    foreach (JsonProperty prop in element.EnumerateObject())
-    {
-        if (
-            prop.Name.EndsWith("Action", StringComparison.Ordinal)
-            || prop.Name.EndsWith("Command", StringComparison.Ordinal)
-        )
-        {
-            return true;
-        }
-    }
-
-    return false;
 }
 
 static void PrintSorted(Dictionary<string, int> counts)

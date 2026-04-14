@@ -37,11 +37,16 @@ internal static class WatchMode
         "liveChatReportModerationStateCommand",
     };
 
-    // addChatItemAction item renderers the library explicitly skips (no ChatItem produced).
+    // addChatItemAction item renderers that produce no ChatItem but are handled by the library
+    // (either intentionally discarded or routed to a dedicated event).
+    // These are NOT unknown — filtering them avoids noise in the default capture mode.
     private static readonly HashSet<string> s_knownSkippedRendererTypes = new(StringComparer.Ordinal)
     {
+        // Intentionally discarded (pending message slot, no user-visible data).
         "liveChatPlaceholderItemRenderer",
+        // Fires EngagementMessageReceived (CommunityGuidelines, SubscribersOnly, PollResult).
         "liveChatViewerEngagementMessageRenderer",
+        // Mode-change notification (subscribers-only on/off) — no dedicated event yet.
         "liveChatModeChangeMessageRenderer",
     };
 
@@ -208,7 +213,7 @@ internal static class WatchMode
                     return;
                 }
 
-                if (!hasItem && s_knownSkippedActionTypes.Contains(actionType))
+                if (!hasItem && (s_knownSkippedActionTypes.Contains(actionType) || s_knownSkippedRendererTypes.Contains(rendererKey)))
                 {
                     reason = "known";
                 }
