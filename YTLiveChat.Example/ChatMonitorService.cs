@@ -686,6 +686,12 @@ internal class ChatMonitorService : IHostedService, IDisposable
             Console.Write(' ');
             Console.ForegroundColor = item.IsOwner ? ConsoleColor.Red : ConsoleColor.White;
             Console.Write(item.Author.Name);
+            if (!string.IsNullOrEmpty(item.Author.ChannelHandle))
+            {
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+                Console.Write($" ({item.Author.ChannelHandle})");
+            }
+
             Console.ResetColor();
             Console.Write(": ");
 
