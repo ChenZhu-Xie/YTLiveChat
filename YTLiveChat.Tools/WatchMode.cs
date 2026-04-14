@@ -16,26 +16,38 @@ using YTLiveChat.Services;
 /// </summary>
 internal static class WatchMode
 {
-    // Action types the library handles but which produce no ChatItem (intentionally silent).
-    // These are NOT unknown — filtering them avoids noise in the default capture mode.
-    private static readonly HashSet<string> s_knownSkippedActionTypes = new(StringComparer.Ordinal)
+    // Action types the library fully parses and routes to a dedicated public event,
+    // but which do NOT produce a ChatItem. These are NOT unknown.
+    // In default capture mode they are silently skipped (no capture).
+    // In --all-events mode they are captured and labeled "parsed".
+    private static readonly HashSet<string> s_parsedDedicatedEventActionTypes = new(StringComparer.Ordinal)
     {
-        "removeChatItemAction",
-        "replaceChatItemAction",
-        "removeChatItemByAuthorAction",
-        "markChatItemsByAuthorAsDeletedAction",
-        "changeEngagementPanelVisibilityAction",
-        "signalAction",
-        // Poll lifecycle — handled by PollStarted/PollUpdated/PollClosed events
-        "showLiveChatActionPanelAction",
-        "updateLiveChatPollAction",
-        "closeLiveChatActionPanelAction",
+        "removeChatItemAction",                  // → ChatItemDeleted
+        "replaceChatItemAction",                 // → ChatItemReplaced
+        "removeChatItemByAuthorAction",          // → ChatItemsDeletedByAuthor
+        "markChatItemsByAuthorAsDeletedAction",  // → ChatItemsDeletedByAuthor
+        "changeEngagementPanelVisibilityAction", // → EngagementMessageReceived
+        // Poll lifecycle
+        "showLiveChatActionPanelAction",         // → PollUpdated (new poll)
+        "updateLiveChatPollAction",              // → PollUpdated (vote update)
+        "closeLiveChatActionPanelAction",        // → PollClosed
         // Banner lifecycle
-        "addBannerToLiveChatCommand",
-        "removeBannerForLiveChatCommand",
-        // Moderation state
+        "addBannerToLiveChatCommand",            // → BannerAdded
+        "removeBannerForLiveChatCommand",        // → BannerRemoved
+    };
+
+    // Action types the library recognizes but intentionally discards with no public event.
+    // These carry no user-visible data. NOT unknown.
+    // In --all-events mode they are captured and labeled "known".
+    private static readonly HashSet<string> s_silentActionTypes = new(StringComparer.Ordinal)
+    {
+        "signalAction",
         "liveChatReportModerationStateCommand",
     };
+
+    // Combined set used to gate the default-mode "is this action unknown?" check.
+    private static readonly HashSet<string> s_knownSkippedActionTypes =
+        new(s_parsedDedicatedEventActionTypes.Concat(s_silentActionTypes), StringComparer.Ordinal);
 
     // addChatItemAction item renderers that produce no ChatItem but are handled by the library
     // (either intentionally discarded or routed to a dedicated event).
@@ -213,9 +225,12 @@ internal static class WatchMode
                     return;
                 }
 
-                reason = !hasItem && (s_knownSkippedActionTypes.Contains(actionType) || s_knownSkippedRendererTypes.Contains(rendererKey))
-                    ? "known"
-                    : hasMembership ? isUnknownMembership ? "unknown-membership" : "membership" : hasItem ? "parsed" : "unknown";
+                reason = !hasItem && s_parsedDedicatedEventActionTypes.Contains(actionType)
+                    ? "parsed"   // fires a dedicated public event (ChatItemDeleted, BannerAdded, PollUpdated, etc.)
+                    : !hasItem && (s_silentActionTypes.Contains(actionType) || s_knownSkippedRendererTypes.Contains(rendererKey))
+                    ? "known"    // recognized, intentionally discarded with no public event
+                    : hasMembership ? isUnknownMembership ? "unknown-membership" : "membership"
+                    : hasItem ? "parsed" : "unknown";
             }
             else
             {
@@ -545,8 +560,10 @@ internal static class WatchMode
         Console.WriteLine("  unknown-action     Unrecognized action or renderer — new event type, investigate.");
         Console.WriteLine("  unknown-membership Membership event with EventType=Unknown — unrecognized subtype.");
         Console.WriteLine("  membership         Known membership event (with --all-membership or --all-events).");
-        Console.WriteLine("  known              Known action type that doesn't produce a ChatItem (polls, banners, etc.).");
-        Console.WriteLine("  parsed             Any other successfully-parsed ChatItem (superchats, stickers, etc.).");
+        Console.WriteLine("  parsed             Fully parsed: fires a ChatItem or a dedicated public event");
+        Console.WriteLine("                     (superchats, deletions, replacements, polls, banners, etc.).");
+        Console.WriteLine("  known              Recognized but intentionally silent: no public event emitted");
+        Console.WriteLine("                     (signalAction, liveChatReportModerationStateCommand).");
         Console.WriteLine();
         Console.WriteLine("Output is a JSONL file (one raw action JSON per line) compatible with");
         Console.WriteLine("the log-analysis commands (--dump-renderer, --variants, etc.).");

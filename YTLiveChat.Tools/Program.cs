@@ -26,25 +26,43 @@ if (options.Paths.Count == 0)
 List<JsonElement> dumpedRenderers = [];
 List<JsonElement> dumpedActions = [];
 
-HashSet<string> knownActionTypes =
+// Parsed: produce ChatItems (ChatReceived)
+HashSet<string> chatItemActionTypes =
 [
     "addChatItemAction",
     "addLiveChatTickerItemAction",
-    "removeChatItemAction",
-    "replaceChatItemAction",
-    "removeChatItemByAuthorAction",
-    "markChatItemsByAuthorAsDeletedAction",
-    "changeEngagementPanelVisibilityAction",
-    "signalAction",
+];
+
+// Parsed: fire a dedicated public event (not a ChatItem)
+HashSet<string> parsedDedicatedEventActionTypes =
+[
+    "removeChatItemAction",                  // → ChatItemDeleted
+    "replaceChatItemAction",                 // → ChatItemReplaced
+    "removeChatItemByAuthorAction",          // → ChatItemsDeletedByAuthor
+    "markChatItemsByAuthorAsDeletedAction",  // → ChatItemsDeletedByAuthor
+    "changeEngagementPanelVisibilityAction", // → EngagementMessageReceived
     // Poll lifecycle
-    "showLiveChatActionPanelAction",
-    "updateLiveChatPollAction",
-    "closeLiveChatActionPanelAction",
-    // Pinned banners
-    "addBannerToLiveChatCommand",
-    "removeBannerForLiveChatCommand",
-    // Moderation state (no result data)
+    "showLiveChatActionPanelAction",         // → PollUpdated (new poll)
+    "updateLiveChatPollAction",              // → PollUpdated (vote update)
+    "closeLiveChatActionPanelAction",        // → PollClosed
+    // Banner lifecycle
+    "addBannerToLiveChatCommand",            // → BannerAdded
+    "removeBannerForLiveChatCommand",        // → BannerRemoved
+];
+
+// Known but intentionally silent: recognized by the library, no public event emitted
+HashSet<string> silentActionTypes =
+[
+    "signalAction",
     "liveChatReportModerationStateCommand",
+];
+
+// Combined set for "is this action known at all?" checks
+HashSet<string> knownActionTypes =
+[
+    .. chatItemActionTypes,
+    .. parsedDedicatedEventActionTypes,
+    .. silentActionTypes,
 ];
 
 HashSet<string> knownItemRenderers =
@@ -193,7 +211,35 @@ Console.WriteLine("== Ticker Nested showLiveChatItemEndpoint Renderers ==");
 PrintSorted(nestedRendererCounts);
 
 Console.WriteLine();
-Console.WriteLine("== Unknown Actions (vs known parser surface) ==");
+Console.WriteLine("== Parsed Actions (dedicated event, no ChatItem) ==");
+foreach (
+    KeyValuePair<string, int> kv in actionCounts
+        .OrderByDescending(x => x.Value)
+        .ThenBy(x => x.Key, StringComparer.Ordinal)
+)
+{
+    if (parsedDedicatedEventActionTypes.Contains(kv.Key))
+    {
+        Console.WriteLine($"{kv.Value,6}  {kv.Key}");
+    }
+}
+
+Console.WriteLine();
+Console.WriteLine("== Silent Actions (recognized, no public event) ==");
+foreach (
+    KeyValuePair<string, int> kv in actionCounts
+        .OrderByDescending(x => x.Value)
+        .ThenBy(x => x.Key, StringComparer.Ordinal)
+)
+{
+    if (silentActionTypes.Contains(kv.Key))
+    {
+        Console.WriteLine($"{kv.Value,6}  {kv.Key}");
+    }
+}
+
+Console.WriteLine();
+Console.WriteLine("== Unknown Actions (not in known parser surface) ==");
 foreach (
     KeyValuePair<string, int> kv in actionCounts
         .OrderByDescending(x => x.Value)
