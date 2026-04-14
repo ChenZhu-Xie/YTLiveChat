@@ -137,9 +137,10 @@ foreach (string path in options.Paths)
                 && tickerItem.ValueKind == JsonValueKind.Object
             )
             {
-                if (LogReader.TryGetSingleRenderer(tickerItem, out string? tickerRenderer, out _))
+                if (LogReader.TryGetSingleRenderer(tickerItem, out string? tickerRenderer, out JsonElement tickerOuterValue))
                 {
                     Increment(tickerRendererCounts, tickerRenderer!);
+                    TryDumpRenderer(tickerRenderer!, tickerOuterValue, options, dumpedRenderers);
                 }
 
                 if (

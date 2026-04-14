@@ -44,6 +44,10 @@ internal static class AnalyzeMode
                 "isV2Style",
                 "textInputBackgroundColor",
                 "leaderboardBadge",
+                // UI interaction widgets — server-rendered buttons, no data value for a read-only library
+                "creatorHeartButton",
+                "replyButton",
+                "pdgLikeButton",
             ],
             ["liveChatPaidStickerRenderer"] =
             [
@@ -64,6 +68,8 @@ internal static class AnalyzeMode
                 "headerPrimaryText",
                 "headerSubtext",
                 "message",
+                // Present (~3.7%) on milestone items with no message body
+                "empty",
             ],
             ["liveChatSponsorshipsGiftPurchaseAnnouncementRenderer"] =
             [
@@ -112,6 +118,10 @@ internal static class AnalyzeMode
                 "amountTextColor",
                 "durationSec",
                 "fullDurationSec",
+                // Animation / engagement tracking — UI-only, no data value for a read-only library
+                "animationOrigin",
+                "dynamicStateData",
+                "openEngagementPanelCommand",
             ],
             ["liveChatTickerSponsorItemRenderer"] =
             [
