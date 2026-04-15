@@ -692,6 +692,298 @@ internal static class ActionTestData
             }
             """;
 
+    /// <summary>
+    /// Poll open action from @OuroKronii: "for the wood" — "wall" vs "floor", 0 votes.
+    /// Real data from dump_poll_show.json (watch_20260415_060005.jsonl).
+    /// Poll ID: ChwKGkNKTzk4NUNiNzVNREZYWlFUQWdkT2U0VjVR
+    /// </summary>
+    public static string ShowPollAction_OuroKronii_WallVsFloor() => """
+            {
+              "clickTrackingParams": "CAEQl98BIhMIgdmNkpvvkwMV9thJBx2pkxN6ygEE75Nu3Q==",
+              "showLiveChatActionPanelAction": {
+                "panelToShow": {
+                  "liveChatActionPanelRenderer": {
+                    "contents": {
+                      "pollRenderer": {
+                        "choices": [
+                          {
+                            "text": { "runs": [{ "text": "wall" }] },
+                            "selected": false,
+                            "signinEndpoint": {
+                              "clickTrackingParams": "CAIQiK0HIhMIgdmNkpvvkwMV9thJBx2pkxN6ygEE75Nu3Q==",
+                              "commandMetadata": { "webCommandMetadata": { "url": "https://accounts.google.com/ServiceLogin?service=youtube\u0026uilel=3\u0026passive=true\u0026continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26app%3Ddesktop%26hl%3Den\u0026hl=en", "webPageType": "WEB_PAGE_TYPE_UNKNOWN", "rootVe": 83769 } },
+                              "signInEndpoint": { "nextEndpoint": { "clickTrackingParams": "CAIQiK0HIhMIgdmNkpvvkwMV9thJBx2pkxN6ygEE75Nu3Q==" } }
+                            }
+                          },
+                          {
+                            "text": { "runs": [{ "text": "floor" }] },
+                            "selected": false,
+                            "signinEndpoint": {
+                              "clickTrackingParams": "CAIQiK0HIhMIgdmNkpvvkwMV9thJBx2pkxN6ygEE75Nu3Q==",
+                              "commandMetadata": { "webCommandMetadata": { "url": "https://accounts.google.com/ServiceLogin?service=youtube\u0026uilel=3\u0026passive=true\u0026continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26app%3Ddesktop%26hl%3Den\u0026hl=en", "webPageType": "WEB_PAGE_TYPE_UNKNOWN", "rootVe": 83769 } },
+                              "signInEndpoint": { "nextEndpoint": { "clickTrackingParams": "CAIQiK0HIhMIgdmNkpvvkwMV9thJBx2pkxN6ygEE75Nu3Q==" } }
+                            }
+                          }
+                        ],
+                        "trackingParams": "CAIQiK0HIhMIgdmNkpvvkwMV9thJBx2pkxN6",
+                        "liveChatPollId": "ChwKGkNKTzk4NUNiNzVNREZYWlFUQWdkT2U0VjVR",
+                        "header": {
+                          "pollHeaderRenderer": {
+                            "pollQuestion": { "runs": [{ "text": "for the wood" }] },
+                            "thumbnail": {
+                              "thumbnails": [
+                                { "url": "https://yt4.ggpht.com/XxF6c2VtpdbRdLcldz5jp05FQY_JTfOXeVd8osfAZsxODIanpt0ymcn_6nitwydHNGek46cfZ04=s32-c-k-c0x00ffffff-no-rj", "width": 32, "height": 32 },
+                                { "url": "https://yt4.ggpht.com/XxF6c2VtpdbRdLcldz5jp05FQY_JTfOXeVd8osfAZsxODIanpt0ymcn_6nitwydHNGek46cfZ04=s64-c-k-c0x00ffffff-no-rj", "width": 64, "height": 64 }
+                              ]
+                            },
+                            "metadataText": {
+                              "runs": [
+                                { "text": "@OuroKronii" },
+                                { "text": " \u2022 " },
+                                { "text": "just now" },
+                                { "text": " \u2022 " },
+                                { "text": "0 votes" }
+                              ]
+                            },
+                            "liveChatPollType": "LIVE_CHAT_POLL_TYPE_CREATOR",
+                            "contextMenuButton": {
+                              "buttonRenderer": {
+                                "icon": { "iconType": "MORE_VERT" },
+                                "accessibility": { "label": "Chat actions" },
+                                "trackingParams": "CAMQ8FsiEwiB2Y2Sm--TAxX22EkHHamTE3o=",
+                                "accessibilityData": { "accessibilityData": { "label": "Chat actions" } },
+                                "targetId": "live-chat-action-panel-poll-context-menu",
+                                "command": {
+                                  "clickTrackingParams": "CAMQ8FsiEwiB2Y2Sm--TAxX22EkHHamTE3rKAQTvk27d",
+                                  "commandMetadata": { "webCommandMetadata": { "ignoreNavigation": true } },
+                                  "liveChatItemContextMenuEndpoint": { "params": "Q2g0S0hBb2FRMHBQT1RnMVEySTNOVTFFUmxoYVVWUkJaMlJQWlRSV05WRWFLU29uQ2hoVlEyMWljemhVTmsxWGNWVklVREYwU1ZGMlUyZExjbWNTQzNvMFFqZHJWSEJUWWxkaklBRW9CRElhQ2hoVlEyMWljemhVTmsxWGNWVklVREYwU1ZGMlUyZExjbWM0QTBnQVVCVSUzRA==" }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "id": "ChwKGkNKTzk4NUNiNzVNREZYWlFUQWdkT2U0VjVR",
+                    "targetId": "live-chat-action-panel"
+                  }
+                }
+              }
+            }
+            """;
+
+    /// <summary>
+    /// First updateLiveChatPollAction for the @OuroKronii "for the wood" poll: both choices at 0 votes.
+    /// Real data from dump_poll_updates.json entry 0 (watch_20260415_060005.jsonl).
+    /// </summary>
+    public static string UpdatePollAction_OuroKronii_ZeroVotes() => """
+            {
+              "updateLiveChatPollAction": {
+                "pollToUpdate": {
+                  "pollRenderer": {
+                    "choices": [
+                      {
+                        "text": { "runs": [{ "text": "wall" }] },
+                        "selected": false,
+                        "voteRatio": 0,
+                        "votePercentage": { "simpleText": "0%" },
+                        "signinEndpoint": { "commandMetadata": { "webCommandMetadata": { "url": "https://accounts.google.com/ServiceLogin?service=youtube\u0026uilel=3\u0026passive=true\u0026continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26app%3Ddesktop%26hl%3Den\u0026hl=en", "webPageType": "WEB_PAGE_TYPE_UNKNOWN", "rootVe": 83769 } }, "signInEndpoint": { "nextEndpoint": {} } }
+                      },
+                      {
+                        "text": { "runs": [{ "text": "floor" }] },
+                        "selected": false,
+                        "voteRatio": 0,
+                        "votePercentage": { "simpleText": "0%" },
+                        "signinEndpoint": { "commandMetadata": { "webCommandMetadata": { "url": "https://accounts.google.com/ServiceLogin?service=youtube\u0026uilel=3\u0026passive=true\u0026continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26app%3Ddesktop%26hl%3Den\u0026hl=en", "webPageType": "WEB_PAGE_TYPE_UNKNOWN", "rootVe": 83769 } }, "signInEndpoint": { "nextEndpoint": {} } }
+                      }
+                    ],
+                    "liveChatPollId": "ChwKGkNKTzk4NUNiNzVNREZYWlFUQWdkT2U0VjVR",
+                    "header": {
+                      "pollHeaderRenderer": {
+                        "pollQuestion": { "runs": [{ "text": "for the wood" }] },
+                        "thumbnail": {
+                          "thumbnails": [
+                            { "url": "https://yt4.ggpht.com/XxF6c2VtpdbRdLcldz5jp05FQY_JTfOXeVd8osfAZsxODIanpt0ymcn_6nitwydHNGek46cfZ04=s32-c-k-c0x00ffffff-no-rj", "width": 32, "height": 32 },
+                            { "url": "https://yt4.ggpht.com/XxF6c2VtpdbRdLcldz5jp05FQY_JTfOXeVd8osfAZsxODIanpt0ymcn_6nitwydHNGek46cfZ04=s64-c-k-c0x00ffffff-no-rj", "width": 64, "height": 64 }
+                          ]
+                        },
+                        "metadataText": {
+                          "runs": [
+                            { "text": "@OuroKronii" },
+                            { "text": " \u2022 " },
+                            { "text": "just now" },
+                            { "text": " \u2022 " },
+                            { "text": "0 votes" }
+                          ]
+                        },
+                        "liveChatPollType": "LIVE_CHAT_POLL_TYPE_CREATOR"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            """;
+
+    /// <summary>
+    /// Mid-poll updateLiveChatPollAction for @OuroKronii: wall 45% vs floor 55%, 1301 votes, "10 min ago".
+    /// Real data from dump_poll_updates.json ~entry 600 (watch_20260415_060005.jsonl).
+    /// </summary>
+    public static string UpdatePollAction_OuroKronii_MidPoll_Wall45_Floor55() => """
+            {
+              "updateLiveChatPollAction": {
+                "pollToUpdate": {
+                  "pollRenderer": {
+                    "choices": [
+                      {
+                        "text": { "runs": [{ "text": "wall" }] },
+                        "selected": false,
+                        "voteRatio": 0.45475459098815918,
+                        "votePercentage": { "simpleText": "45%" },
+                        "signinEndpoint": { "commandMetadata": { "webCommandMetadata": { "url": "https://accounts.google.com/ServiceLogin?service=youtube\u0026uilel=3\u0026passive=true\u0026continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26app%3Ddesktop%26hl%3Den\u0026hl=en", "webPageType": "WEB_PAGE_TYPE_UNKNOWN", "rootVe": 83769 } }, "signInEndpoint": { "nextEndpoint": {} } }
+                      },
+                      {
+                        "text": { "runs": [{ "text": "floor" }] },
+                        "selected": false,
+                        "voteRatio": 0.54524540901184082,
+                        "votePercentage": { "simpleText": "55%" },
+                        "signinEndpoint": { "commandMetadata": { "webCommandMetadata": { "url": "https://accounts.google.com/ServiceLogin?service=youtube\u0026uilel=3\u0026passive=true\u0026continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26app%3Ddesktop%26hl%3Den\u0026hl=en", "webPageType": "WEB_PAGE_TYPE_UNKNOWN", "rootVe": 83769 } }, "signInEndpoint": { "nextEndpoint": {} } }
+                      }
+                    ],
+                    "liveChatPollId": "ChwKGkNKTzk4NUNiNzVNREZYWlFUQWdkT2U0VjVR",
+                    "header": {
+                      "pollHeaderRenderer": {
+                        "pollQuestion": { "runs": [{ "text": "for the wood" }] },
+                        "thumbnail": {
+                          "thumbnails": [
+                            { "url": "https://yt4.ggpht.com/XxF6c2VtpdbRdLcldz5jp05FQY_JTfOXeVd8osfAZsxODIanpt0ymcn_6nitwydHNGek46cfZ04=s32-c-k-c0x00ffffff-no-rj", "width": 32, "height": 32 },
+                            { "url": "https://yt4.ggpht.com/XxF6c2VtpdbRdLcldz5jp05FQY_JTfOXeVd8osfAZsxODIanpt0ymcn_6nitwydHNGek46cfZ04=s64-c-k-c0x00ffffff-no-rj", "width": 64, "height": 64 }
+                          ]
+                        },
+                        "metadataText": {
+                          "runs": [
+                            { "text": "@OuroKronii" },
+                            { "text": " \u2022 " },
+                            { "text": "10\u00A0min ago" },
+                            { "text": " \u2022 " },
+                            { "text": "1,301 votes" }
+                          ]
+                        },
+                        "liveChatPollType": "LIVE_CHAT_POLL_TYPE_CREATOR"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            """;
+
+    /// <summary>
+    /// Final updateLiveChatPollAction for @OuroKronii: wall 47% vs floor 53%, 1972 votes, "20 min ago".
+    /// Real data from dump_poll_updates.json last entry (watch_20260415_060005.jsonl).
+    /// </summary>
+    public static string UpdatePollAction_OuroKronii_FinalResult_Wall47_Floor53() => """
+            {
+              "updateLiveChatPollAction": {
+                "pollToUpdate": {
+                  "pollRenderer": {
+                    "choices": [
+                      {
+                        "text": { "runs": [{ "text": "wall" }] },
+                        "selected": false,
+                        "voteRatio": 0.46805274486541748,
+                        "votePercentage": { "simpleText": "47%" },
+                        "signinEndpoint": { "commandMetadata": { "webCommandMetadata": { "url": "https://accounts.google.com/ServiceLogin?service=youtube\u0026uilel=3\u0026passive=true\u0026continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26app%3Ddesktop%26hl%3Den\u0026hl=en", "webPageType": "WEB_PAGE_TYPE_UNKNOWN", "rootVe": 83769 } }, "signInEndpoint": { "nextEndpoint": {} } }
+                      },
+                      {
+                        "text": { "runs": [{ "text": "floor" }] },
+                        "selected": false,
+                        "voteRatio": 0.53194725513458252,
+                        "votePercentage": { "simpleText": "53%" },
+                        "signinEndpoint": { "commandMetadata": { "webCommandMetadata": { "url": "https://accounts.google.com/ServiceLogin?service=youtube\u0026uilel=3\u0026passive=true\u0026continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26app%3Ddesktop%26hl%3Den\u0026hl=en", "webPageType": "WEB_PAGE_TYPE_UNKNOWN", "rootVe": 83769 } }, "signInEndpoint": { "nextEndpoint": {} } }
+                      }
+                    ],
+                    "liveChatPollId": "ChwKGkNKTzk4NUNiNzVNREZYWlFUQWdkT2U0VjVR",
+                    "header": {
+                      "pollHeaderRenderer": {
+                        "pollQuestion": { "runs": [{ "text": "for the wood" }] },
+                        "thumbnail": {
+                          "thumbnails": [
+                            { "url": "https://yt4.ggpht.com/XxF6c2VtpdbRdLcldz5jp05FQY_JTfOXeVd8osfAZsxODIanpt0ymcn_6nitwydHNGek46cfZ04=s32-c-k-c0x00ffffff-no-rj", "width": 32, "height": 32 },
+                            { "url": "https://yt4.ggpht.com/XxF6c2VtpdbRdLcldz5jp05FQY_JTfOXeVd8osfAZsxODIanpt0ymcn_6nitwydHNGek46cfZ04=s64-c-k-c0x00ffffff-no-rj", "width": 64, "height": 64 }
+                          ]
+                        },
+                        "metadataText": {
+                          "runs": [
+                            { "text": "@OuroKronii" },
+                            { "text": " \u2022 " },
+                            { "text": "20\u00A0min ago" },
+                            { "text": " \u2022 " },
+                            { "text": "1,972 votes" }
+                          ]
+                        },
+                        "liveChatPollType": "LIVE_CHAT_POLL_TYPE_CREATOR"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            """;
+
+    /// <summary>
+    /// closeLiveChatActionPanelAction for the @OuroKronii "for the wood" poll.
+    /// Includes skipOnDismissCommand: true, observed when closing a creator poll panel.
+    /// Real data from dump_poll_close.json (watch_20260415_060005.jsonl).
+    /// </summary>
+    public static string ClosePollPanel_OuroKronii() => """
+            {
+              "closeLiveChatActionPanelAction": {
+                "targetPanelId": "ChwKGkNKTzk4NUNiNzVNREZYWlFUQWdkT2U0VjVR",
+                "skipOnDismissCommand": true
+              }
+            }
+            """;
+
+    /// <summary>
+    /// Poll result summary as a liveChatViewerEngagementMessageRenderer (POLL icon, bold question text).
+    /// "for the wood" — floor 53%, wall 47% — Poll complete: 1.9K votes.
+    /// Real data from dump_poll_engagement.json (watch_20260415_060005.jsonl).
+    /// </summary>
+    public static string ViewerEngagementPollResult_OuroKronii_WallVsFloor() => """
+            {
+              "addChatItemAction": {
+                "item": {
+                  "liveChatViewerEngagementMessageRenderer": {
+                    "id": "ChwKGkNKelhuTldmNzVNREZaZHhUQWdkY0JZeDZR",
+                    "icon": {
+                      "iconType": "POLL"
+                    },
+                    "message": {
+                      "runs": [
+                        { "text": "for the wood", "bold": true },
+                        { "text": "\n" },
+                        { "text": "floor (53%)" },
+                        { "text": "\n" },
+                        { "text": "wall (47%)" },
+                        { "text": "\n" },
+                        { "text": "\n" },
+                        { "text": "Poll complete: 1.9K votes" }
+                      ]
+                    },
+                    "contextMenuEndpoint": {
+                      "commandMetadata": { "webCommandMetadata": { "ignoreNavigation": true } },
+                      "liveChatItemContextMenuEndpoint": { "params": "Q2g0S0hBb2FRMHA2V0c1T1YyWTNOVTFFUmxwa2VGUkJaMlJqUWxsNE5sRWFLU29uQ2hoVlEyMWljemhVTmsxWGNWVklVREYwU1ZGMlUyZExjbWNTQzNvMFFqZHJWSEJUWWxkaklBRW9CRElhQ2hoVlEyMWljemhVTmsxWGNWVklVREYwU1ZGMlUyZExjbWM0QWtnQVVCWSUzRA==" }
+                    },
+                    "contextMenuAccessibility": {
+                      "accessibilityData": { "label": "Chat actions" }
+                    }
+                  }
+                }
+              }
+            }
+            """;
+
     public static string RemoveChatItemByAuthor() => """
             {
               "removeChatItemByAuthorAction": {

@@ -1408,6 +1408,86 @@ public class ParserTests
     }
 
     [TestMethod]
+    public void ToPollItem_ShowPollAction_OuroKronii_IsNewWithQuestionAndZeroVotes()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.ShowPollAction_OuroKronii_WallVsFloor(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+
+        PollItem? poll = Parser.ToPollItem(action);
+
+        Assert.IsNotNull(poll);
+        Assert.AreEqual("ChwKGkNKTzk4NUNiNzVNREZYWlFUQWdkT2U0VjVR", poll.PollId);
+        Assert.IsTrue(poll.IsNew, "showLiveChatActionPanelAction should be marked IsNew.");
+        Assert.AreEqual("for the wood", poll.Question);
+        Assert.AreEqual("@OuroKronii", poll.CreatorHandle);
+        Assert.AreEqual(0, poll.TotalVotes);
+        Assert.AreEqual(2, poll.Choices.Count);
+        Assert.AreEqual("wall", poll.Choices[0].Text);
+        Assert.AreEqual("floor", poll.Choices[1].Text);
+    }
+
+    [TestMethod]
+    public void ToPollItem_UpdatePollAction_OuroKronii_ZeroVotes_AllChoicesAtZeroRatio()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.UpdatePollAction_OuroKronii_ZeroVotes(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+
+        PollItem? poll = Parser.ToPollItem(action);
+
+        Assert.IsNotNull(poll);
+        Assert.AreEqual("ChwKGkNKTzk4NUNiNzVNREZYWlFUQWdkT2U0VjVR", poll.PollId);
+        Assert.IsFalse(poll.IsNew, "updateLiveChatPollAction should not be marked IsNew.");
+        Assert.AreEqual("for the wood", poll.Question);
+        Assert.AreEqual(0, poll.TotalVotes);
+        Assert.AreEqual(0.0, poll.Choices[0].VoteRatio, 0.001);
+        Assert.AreEqual(0.0, poll.Choices[1].VoteRatio, 0.001);
+    }
+
+    [TestMethod]
+    public void ToPollItem_UpdatePollAction_OuroKronii_MidPoll_ParsesVoteRatiosAndTotalVotes()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.UpdatePollAction_OuroKronii_MidPoll_Wall45_Floor55(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+
+        PollItem? poll = Parser.ToPollItem(action);
+
+        Assert.IsNotNull(poll);
+        Assert.AreEqual("ChwKGkNKTzk4NUNiNzVNREZYWlFUQWdkT2U0VjVR", poll.PollId);
+        Assert.IsFalse(poll.IsNew);
+        Assert.AreEqual(1301, poll.TotalVotes);
+        Assert.AreEqual(0.4547, poll.Choices[0].VoteRatio, 0.001, "wall should be ~45%.");
+        Assert.AreEqual(0.5452, poll.Choices[1].VoteRatio, 0.001, "floor should be ~55%.");
+    }
+
+    [TestMethod]
+    public void ToPollItem_UpdatePollAction_OuroKronii_FinalResult_ParsesFinalVoteCounts()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.UpdatePollAction_OuroKronii_FinalResult_Wall47_Floor53(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+
+        PollItem? poll = Parser.ToPollItem(action);
+
+        Assert.IsNotNull(poll);
+        Assert.AreEqual("ChwKGkNKTzk4NUNiNzVNREZYWlFUQWdkT2U0VjVR", poll.PollId);
+        Assert.IsFalse(poll.IsNew);
+        Assert.AreEqual(1972, poll.TotalVotes);
+        Assert.AreEqual(0.4680, poll.Choices[0].VoteRatio, 0.001, "wall should be ~47%.");
+        Assert.AreEqual(0.5319, poll.Choices[1].VoteRatio, 0.001, "floor should be ~53%.");
+    }
+
+    [TestMethod]
     public void ToPollItem_UnrelatedAction_ReturnsNull()
     {
         Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
@@ -1632,6 +1712,20 @@ public class ParserTests
     }
 
     [TestMethod]
+    public void ToClosedPollId_OuroKronii_WithSkipDismissCommand_ReturnsCorrectPollId()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.ClosePollPanel_OuroKronii(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+
+        string? pollId = Parser.ToClosedPollId(action);
+
+        Assert.AreEqual("ChwKGkNKTzk4NUNiNzVNREZYWlFUQWdkT2U0VjVR", pollId);
+    }
+
+    [TestMethod]
     public void ToClosedPollId_UnrelatedAction_ReturnsNull()
     {
         Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
@@ -1795,6 +1889,27 @@ public class ParserTests
         Assert.IsNull(item.LearnMoreUrl);
         StringAssert.Contains(item.Message, "Poll complete");
         StringAssert.Contains(item.Message, "DIG (70%)");
+    }
+
+    [TestMethod]
+    public void ToEngagementItem_PollResult_OuroKronii_ParsesBoldQuestionAndResults()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.ViewerEngagementPollResult_OuroKronii_WallVsFloor(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+
+        EngagementItem? item = Parser.ToEngagementItem(action);
+
+        Assert.IsNotNull(item);
+        Assert.AreEqual("ChwKGkNKelhuTldmNzVNREZaZHhUQWdkY0JZeDZR", item.Id);
+        Assert.AreEqual(EngagementMessageType.PollResult, item.MessageType);
+        Assert.AreEqual(8, item.MessageParts.Length, "Bold question + newline + 2 result lines + 2 newlines + summary = 8 parts.");
+        Assert.IsNull(item.LearnMoreUrl);
+        StringAssert.Contains(item.Message, "Poll complete: 1.9K votes");
+        StringAssert.Contains(item.Message, "floor (53%)");
+        StringAssert.Contains(item.Message, "for the wood");
     }
 
     [TestMethod]

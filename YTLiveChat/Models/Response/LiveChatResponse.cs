@@ -890,6 +890,12 @@ public record CloseLiveChatActionPanelAction
 {
     [JsonPropertyName("targetPanelId")]
     public string? TargetPanelId { get; init; }
+
+    /// <summary>
+    /// When true the panel should not fire its dismiss command on close (observed on poll close).
+    /// </summary>
+    [JsonPropertyName("skipOnDismissCommand")]
+    public bool SkipOnDismissCommand { get; init; }
 }
 
 // =============================================
