@@ -440,7 +440,15 @@ internal class ChatMonitorService : IHostedService, IDisposable
 
             if (e.Banner is CrossChannelRedirectBannerItem redirect)
             {
-                WriteTag("REDIRECT", ConsoleColor.Magenta);
+                // StreamRedirect = stream ended, owner is sending viewers to another live ("Go now")
+                // SquadJoin = another channel's viewers joined via Squad streaming ("Learn more")
+                string redirectLabel = redirect.RedirectType switch
+                {
+                    CrossChannelRedirectType.StreamRedirect => "STREAM-REDIRECT",
+                    CrossChannelRedirectType.SquadJoin => "SQUAD-JOIN",
+                    _ => "REDIRECT",
+                };
+                WriteTag(redirectLabel, ConsoleColor.Magenta);
                 Console.Write(' ');
                 Console.ForegroundColor = ConsoleColor.Cyan;
                 Console.Write(redirect.RedirectChannelHandle);

@@ -614,6 +614,63 @@ internal static class ActionTestData
             }
             """;
 
+    /// <summary>
+    /// Cross-channel redirect banner from @usadapekora ("Go now" / stream-ending redirect variant).
+    /// Real data from dump_banners_20260415.json.
+    /// Banner type: LIVE_CHAT_BANNER_TYPE_CROSS_CHANNEL_REDIRECT
+    /// actionId: ChwKGkNMdk96OG55NzVNREZYYkNsQWtkNFVVRndB
+    /// </summary>
+    public static string AddBannerRedirectGoNow_UsadaPekora() => """
+            {
+              "addBannerToLiveChatCommand": {
+                "bannerRenderer": {
+                  "liveChatBannerRenderer": {
+                    "contents": {
+                      "liveChatBannerRedirectRenderer": {
+                        "bannerMessage": {
+                          "runs": [
+                            { "text": "Don't miss out! People are going to watch something from ", "fontFace": "FONT_FACE_ROBOTO_REGULAR" },
+                            { "text": "@usadapekora", "bold": true, "fontFace": "FONT_FACE_ROBOTO_REGULAR" }
+                          ]
+                        },
+                        "authorPhoto": {
+                          "thumbnails": [
+                            { "url": "https://yt4.ggpht.com/B-5Iau5CJVDiUOeCvCzHiwdkUijqoi2n0tNwfgIv_yDAvMbLHS4vq1IvK2RxL8y69BxTwmPhow=s32-c-k-c0x00ffffff-no-rj", "width": 32, "height": 32 },
+                            { "url": "https://yt4.ggpht.com/B-5Iau5CJVDiUOeCvCzHiwdkUijqoi2n0tNwfgIv_yDAvMbLHS4vq1IvK2RxL8y69BxTwmPhow=s64-c-k-c0x00ffffff-no-rj", "width": 64, "height": 64 }
+                          ]
+                        },
+                        "inlineActionButton": {
+                          "buttonRenderer": {
+                            "style": "STYLE_DEFAULT",
+                            "size": "SIZE_DEFAULT",
+                            "isDisabled": false,
+                            "text": { "runs": [{ "text": "Go now" }] },
+                            "command": {
+                              "commandMetadata": {
+                                "webCommandMetadata": {
+                                  "url": "/watch?v=AFcfu7GuxVs",
+                                  "webPageType": "WEB_PAGE_TYPE_WATCH",
+                                  "rootVe": 3832
+                                }
+                              },
+                              "watchEndpoint": {
+                                "videoId": "AFcfu7GuxVs"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "actionId": "ChwKGkNMdk96OG55NzVNREZYYkNsQWtkNFVVRndB",
+                    "targetId": "live-chat-banner",
+                    "isStackable": true,
+                    "bannerType": "LIVE_CHAT_BANNER_TYPE_CROSS_CHANNEL_REDIRECT"
+                  }
+                }
+              }
+            }
+            """;
+
     public static string RemoveChatItem() => """
             {
               "removeChatItemAction": {

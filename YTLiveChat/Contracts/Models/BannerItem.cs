@@ -117,50 +117,90 @@ public sealed class ChatSummaryBannerItem : BannerItem
 }
 
 /// <summary>
-/// A cross-channel stream redirect banner (<c>LIVE_CHAT_BANNER_TYPE_CROSS_CHANNEL_REDIRECT</c>).
-/// Shown when a stream ends and viewers are prompted to follow along to another live stream,
-/// or when another channel's viewers join via Squad streaming.
-/// <para>
-/// When a direct video destination is available (the "Go now" button variant), both
-/// <see cref="RedirectChannelHandle"/> and <see cref="RedirectVideoId"/> are populated and you
-/// can start a new <c>IYTLiveChat</c> session with <see cref="RedirectVideoId"/> or
-/// <see cref="RedirectChannelHandle"/> immediately.
-/// </para>
-/// <para>
-/// When only a "Learn more" link is available (Squad streaming join notification),
-/// <see cref="RedirectVideoId"/> is null. Use <see cref="RedirectChannelHandle"/> to
-/// look up the channel's current livestream separately.
-/// </para>
+/// Discriminates the two observed variants of a
+/// <see cref="CrossChannelRedirectBannerItem"/>.
+/// </summary>
+public enum CrossChannelRedirectType
+{
+    /// <summary>Unrecognised or future variant.</summary>
+    Unknown = 0,
+
+    /// <summary>
+    /// The current stream ended and the channel owner is redirecting viewers to another
+    /// live stream ("Don't miss out! People are going to watch something from @Handle").
+    /// The button is "Go now" (<c>watchEndpoint</c>); <see cref="CrossChannelRedirectBannerItem.RedirectVideoId"/>
+    /// is always non-null for this variant.
+    /// </summary>
+    StreamRedirect = 1,
+
+    /// <summary>
+    /// Another channel's viewers joined this stream via Squad streaming
+    /// ("@Handle and their viewers just joined. Say hello!").
+    /// The button is "Learn more" (<c>urlEndpoint</c>); <see cref="CrossChannelRedirectBannerItem.RedirectVideoId"/>
+    /// is always null for this variant.
+    /// </summary>
+    SquadJoin = 2,
+}
+
+/// <summary>
+/// A cross-channel redirect banner (<c>LIVE_CHAT_BANNER_TYPE_CROSS_CHANNEL_REDIRECT</c>).
+/// Two distinct variants exist — check <see cref="RedirectType"/> to tell them apart:
+/// <list type="bullet">
+///   <item>
+///     <description>
+///       <see cref="CrossChannelRedirectType.StreamRedirect"/> — the stream ended and the channel
+///       owner is sending viewers away to another live stream ("Don't miss out!…"). The "Go now"
+///       button carries a direct <c>watchEndpoint</c>; <see cref="RedirectVideoId"/> is non-null.
+///       Pass it to <c>IYTLiveChat.Start(liveId: ...)</c> to follow immediately.
+///     </description>
+///   </item>
+///   <item>
+///     <description>
+///       <see cref="CrossChannelRedirectType.SquadJoin"/> — another channel's viewers joined this
+///       stream via Squad streaming ("@Handle and their viewers just joined. Say hello!"). The
+///       "Learn more" button links to a support page; <see cref="RedirectVideoId"/> is null.
+///       Use <see cref="RedirectChannelHandle"/> with <c>Start(handle: ...)</c> to connect to
+///       that channel's current stream separately.
+///     </description>
+///   </item>
+/// </list>
 /// </summary>
 public sealed class CrossChannelRedirectBannerItem : BannerItem
 {
     /// <summary>
-    /// The @handle of the channel being redirected to (e.g. <c>"@TakanashiKiara"</c>).
+    /// Whether this is a stream-ending owner redirect or a Squad streaming join notification.
+    /// Use this instead of null-checking <see cref="RedirectVideoId"/> to branch on intent.
+    /// </summary>
+    public CrossChannelRedirectType RedirectType { get; set; }
+
+    /// <summary>
+    /// The @handle of the channel involved (e.g. <c>"@TakanashiKiara"</c>).
     /// Extracted from the bold text run in the banner message.
-    /// Pass directly to <c>IYTLiveChat.Start(handle: ...)</c> to follow the redirect.
+    /// For <see cref="CrossChannelRedirectType.StreamRedirect"/>, pass to
+    /// <c>IYTLiveChat.Start(handle: ...)</c> as an alternative to <see cref="RedirectVideoId"/>.
+    /// For <see cref="CrossChannelRedirectType.SquadJoin"/>, use it to look up that channel's
+    /// current livestream via <c>Start(handle: ...)</c>.
     /// </summary>
     public required string RedirectChannelHandle { get; set; }
 
     /// <summary>
-    /// The video ID of the destination livestream, or <see langword="null"/> when no specific
-    /// video is indicated (e.g. Squad streaming join notifications show only a "Learn more" link).
-    /// <para>
-    /// When non-null, pass to <c>IYTLiveChat.Start(liveId: ...)</c> to connect directly.
-    /// When null, use <see cref="RedirectChannelHandle"/> with <c>Start(handle: ...)</c> instead.
-    /// </para>
+    /// The video ID of the destination livestream.
+    /// Non-null only for <see cref="CrossChannelRedirectType.StreamRedirect"/> ("Go now" button).
+    /// Null for <see cref="CrossChannelRedirectType.SquadJoin"/> ("Learn more" button).
+    /// Pass to <c>IYTLiveChat.Start(liveId: ...)</c> to connect directly when non-null.
     /// </summary>
     public string? RedirectVideoId { get; set; }
 
     /// <summary>
-    /// Thumbnail image of the redirected channel's profile photo.
+    /// Thumbnail image of the other channel's profile photo.
     /// </summary>
     public ImagePart? ChannelPhoto { get; set; }
 
     /// <summary>
     /// The full banner message as structured parts, e.g.:
     /// <list type="bullet">
-    ///   <item><description>"Don't miss out! People are going to watch something from " + "@TakanashiKiara" (bold)</description></item>
-    ///   <item><description>"@holoen_ceciliaimmergreen" (bold) + " and their viewers just joined. Say hello!"</description></item>
+    ///   <item><description><see cref="CrossChannelRedirectType.StreamRedirect"/>: "Don't miss out! People are going to watch something from " + "@TakanashiKiara" (bold)</description></item>
+    ///   <item><description><see cref="CrossChannelRedirectType.SquadJoin"/>: "@holoen_ceciliaimmergreen" (bold) + " and their viewers just joined. Say hello!"</description></item>
     /// </list>
     /// Concatenate <see cref="TextPart.Text"/> values for a plain-text summary.
     /// </summary>

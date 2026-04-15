@@ -1593,6 +1593,7 @@ public class ParserTests
 
         Assert.AreEqual("ChwKGkNKLW1yNjd4NkpNREZhRE5GZ2tkVUFNWUNn", redirect.ActionId);
         Assert.AreEqual(BannerType.CrossChannelRedirect, redirect.BannerType);
+        Assert.AreEqual(CrossChannelRedirectType.StreamRedirect, redirect.RedirectType);
         Assert.AreEqual("@TakanashiKiara", redirect.RedirectChannelHandle);
         Assert.AreEqual("OcULALBAXRA", redirect.RedirectVideoId);
         Assert.IsNotNull(redirect.ChannelPhoto, "Redirect banner should have a ChannelPhoto.");
@@ -1616,6 +1617,7 @@ public class ParserTests
 
         Assert.AreEqual("ChwKGkNPNzM0NEdnNlpNREZUUFFsQWtkM25ZN3NR", redirect.ActionId);
         Assert.AreEqual(BannerType.CrossChannelRedirect, redirect.BannerType);
+        Assert.AreEqual(CrossChannelRedirectType.SquadJoin, redirect.RedirectType);
         Assert.AreEqual("@holoen_ceciliaimmergreen", redirect.RedirectChannelHandle);
         Assert.IsNull(redirect.RedirectVideoId, "Learn-more redirect should have no RedirectVideoId.");
         Assert.IsNotNull(redirect.ChannelPhoto, "Learn-more redirect banner should have a ChannelPhoto.");
@@ -1716,10 +1718,38 @@ public class ParserTests
 
         Assert.AreEqual("ChwKGkNPdjN0b1g0N1pNREZmWENsQWtkaFVveU1B", redirect.ActionId);
         Assert.AreEqual(BannerType.CrossChannelRedirect, redirect.BannerType);
+        Assert.AreEqual(CrossChannelRedirectType.SquadJoin, redirect.RedirectType);
         Assert.AreEqual("@KureijiOllie", redirect.RedirectChannelHandle);
         Assert.IsNull(redirect.RedirectVideoId, "Learn-more variant should have no video ID.");
         Assert.IsNotNull(redirect.ChannelPhoto, "Should have a channel photo.");
         Assert.AreEqual(2, redirect.BannerMessage.Length, "Banner message should have 2 parts.");
+    }
+
+    [TestMethod]
+    public void ToBannerItem_RedirectGoNow_UsadaPekora_ParsesStreamRedirectTypeAndVideoId()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.AddBannerRedirectGoNow_UsadaPekora(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+
+        BannerItem? banner = Parser.ToBannerItem(action);
+
+        Assert.IsNotNull(banner);
+        _ = Assert.IsInstanceOfType<CrossChannelRedirectBannerItem>(banner);
+        CrossChannelRedirectBannerItem redirect = (CrossChannelRedirectBannerItem)banner;
+
+        Assert.AreEqual("ChwKGkNMdk96OG55NzVNREZYYkNsQWtkNFVVRndB", redirect.ActionId);
+        Assert.AreEqual(BannerType.CrossChannelRedirect, redirect.BannerType);
+        Assert.AreEqual(CrossChannelRedirectType.StreamRedirect, redirect.RedirectType, "watchEndpoint button should map to StreamRedirect.");
+        Assert.AreEqual("@usadapekora", redirect.RedirectChannelHandle);
+        Assert.AreEqual("AFcfu7GuxVs", redirect.RedirectVideoId, "Go-now redirect should carry a video ID.");
+        Assert.IsNotNull(redirect.ChannelPhoto, "Should have a channel photo.");
+        Assert.AreEqual(2, redirect.BannerMessage.Length, "Banner message should have 2 parts (prefix text + bold handle).");
+        TextPart? handlePart = redirect.BannerMessage.OfType<TextPart>().FirstOrDefault(p => p.Bold);
+        Assert.IsNotNull(handlePart, "The @handle run should be marked bold.");
+        Assert.AreEqual("@usadapekora", handlePart.Text);
     }
 
     [TestMethod]
