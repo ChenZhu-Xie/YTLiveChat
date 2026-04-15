@@ -49,6 +49,12 @@ builder.Services.Configure<YTLiveChat.Contracts.YTLiveChatOptions>(options => {
 
 var app = builder.Build();
 
+var jsonOptions = new JsonSerializerOptions
+{
+    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    WriteIndented = false
+};
+
 app.UseWebSockets();
 app.UseDefaultFiles(); // 修复 404：允许访问根目录加载 index.html
 app.UseStaticFiles();
@@ -91,13 +97,21 @@ chatService.ChatReceived += async (sender, e) =>
         id = e.ChatItem.Id,
         author = authorName,
         text = messageText,
+        parts = e.ChatItem.Message.Select(p => p switch
+        {
+            YTLiveChat.Contracts.Models.TextPart tp => (object)new { type = "text", text = tp.Text },
+            YTLiveChat.Contracts.Models.EmojiPart ep => new { type = "emoji", url = ep.Url, emojiText = ep.EmojiText },
+            YTLiveChat.Contracts.Models.ImagePart ip => new { type = "image", url = ip.Url, alt = ip.Alt },
+            _ => new { type = "unknown" }
+        }),
         isSuperChat = e.ChatItem.Superchat != null,
         amount = e.ChatItem.Superchat?.AmountString,
         isMembership = e.ChatItem.IsMembership,
-        avatar = e.ChatItem.Author.Thumbnail?.Url
+        avatar = e.ChatItem.Author.Thumbnail?.Url,
+        sticker = e.ChatItem.Superchat?.Sticker?.Url
     };
 
-    var json = JsonSerializer.Serialize(message);
+    var json = JsonSerializer.Serialize(message, jsonOptions);
     
     // 更新历史记录
     messageHistory.Enqueue(json);
@@ -167,14 +181,21 @@ app.Map("/ws", async context =>
 
 app.MapGet("/test", async () => {
     var testMsg = new {
+        id = Guid.NewGuid().ToString(),
         author = "测试用户",
-        text = "OBS 链路正常！等待 @xczphysics 开播...",
+        text = "OBS 链路正常！测试 emoji: [:heart:] 和 Super Sticker",
+        parts = new object[] {
+            new { type = "text", text = "OBS 链路正常！测试 emoji: " },
+            new { type = "emoji", url = "https://yt3.ggpht.com/8LAn6mE6S-C-6oXn-M-8-8X-8-8X-8-8X-8-8X-8-8X-8-8X-8-8X-8-8X-8-8X-8-8X-8=w24-h24-c-k-nd", emojiText = "[:heart:]" },
+            new { type = "text", text = " 和 Super Sticker" }
+        },
         isSuperChat = true,
         amount = "￥100.00",
         isMembership = false,
-        avatar = "https://www.gstatic.com/images/branding/product/1x/avatar_circle_blue_512dp.png"
+        avatar = "https://www.gstatic.com/images/branding/product/1x/avatar_circle_blue_512dp.png",
+        sticker = "https://yt3.ggpht.com/8LAn6mE6S-C-6oXn-M-8-8X-8-8X-8-8X-8-8X-8-8X-8-8X-8-8X-8-8X-8-8X-8-8X-8=w64-h64-c-k-nd"
     };
-    var json = JsonSerializer.Serialize(testMsg);
+    var json = JsonSerializer.Serialize(testMsg, jsonOptions);
     var bytes = Encoding.UTF8.GetBytes(json);
     foreach (var socket in sockets.Values) {
         if (socket.State == WebSocketState.Open)

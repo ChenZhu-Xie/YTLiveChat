@@ -248,6 +248,27 @@
             line-height: 1.4;
             word-break: break-all;
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .emoji {
+            height: 24px;
+            width: auto;
+            vertical-align: middle;
+            object-fit: contain;
+        }
+
+        .sticker-box {
+            margin-top: 4px;
+        }
+
+        .sticker {
+            height: 64px;
+            width: auto;
+            object-fit: contain;
         }
 
         /* 打赏特殊样式 */
@@ -381,11 +402,34 @@
             const isSpecial = msg.isSuperChat || msg.isMembership;
             const authorColor = isSpecial ? '' : `style="color: ${stringToColor(msg.author)}"`;
 
+            let messageContent = '';
+            if (msg.parts && msg.parts.length > 0) {
+                msg.parts.forEach(part => {
+                    if (part.text) {
+                        messageContent += `<span>${part.text}</span>`;
+                    } else if (part.url) {
+                        messageContent += `<img class="emoji" src="${part.url}" alt="${part.emojiText || part.alt || ''}" title="${part.emojiText || part.alt || ''}" />`;
+                    }
+                });
+            } else {
+                messageContent = msg.text;
+            }
+
+            let stickerContent = '';
+            if (msg.sticker) {
+                stickerContent = `
+                    <div class="sticker-box">
+                        <img class="sticker" src="${msg.sticker}" referrerpolicy="no-referrer" />
+                    </div>
+                `;
+            }
+
             const content = `
                 <img class="avatar" src="${avatarUrl}" referrerpolicy="no-referrer" onerror="this.src='https://www.gstatic.com/images/branding/product/1x/avatar_circle_blue_512dp.png'" />
                 <div class="content">
                     <div class="author" ${authorColor}>${msg.author} ${msg.isSuperChat ? '💰 ' + msg.amount : ''}</div>
-                    <div class="text">${msg.text}</div>
+                    <div class="text">${messageContent}</div>
+                    ${stickerContent}
                 </div>
             `;
             div.innerHTML = content;
