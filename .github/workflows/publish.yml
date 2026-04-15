@@ -53,7 +53,7 @@ jobs:
         with:
           name: test-results
           path: '**/*.trx' # Path to trx files in the test project's output
-          retention-days: 7
+          retention-days: 1
 
       - name: Pack Core Library (YTLiveChat)
         run: dotnet pack YTLiveChat/YTLiveChat.csproj --configuration Release --no-build --output ${{ env.NuGetDirectory }}
@@ -69,7 +69,7 @@ jobs:
         with:
           name: nuget-packages
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 1
           path: ${{ env.NuGetDirectory }}/*.nupkg
 
   deploy:
