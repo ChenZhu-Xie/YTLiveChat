@@ -1495,7 +1495,7 @@ internal static partial class Parser
                 ActionId = actionId!,
                 BannerType = Contracts.Models.BannerType.ChatSummary,
                 SummaryId = summaryRenderer.LiveChatSummaryId,
-                SummaryParts = summaryRenderer.ChatSummary?.Runs?.ToMessageParts() ?? [],
+                Summary = summaryRenderer.ChatSummary?.Runs?.ToMessageParts() ?? [],
             };
         }
 

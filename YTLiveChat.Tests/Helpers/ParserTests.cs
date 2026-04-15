@@ -1642,30 +1642,30 @@ public class ParserTests
 
         // All 5 runs preserved as-is: [bold title, "\n", deemphasized disclaimer, "\n", body text].
         // Newline separators are kept so consumers can faithfully reproduce YouTube's layout.
-        Assert.AreEqual(5, summary.SummaryParts.Length, "All 5 chatSummary runs should be preserved.");
+        Assert.AreEqual(5, summary.Summary.Length, "All 5 chatSummary runs should be preserved.");
 
         // Part 0: bold title
-        TextPart title = Assert.IsInstanceOfType<TextPart>(summary.SummaryParts[0]);
+        TextPart title = Assert.IsInstanceOfType<TextPart>(summary.Summary[0]);
         Assert.AreEqual("Chat summary", title.Text);
         Assert.IsTrue(title.Bold, "Title run should be bold.");
         Assert.IsFalse(title.IsDeemphasized);
 
         // Part 1: newline separator
-        TextPart newline1 = Assert.IsInstanceOfType<TextPart>(summary.SummaryParts[1]);
+        TextPart newline1 = Assert.IsInstanceOfType<TextPart>(summary.Summary[1]);
         Assert.AreEqual("\n", newline1.Text);
 
         // Part 2: deemphasized disclaimer
-        TextPart disclaimer = Assert.IsInstanceOfType<TextPart>(summary.SummaryParts[2]);
+        TextPart disclaimer = Assert.IsInstanceOfType<TextPart>(summary.Summary[2]);
         StringAssert.Contains(disclaimer.Text, "Auto-generated");
         Assert.IsTrue(disclaimer.IsDeemphasized, "Disclaimer run should be deemphasized.");
         Assert.IsFalse(disclaimer.Bold);
 
         // Part 3: newline separator
-        TextPart newline2 = Assert.IsInstanceOfType<TextPart>(summary.SummaryParts[3]);
+        TextPart newline2 = Assert.IsInstanceOfType<TextPart>(summary.Summary[3]);
         Assert.AreEqual("\n", newline2.Text);
 
         // Part 4: body text — the actual AI-generated summary content
-        TextPart body = Assert.IsInstanceOfType<TextPart>(summary.SummaryParts[4]);
+        TextPart body = Assert.IsInstanceOfType<TextPart>(summary.Summary[4]);
         StringAssert.Contains(body.Text, "happy birthday");
         Assert.IsFalse(body.Bold);
         Assert.IsFalse(body.IsDeemphasized);

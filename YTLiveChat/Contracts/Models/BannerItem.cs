@@ -113,7 +113,7 @@ public sealed class ChatSummaryBannerItem : BannerItem
     /// a deemphasized disclaimer run, a newline, and the body text run.
     /// Concatenate <see cref="TextPart.Text"/> values for a plain-text summary.
     /// </summary>
-    public required MessagePart[] SummaryParts { get; set; }
+    public required MessagePart[] Summary { get; set; }
 }
 
 /// <summary>

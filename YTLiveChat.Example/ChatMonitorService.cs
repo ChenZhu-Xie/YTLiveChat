@@ -497,7 +497,7 @@ internal class ChatMonitorService : IHostedService, IDisposable
                 Console.ResetColor();
                 Console.Write(' ');
                 Console.ForegroundColor = ConsoleColor.DarkGray;
-                Console.Write(string.Concat(summary.SummaryParts.OfType<TextPart>().Select(p => p.Text)));
+                Console.Write(string.Concat(summary.Summary.OfType<TextPart>().Select(p => p.Text)));
             }
 
             Console.ResetColor();
