@@ -376,6 +376,53 @@ internal static class ActionTestData
             """;
 
     /// <summary>
+    /// AI-generated chat summary banner (LIVE_CHAT_BANNER_TYPE_CHAT_SUMMARY).
+    /// Contains liveChatBannerChatSummaryRenderer with bold title, disclaimer, and body text.
+    /// Real data from dump_poll_banners.json entry 0 (watch_20260415_060005.jsonl).
+    /// </summary>
+    public static string AddBannerChatSummary() => """
+            {
+              "clickTrackingParams": "CAEQl98BIhMI89Gw65bvkwMVrAE6Ah1euhdEygEExHmptQ==",
+              "addBannerToLiveChatCommand": {
+                "bannerRenderer": {
+                  "liveChatBannerRenderer": {
+                    "contents": {
+                      "liveChatBannerChatSummaryRenderer": {
+                        "liveChatSummaryId": "z4B7kTpSbWc_1776232797929176",
+                        "chatSummary": {
+                          "runs": [
+                            { "text": "Chat summary", "bold": true, "fontFace": "FONT_FACE_ROBOTO_MEDIUM" },
+                            { "text": "\n" },
+                            { "text": "Auto-generated experiment \u2022 Quality may vary", "deemphasize": true, "fontFace": "FONT_FACE_ROBOTO_MEDIUM" },
+                            { "text": "\n" },
+                            { "text": "Viewers in the chat are saying happy birthday and discussing the construction of an open-air home theater setup. They are sharing suggestions on the design, layout, and functionality of the space.", "fontFace": "FONT_FACE_ROBOTO_REGULAR" }
+                          ]
+                        },
+                        "icon": { "iconType": "SPARK" },
+                        "trackingParams": "CB4Q77sMIhMI89Gw65bvkwMVrAE6Ah1euhdE",
+                        "collapsedStateEntityKey": "Ehx6NEI3a1RwU2JXY18xNzc2MjMyNzk3OTI5MTc2IIsBKAE%3D"
+                      }
+                    },
+                    "actionId": "z4B7kTpSbWc_1776232797929176",
+                    "targetId": "live-chat-banner",
+                    "isStackable": true,
+                    "bannerProperties": {
+                      "isEphemeral": true,
+                      "autoCollapseDelay": { "seconds": "30" },
+                      "bannerCollapsedStateEntityKey": "Ehx6NEI3a1RwU2JXY18xNzc2MjMyNzk3OTI5MTc2IIsBKAE%3D"
+                    },
+                    "bannerType": "LIVE_CHAT_BANNER_TYPE_CHAT_SUMMARY"
+                  }
+                },
+                "bannerProperties": {
+                  "isEphemeral": true,
+                  "bannerTimeoutMs": "12000"
+                }
+              }
+            }
+            """;
+
+    /// <summary>
     /// Pinned message banner from @InugamiKorone with OWNER + VERIFIED badges and Japanese text with 3 flushed-face emojis.
     /// Real data from dump_banners.json (entry 0).
     /// </summary>

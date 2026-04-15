@@ -1620,6 +1620,30 @@ public class ParserTests
     }
 
     [TestMethod]
+    public void ToBannerItem_ChatSummaryBanner_ReturnsChatSummaryBannerItemWithBodyText()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.AddBannerChatSummary(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+
+        BannerItem? banner = Parser.ToBannerItem(action);
+
+        Assert.IsNotNull(banner);
+        _ = Assert.IsInstanceOfType<ChatSummaryBannerItem>(banner);
+        ChatSummaryBannerItem summary = (ChatSummaryBannerItem)banner;
+
+        Assert.AreEqual("z4B7kTpSbWc_1776232797929176", summary.ActionId);
+        Assert.AreEqual(BannerType.ChatSummary, summary.BannerType);
+        Assert.AreEqual("z4B7kTpSbWc_1776232797929176", summary.SummaryId);
+        // SummaryText should be the body text, not the bold title or disclaimer
+        StringAssert.Contains(summary.SummaryText, "happy birthday");
+        Assert.IsFalse(summary.SummaryText.Contains("Chat summary"), "Title should not bleed into SummaryText.");
+        Assert.IsFalse(summary.SummaryText.Contains("Auto-generated"), "Disclaimer should not bleed into SummaryText.");
+    }
+
+    [TestMethod]
     public void ToBannerItem_PinnedMessage_InugamiKorone_HasOwnerAndVerifiedBadgesWithEmojiMessage()
     {
         Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(

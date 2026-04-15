@@ -16,6 +16,12 @@ public enum BannerType
     /// (<c>LIVE_CHAT_BANNER_TYPE_CROSS_CHANNEL_REDIRECT</c>).
     /// </summary>
     CrossChannelRedirect = 2,
+
+    /// <summary>
+    /// An AI-generated chat summary banner (<c>LIVE_CHAT_BANNER_TYPE_CHAT_SUMMARY</c>).
+    /// Shown periodically during long streams as an experimental YouTube feature.
+    /// </summary>
+    ChatSummary = 3,
 }
 
 /// <summary>
@@ -87,6 +93,25 @@ public sealed class PinnedMessageBannerItem : BannerItem
 
     /// <summary>Whether the author of the pinned message is the channel owner.</summary>
     public bool IsOwner { get; set; }
+}
+
+/// <summary>
+/// An AI-generated chat summary banner (<c>LIVE_CHAT_BANNER_TYPE_CHAT_SUMMARY</c>).
+/// Shown periodically during long streams as an experimental YouTube feature. The summary
+/// text is auto-generated from recent chat messages.
+/// </summary>
+public sealed class ChatSummaryBannerItem : BannerItem
+{
+    /// <summary>
+    /// The server-assigned summary identifier (distinct from <see cref="BannerItem.ActionId"/>).
+    /// </summary>
+    public string? SummaryId { get; set; }
+
+    /// <summary>
+    /// The AI-generated summary text extracted from the banner body (the last non-empty,
+    /// non-newline run in the <c>chatSummary.runs</c> array).
+    /// </summary>
+    public required string SummaryText { get; set; }
 }
 
 /// <summary>

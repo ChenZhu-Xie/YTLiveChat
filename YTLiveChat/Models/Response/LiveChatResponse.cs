@@ -929,6 +929,19 @@ public record LiveChatBannerRedirectRenderer
     public JsonElement? InlineActionButton { get; init; }
 }
 
+/// <summary>
+/// The structured text payload inside a <c>liveChatBannerChatSummaryRenderer</c>.
+/// Runs typically contain: bold title, newline, deemphasized disclaimer, newline, body text.
+/// </summary>
+public record LiveChatBannerChatSummaryRenderer
+{
+    [JsonPropertyName("liveChatSummaryId")]
+    public string? LiveChatSummaryId { get; init; }
+
+    [JsonPropertyName("chatSummary")]
+    public Message? ChatSummary { get; init; }
+}
+
 public record LiveChatBannerRendererContents
 {
     [JsonPropertyName("liveChatTextMessageRenderer")]
@@ -936,6 +949,9 @@ public record LiveChatBannerRendererContents
 
     [JsonPropertyName("liveChatBannerRedirectRenderer")]
     public LiveChatBannerRedirectRenderer? LiveChatBannerRedirectRenderer { get; init; }
+
+    [JsonPropertyName("liveChatBannerChatSummaryRenderer")]
+    public LiveChatBannerChatSummaryRenderer? LiveChatBannerChatSummaryRenderer { get; init; }
 }
 
 /// <summary>Auto-collapse timer present on pinned-message banners.</summary>
@@ -947,11 +963,15 @@ public record BannerAutoCollapseDelay
 }
 
 /// <summary>
-/// Properties embedded inside <see cref="LiveChatBannerRenderer"/> for pinned-message banners.
-/// Contains the auto-collapse timer and a server-side state key.
+/// Properties embedded inside <see cref="LiveChatBannerRenderer"/>.
+/// Observed on pinned-message and chat-summary banners (auto-collapse timer, ephemeral flag).
 /// </summary>
 public record LiveChatBannerRendererProperties
 {
+    /// <summary>When true the banner auto-dismisses (also observed at the renderer level for chat-summary banners).</summary>
+    [JsonPropertyName("isEphemeral")]
+    public bool IsEphemeral { get; init; }
+
     [JsonPropertyName("autoCollapseDelay")]
     public BannerAutoCollapseDelay? AutoCollapseDelay { get; init; }
 

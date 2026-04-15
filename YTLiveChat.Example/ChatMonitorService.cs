@@ -489,6 +489,14 @@ internal class ChatMonitorService : IHostedService, IDisposable
                 string text = string.Concat(pinned.Message.OfType<TextPart>().Select(p => p.Text));
                 Console.Write(text);
             }
+            else if (e.Banner is ChatSummaryBannerItem summary)
+            {
+                WriteTag("SUMMARY", ConsoleColor.DarkCyan);
+                Console.ResetColor();
+                Console.Write(' ');
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+                Console.Write(summary.SummaryText);
+            }
 
             Console.ResetColor();
             Console.WriteLine();

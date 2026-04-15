@@ -1491,6 +1491,35 @@ internal static partial class Parser
                 pinnedBy = null;
         }
 
+        // ── Chat summary banner (LIVE_CHAT_BANNER_TYPE_CHAT_SUMMARY) ──
+        LiveChatBannerChatSummaryRenderer? summaryRenderer =
+            banner.Contents?.LiveChatBannerChatSummaryRenderer;
+        if (summaryRenderer is not null)
+        {
+            // The chatSummary runs are: [bold title, "\n", deemphasized disclaimer, "\n", body text].
+            // Extract the body text — the last non-empty, non-newline run.
+            string summaryText = string.Empty;
+            if (summaryRenderer.ChatSummary?.Runs is { } summaryRuns)
+            {
+                for (int i = summaryRuns.Count - 1; i >= 0; i--)
+                {
+                    if (summaryRuns[i] is MessageText { Text: { Length: > 0 } runText } && runText != "\n")
+                    {
+                        summaryText = runText;
+                        break;
+                    }
+                }
+            }
+
+            return new Contracts.Models.ChatSummaryBannerItem
+            {
+                ActionId = actionId!,
+                BannerType = Contracts.Models.BannerType.ChatSummary,
+                SummaryId = summaryRenderer.LiveChatSummaryId,
+                SummaryText = summaryText,
+            };
+        }
+
         // ── Redirect banner (LIVE_CHAT_BANNER_TYPE_CROSS_CHANNEL_REDIRECT) ──
         LiveChatBannerRedirectRenderer? redirectRenderer =
             banner.Contents?.LiveChatBannerRedirectRenderer;
