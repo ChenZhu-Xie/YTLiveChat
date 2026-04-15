@@ -932,6 +932,42 @@ public record LiveChatBannerRendererContents
     public LiveChatBannerRedirectRenderer? LiveChatBannerRedirectRenderer { get; init; }
 }
 
+/// <summary>Auto-collapse timer present on pinned-message banners.</summary>
+public record BannerAutoCollapseDelay
+{
+    /// <summary>Seconds until the banner auto-collapses (string-encoded integer).</summary>
+    [JsonPropertyName("seconds")]
+    public string? Seconds { get; init; }
+}
+
+/// <summary>
+/// Properties embedded inside <see cref="LiveChatBannerRenderer"/> for pinned-message banners.
+/// Contains the auto-collapse timer and a server-side state key.
+/// </summary>
+public record LiveChatBannerRendererProperties
+{
+    [JsonPropertyName("autoCollapseDelay")]
+    public BannerAutoCollapseDelay? AutoCollapseDelay { get; init; }
+
+    [JsonPropertyName("bannerCollapsedStateEntityKey")]
+    public string? BannerCollapsedStateEntityKey { get; init; }
+}
+
+/// <summary>
+/// Properties at the <see cref="AddBannerToLiveChatCommand"/> level for ephemeral banners
+/// (e.g. cross-channel redirect / Squad streaming join notifications).
+/// </summary>
+public record AddBannerCommandProperties
+{
+    /// <summary>When true the banner auto-dismisses after <see cref="BannerTimeoutMs"/> ms.</summary>
+    [JsonPropertyName("isEphemeral")]
+    public bool IsEphemeral { get; init; }
+
+    /// <summary>Duration in milliseconds before the ephemeral banner is dismissed (string-encoded).</summary>
+    [JsonPropertyName("bannerTimeoutMs")]
+    public string? BannerTimeoutMs { get; init; }
+}
+
 public record LiveChatBannerRenderer
 {
     [JsonPropertyName("header")]
@@ -945,6 +981,18 @@ public record LiveChatBannerRenderer
 
     [JsonPropertyName("bannerType")]
     public string? BannerType { get; init; }
+
+    /// <summary>Whether this banner can be stacked alongside another active banner.</summary>
+    [JsonPropertyName("isStackable")]
+    public bool IsStackable { get; init; }
+
+    /// <summary>True when the viewer is the channel creator (viewer-side flag, not author metadata).</summary>
+    [JsonPropertyName("viewerIsCreator")]
+    public bool ViewerIsCreator { get; init; }
+
+    /// <summary>Timing and state properties for pinned-message banners (auto-collapse delay).</summary>
+    [JsonPropertyName("bannerProperties")]
+    public LiveChatBannerRendererProperties? BannerProperties { get; init; }
 }
 
 public record BannerRendererContainer
@@ -957,6 +1005,13 @@ public record AddBannerToLiveChatCommand
 {
     [JsonPropertyName("bannerRenderer")]
     public BannerRendererContainer? BannerRenderer { get; init; }
+
+    /// <summary>
+    /// Ephemeral-banner properties (auto-dismiss timeout) present on redirect banners.
+    /// Located at the command level, not inside the renderer.
+    /// </summary>
+    [JsonPropertyName("bannerProperties")]
+    public AddBannerCommandProperties? BannerProperties { get; init; }
 }
 
 public record RemoveBannerForLiveChatCommand

@@ -1540,6 +1540,57 @@ public class ParserTests
     }
 
     [TestMethod]
+    public void ToBannerItem_PinnedMessage_InugamiKorone_HasOwnerAndVerifiedBadgesWithEmojiMessage()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.AddBannerPinnedMessage_InugamiKorone(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+
+        BannerItem? banner = Parser.ToBannerItem(action);
+
+        Assert.IsNotNull(banner);
+        _ = Assert.IsInstanceOfType<PinnedMessageBannerItem>(banner);
+        PinnedMessageBannerItem pinned = (PinnedMessageBannerItem)banner;
+
+        Assert.AreEqual("ChwKGkNMcTd1dlRYN1pNREZXcmV3Z1FkRndzSXJ3", pinned.ActionId);
+        Assert.AreEqual(BannerType.PinnedMessage, pinned.BannerType);
+        Assert.AreEqual("@InugamiKorone", pinned.Author.Name);
+        Assert.AreEqual("Pinned by @InugamiKorone", pinned.PinnedBy);
+        Assert.IsTrue(pinned.IsOwner, "Author should be flagged as OWNER.");
+        Assert.IsTrue(pinned.IsVerified, "Author should be flagged as VERIFIED.");
+        Assert.AreEqual(4, pinned.Message.Length, "Message should have 1 text + 3 emoji parts.");
+        _ = Assert.IsInstanceOfType<TextPart>(pinned.Message[0], "First part should be a TextPart.");
+        _ = Assert.IsInstanceOfType<EmojiPart>(pinned.Message[1], "Second part should be an EmojiPart.");
+        _ = Assert.IsInstanceOfType<EmojiPart>(pinned.Message[2], "Third part should be an EmojiPart.");
+        _ = Assert.IsInstanceOfType<EmojiPart>(pinned.Message[3], "Fourth part should be an EmojiPart.");
+    }
+
+    [TestMethod]
+    public void ToBannerItem_RedirectLearnMore_KureijiOllie_ParsesHandleAndNullVideoId()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.AddBannerRedirectLearnMore_KureijiOllie(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+
+        BannerItem? banner = Parser.ToBannerItem(action);
+
+        Assert.IsNotNull(banner);
+        _ = Assert.IsInstanceOfType<CrossChannelRedirectBannerItem>(banner);
+        CrossChannelRedirectBannerItem redirect = (CrossChannelRedirectBannerItem)banner;
+
+        Assert.AreEqual("ChwKGkNPdjN0b1g0N1pNREZmWENsQWtkaFVveU1B", redirect.ActionId);
+        Assert.AreEqual(BannerType.CrossChannelRedirect, redirect.BannerType);
+        Assert.AreEqual("@KureijiOllie", redirect.RedirectChannelHandle);
+        Assert.IsNull(redirect.RedirectVideoId, "Learn-more variant should have no video ID.");
+        Assert.IsNotNull(redirect.ChannelPhoto, "Should have a channel photo.");
+        Assert.AreEqual(2, redirect.BannerMessage.Length, "Banner message should have 2 parts.");
+    }
+
+    [TestMethod]
     public void ToBannerItem_UnrelatedAction_ReturnsNull()
     {
         Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(

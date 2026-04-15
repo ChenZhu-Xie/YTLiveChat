@@ -375,6 +375,198 @@ internal static class ActionTestData
             }
             """;
 
+    /// <summary>
+    /// Pinned message banner from @InugamiKorone with OWNER + VERIFIED badges and Japanese text with 3 flushed-face emojis.
+    /// Real data from dump_banners.json (entry 0).
+    /// </summary>
+    public static string AddBannerPinnedMessage_InugamiKorone() => """
+            {
+              "addBannerToLiveChatCommand": {
+                "bannerRenderer": {
+                  "liveChatBannerRenderer": {
+                    "header": {
+                      "liveChatBannerHeaderRenderer": {
+                        "icon": { "iconType": "KEEP" },
+                        "text": {
+                          "runs": [
+                            { "text": "Pinned by " },
+                            { "text": "@InugamiKorone" }
+                          ]
+                        },
+                        "contextMenuButton": {
+                          "buttonRenderer": {
+                            "icon": { "iconType": "MORE_VERT" },
+                            "accessibility": { "label": "Chat actions" },
+                            "accessibilityData": { "accessibilityData": { "label": "Chat actions" } },
+                            "command": {
+                              "commandMetadata": { "webCommandMetadata": { "ignoreNavigation": true } },
+                              "liveChatItemContextMenuEndpoint": {
+                                "params": "Q2g0S0hBb2FRMDFsV1hsbVRGZzNXazFFUmxOM1ZISlJXV1JOTXpoVlJtY2FLU29uQ2hoVlEyaEJibkZqWDBGWk5WOUpNMUI0TldScFp6TllNVkVTQzFORk5ESjZkSEZLZFdGRklBRW9CRElhQ2hoVlEyaEJibkZqWDBGWk5WOUpNMUI0TldScFp6TllNVkU0QVVnQVVBRSUzRA=="
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "contents": {
+                      "liveChatTextMessageRenderer": {
+                        "message": {
+                          "runs": [
+                            { "text": "\u3044\u3063\u3071\u3044\u3044\u3063\u3071\u3044\u3042\u308A\u304C\u3068\u3046\uFF5E\uFF01\u3053\u308C\u304B\u3089\u3082\u3088\u308D\u3057\u304F\u306D\u3063" },
+                            {
+                              "emoji": {
+                                "emojiId": "\uD83D\uDE33",
+                                "shortcuts": [ ":flushed_face:", ":flushed:" ],
+                                "searchTerms": [ "flushed", "face" ],
+                                "image": {
+                                  "thumbnails": [ { "url": "https://fonts.gstatic.com/s/e/notoemoji/15.1/1f633/72.png" } ],
+                                  "accessibility": { "accessibilityData": { "label": "\uD83D\uDE33" } }
+                                }
+                              }
+                            },
+                            {
+                              "emoji": {
+                                "emojiId": "\uD83D\uDE33",
+                                "shortcuts": [ ":flushed_face:", ":flushed:" ],
+                                "searchTerms": [ "flushed", "face" ],
+                                "image": {
+                                  "thumbnails": [ { "url": "https://fonts.gstatic.com/s/e/notoemoji/15.1/1f633/72.png" } ],
+                                  "accessibility": { "accessibilityData": { "label": "\uD83D\uDE33" } }
+                                }
+                              }
+                            },
+                            {
+                              "emoji": {
+                                "emojiId": "\uD83D\uDE33",
+                                "shortcuts": [ ":flushed_face:", ":flushed:" ],
+                                "searchTerms": [ "flushed", "face" ],
+                                "image": {
+                                  "thumbnails": [ { "url": "https://fonts.gstatic.com/s/e/notoemoji/15.1/1f633/72.png" } ],
+                                  "accessibility": { "accessibilityData": { "label": "\uD83D\uDE33" } }
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        "authorName": { "simpleText": "@InugamiKorone" },
+                        "authorPhoto": {
+                          "thumbnails": [
+                            { "url": "https://yt4.ggpht.com/ytc/AIdro_nrS6tFctvjyWv1mKzKBIetHJBfpqwHOpvRFc3KU2P_5yc=s32-c-k-c0x00ffffff-no-rj", "width": 32, "height": 32 },
+                            { "url": "https://yt4.ggpht.com/ytc/AIdro_nrS6tFctvjyWv1mKzKBIetHJBfpqwHOpvRFc3KU2P_5yc=s64-c-k-c0x00ffffff-no-rj", "width": 64, "height": 64 }
+                          ]
+                        },
+                        "id": "ChwKGkNNZVl5ZkxYN1pNREZTd1RyUVlkTTM4VUZn",
+                        "timestampUsec": "1776181549619677",
+                        "authorBadges": [
+                          {
+                            "liveChatAuthorBadgeRenderer": {
+                              "icon": { "iconType": "VERIFIED" },
+                              "tooltip": "Verified",
+                              "accessibility": { "accessibilityData": { "label": "Verified" } }
+                            }
+                          },
+                          {
+                            "liveChatAuthorBadgeRenderer": {
+                              "icon": { "iconType": "OWNER" },
+                              "tooltip": "Owner",
+                              "accessibility": { "accessibilityData": { "label": "Owner" } }
+                            }
+                          }
+                        ],
+                        "authorExternalChannelId": "UChAnqc_AY5_I3Px5dig3X1Q"
+                      }
+                    },
+                    "actionId": "ChwKGkNMcTd1dlRYN1pNREZXcmV3Z1FkRndzSXJ3",
+                    "viewerIsCreator": false,
+                    "targetId": "live-chat-banner",
+                    "isStackable": false,
+                    "backgroundType": "LIVE_CHAT_BANNER_BACKGROUND_TYPE_STATIC",
+                    "bannerProperties": {
+                      "autoCollapseDelay": { "seconds": "7" },
+                      "bannerCollapsedStateEntityKey": "EihDaHdLR2tOTWNUZDFkbFJZTjFwTlJFWlhjbVYzWjFGa1JuZHpTWEozIIsBKAE%3D"
+                    },
+                    "bannerType": "LIVE_CHAT_BANNER_TYPE_PINNED_MESSAGE"
+                  }
+                }
+              }
+            }
+            """;
+
+    /// <summary>
+    /// Cross-channel redirect banner from @KureijiOllie ("Learn more" / Squad join variant).
+    /// Real data from dump_banners.json (entry 3).
+    /// Banner type: LIVE_CHAT_BANNER_TYPE_CROSS_CHANNEL_REDIRECT
+    /// isEphemeral: true, bannerTimeoutMs: "20000"
+    /// </summary>
+    public static string AddBannerRedirectLearnMore_KureijiOllie() => """
+            {
+              "addBannerToLiveChatCommand": {
+                "bannerRenderer": {
+                  "liveChatBannerRenderer": {
+                    "contents": {
+                      "liveChatBannerRedirectRenderer": {
+                        "bannerMessage": {
+                          "runs": [
+                            { "text": "@KureijiOllie", "bold": true, "fontFace": "FONT_FACE_ROBOTO_REGULAR" },
+                            { "text": " and their viewers just joined. Say hello!", "fontFace": "FONT_FACE_ROBOTO_REGULAR" }
+                          ]
+                        },
+                        "authorPhoto": {
+                          "thumbnails": [
+                            { "url": "https://yt4.ggpht.com/fCQ1LUhWHfIGkCLeZl2BG_uQhQ6IqxJ3AJJxFbG6uEpLJ1hlJ2JOoBG7FJiAREeDeEVtwJoZKA=s32-c-k-c0x00ffffff-no-rj", "width": 32, "height": 32 },
+                            { "url": "https://yt4.ggpht.com/fCQ1LUhWHfIGkCLeZl2BG_uQhQ6IqxJ3AJJxFbG6uEpLJ1hlJ2JOoBG7FJiAREeDeEVtwJoZKA=s64-c-k-c0x00ffffff-no-rj", "width": 64, "height": 64 }
+                          ]
+                        },
+                        "inlineActionButton": {
+                          "buttonRenderer": {
+                            "style": "STYLE_DEFAULT",
+                            "size": "SIZE_DEFAULT",
+                            "isDisabled": false,
+                            "text": { "runs": [{ "text": "Learn more" }] },
+                            "command": {
+                              "commandMetadata": {
+                                "webCommandMetadata": {
+                                  "url": "https://support.google.com/youtube/answer/10359590?hl=en",
+                                  "webPageType": "WEB_PAGE_TYPE_UNKNOWN",
+                                  "rootVe": 83769
+                                }
+                              },
+                              "urlEndpoint": {
+                                "url": "https://support.google.com/youtube/answer/10359590?hl=en",
+                                "target": "TARGET_NEW_WINDOW"
+                              }
+                            }
+                          }
+                        },
+                        "contextMenuButton": {
+                          "buttonRenderer": {
+                            "icon": { "iconType": "MORE_VERT" },
+                            "accessibility": { "label": "Chat actions" },
+                            "accessibilityData": { "accessibilityData": { "label": "Chat actions" } },
+                            "command": {
+                              "commandMetadata": { "webCommandMetadata": { "ignoreNavigation": true } },
+                              "liveChatItemContextMenuEndpoint": {
+                                "params": "Q2g0S0hBb2FRMDkyTTNSdldEUTNXazFFUm1aWVEyeEJhMlJvVlc5NVRVRWFLU29uQ2hoVlEwaHplRFJJY1dFdE1VOVNhbEZVYURsVVdVUm9kM2NTQ3pGWGJFTmlURzk2V0U1RklBRW9CRElFRWdJSUJqZ0JTQUJRSmclM0QlM0Q="
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "actionId": "ChwKGkNPdjN0b1g0N1pNREZmWENsQWtkaFVveU1B",
+                    "targetId": "live-chat-banner",
+                    "isStackable": true,
+                    "bannerType": "LIVE_CHAT_BANNER_TYPE_CROSS_CHANNEL_REDIRECT"
+                  }
+                },
+                "bannerProperties": {
+                  "isEphemeral": true,
+                  "bannerTimeoutMs": "20000"
+                }
+              }
+            }
+            """;
+
     public static string RemoveChatItem() => """
             {
               "removeChatItemAction": {
