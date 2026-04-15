@@ -51,7 +51,9 @@ public class EmojiPart : ImagePart
 };
 
 /// <summary>
-/// Text variant of a message part
+/// Text run variant of a message part, carrying the raw text and optional inline formatting flags.
+/// Use <see cref="Text"/> for plain-text rendering; check <see cref="Bold"/>, <see cref="Italics"/>,
+/// and <see cref="IsDeemphasized"/> for rich rendering. All flags default to <see langword="false"/>.
 /// </summary>
 public class TextPart : MessagePart
 {

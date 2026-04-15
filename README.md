@@ -10,6 +10,7 @@ Unofficial .NET library for reading YouTube live chat via InnerTube (the same we
 ## Targets
 
 - `net10.0`
+- `net9.0`
 - `netstandard2.1`
 - `netstandard2.0`
 
@@ -42,18 +43,19 @@ dotnet add package Agash.YTLiveChat.DependencyInjection
 - Message replaced (`ChatItemReplaced`) — slow-mode or placeholder resolution
 
 **Polls**
-- `PollUpdated` — fires when a new poll opens (`Poll.IsNew == true`) and on every vote-count update (`IsNew == false`); carries structured choices and vote ratios
+- `PollUpdated` — fires when a new poll opens (`Poll.IsNew == true`) and on every vote-count update (`IsNew == false`); carries `Question` (`MessagePart[]?`), structured `Choices` (each with `Text: MessagePart[]` and `VoteRatio`), `CreatorHandle`, and `TotalVotes`
 - `PollClosed` — fires when the poll panel is dismissed; use `PollId` to correlate with the preceding `PollUpdated` events
-- After `PollClosed`, `EngagementMessageReceived` fires with `MessageType == PollResult` carrying the final text summary that appears in chat (not required for poll lifecycle tracking)
+- After `PollClosed`, `EngagementMessageReceived` fires with `MessageType == PollResult` carrying the final summary in `Message` (`MessagePart[]`, not required for poll lifecycle tracking)
 
 **Banners**
 - `BannerAdded` — fires with a `BannerItem` subclass; pattern-match to distinguish:
-  - `PinnedMessageBannerItem` — pinned chat message; carries `Author`, `Message`, `PinnedBy`, `Timestamp`, and role flags (`IsOwner`, `IsModerator`, `IsVerified`)
-  - `CrossChannelRedirectBannerItem` — redirect to another stream; carries `RedirectChannelHandle` (the `@handle`) and `RedirectVideoId` (null when no specific video is provided, e.g. Squad streaming join notifications)
+  - `PinnedMessageBannerItem` — pinned chat message; carries `Author`, `Message` (`MessagePart[]`), `PinnedBy`, `Timestamp`, and role flags (`IsOwner`, `IsModerator`, `IsVerified`)
+  - `CrossChannelRedirectBannerItem` — redirect to another stream; carries `RedirectChannelHandle` (the `@handle`), `RedirectVideoId` (null for Squad streaming join notifications), and `BannerMessage` (`MessagePart[]`)
+  - `ChatSummaryBannerItem` — AI-generated chat summary (experimental YouTube feature); carries `Summary` (`MessagePart[]`) with bold title, deemphasized disclaimer, and body text runs, plus `SummaryId`
 - `BannerRemoved` — banner dismissed; `TargetActionId` matches the preceding `BannerAdded`'s `ActionId`
 
 **System / engagement messages**
-- `EngagementMessageReceived` — YouTube-generated notices in the chat feed:
+- `EngagementMessageReceived` — YouTube-generated notices in the chat feed; `Message` is `MessagePart[]`:
   - `CommunityGuidelines` — welcome/guidelines reminder at stream start
   - `SubscribersOnly` — subscribers-only mode notice
   - `PollResult` — formatted poll result summary (see Polls above)
@@ -168,6 +170,11 @@ static string ToText(MessagePart part) => part switch
     EmojiPart e => e.EmojiText ?? e.Alt ?? "",
     _ => ""
 };
+```
+
+`TextPart` carries `Bold`, `Italics`, and `IsDeemphasized` flags so consumers can render formatting without re-parsing. All structured message fields across the library (`ChatItem.Message`, `EngagementItem.Message`, `PollChoice.Text`, `PollItem.Question`, banner `Summary`/`BannerMessage`/`Message`) are `MessagePart[]` — concatenate `TextPart.Text` values for plain text, or pattern-match on the flags for rich rendering.
+
+```csharp
 ```
 
 ## Raw JSON Capture for Schema Analysis
