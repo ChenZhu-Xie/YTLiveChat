@@ -656,6 +656,9 @@ internal static partial class Parser
             Models.Response.MessageText { Text: not null } textRun => new Contracts.Models.TextPart
             {
                 Text = textRun.Text,
+                Bold = textRun.Bold,
+                Italics = textRun.Italics,
+                IsDeemphasized = textRun.Deemphasize,
             },
             Models.Response.MessageEmoji { Emoji: not null } emojiRun =>
                 new Contracts.Models.EmojiPart
@@ -1387,17 +1390,10 @@ internal static partial class Parser
         {
             foreach (Models.Response.PollChoice choice in pollRenderer.Choices)
             {
-                string choiceText =
-                    choice.Text?.Runs != null
-                        ? string.Concat(
-                            choice.Text.Runs.OfType<MessageText>().Select(r => r.Text ?? string.Empty)
-                        )
-                        : string.Empty;
-
                 choices.Add(
                     new Contracts.Models.PollChoice
                     {
-                        Text = choiceText,
+                        Text = choice.Text?.Runs?.ToMessageParts() ?? [],
                         IsSelected = choice.Selected,
                         VoteRatio = choice.VoteRatio,
                     }
@@ -1421,16 +1417,14 @@ internal static partial class Parser
         }
 
         // Extract poll question (frequently empty in the wild)
-        string? question = null;
+        Contracts.Models.MessagePart[]? question = null;
         List<MessageRun>? questionRuns =
             pollRenderer.Header?.PollHeaderRenderer?.PollQuestion?.Runs;
         if (questionRuns is { Count: > 0 })
         {
-            string joined = string.Concat(
-                questionRuns.OfType<MessageText>().Select(r => r.Text ?? string.Empty)
-            );
-            if (!string.IsNullOrWhiteSpace(joined))
-                question = joined;
+            Contracts.Models.MessagePart[] parts = questionRuns.ToMessageParts();
+            if (parts.Length > 0)
+                question = parts;
         }
 
         return new Contracts.Models.PollItem
@@ -1496,27 +1490,12 @@ internal static partial class Parser
             banner.Contents?.LiveChatBannerChatSummaryRenderer;
         if (summaryRenderer is not null)
         {
-            // The chatSummary runs are: [bold title, "\n", deemphasized disclaimer, "\n", body text].
-            // Extract the body text — the last non-empty, non-newline run.
-            string summaryText = string.Empty;
-            if (summaryRenderer.ChatSummary?.Runs is { } summaryRuns)
-            {
-                for (int i = summaryRuns.Count - 1; i >= 0; i--)
-                {
-                    if (summaryRuns[i] is MessageText { Text: { Length: > 0 } runText } && runText != "\n")
-                    {
-                        summaryText = runText;
-                        break;
-                    }
-                }
-            }
-
             return new Contracts.Models.ChatSummaryBannerItem
             {
                 ActionId = actionId!,
                 BannerType = Contracts.Models.BannerType.ChatSummary,
                 SummaryId = summaryRenderer.LiveChatSummaryId,
-                SummaryText = summaryText,
+                SummaryParts = summaryRenderer.ChatSummary?.Runs?.ToMessageParts() ?? [],
             };
         }
 
@@ -1679,24 +1658,21 @@ internal static partial class Parser
     /// </summary>
     public static Contracts.Models.EngagementItem? ToEngagementItem(this Action action)
     {
-        System.Text.Json.Nodes.JsonObject? obj =
+        Models.Response.LiveChatViewerEngagementMessageRenderer? renderer =
             action.AddChatItemAction?.Item?.LiveChatViewerEngagementMessageRenderer;
-        if (obj is null)
+        if (renderer is null)
             return null;
 
-        string? id = obj["id"]?.GetValue<string>();
+        string? id = renderer.Id;
         if (string.IsNullOrWhiteSpace(id))
             return null;
 
         DateTimeOffset timestamp = DateTimeOffset.UtcNow;
-        if (long.TryParse(obj["timestampUsec"]?.GetValue<string>(), out long usec))
+        if (long.TryParse(renderer.TimestampUsec, out long usec))
             timestamp = DateTimeOffset.FromUnixTimeMilliseconds(usec / 1000);
 
-        string? iconType = obj["icon"]?["iconType"]?.GetValue<string>();
-
-        // Extract URL from actionButton.buttonRenderer.navigationEndpoint.urlEndpoint.url
-        string? learnMoreUrl = obj["actionButton"]?["buttonRenderer"]?
-            ["navigationEndpoint"]?["urlEndpoint"]?["url"]?.GetValue<string>();
+        string? iconType = renderer.Icon?.IconType;
+        string? learnMoreUrl = renderer.ActionButton?.ButtonRenderer?.NavigationEndpoint?.UrlEndpoint?.Url;
 
         Contracts.Models.EngagementMessageType msgType = iconType switch
         {
@@ -1708,33 +1684,12 @@ internal static partial class Parser
             _ => Contracts.Models.EngagementMessageType.Unknown,
         };
 
-        // Build message parts from runs
-        List<Contracts.Models.MessagePart> parts = [];
-        System.Text.Json.Nodes.JsonArray? runs = obj["message"]?["runs"]?.AsArray();
-        if (runs is not null)
-        {
-            foreach (System.Text.Json.Nodes.JsonNode? run in runs)
-            {
-                if (run is null)
-                    continue;
-                string? text = run["text"]?.GetValue<string>();
-                if (text is not null)
-                    parts.Add(new Contracts.Models.TextPart { Text = text });
-            }
-        }
-
-        Contracts.Models.MessagePart[] messageParts = [.. parts];
-        string messageText = string.Concat(
-            parts.OfType<Contracts.Models.TextPart>().Select(p => p.Text)
-        );
-
         return new Contracts.Models.EngagementItem
         {
             Id = id!,
             Timestamp = timestamp,
             MessageType = msgType,
-            Message = messageText,
-            MessageParts = messageParts,
+            Message = renderer.Message?.Runs?.ToMessageParts() ?? [],
             LearnMoreUrl = learnMoreUrl,
         };
     }

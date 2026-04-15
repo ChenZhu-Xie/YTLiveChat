@@ -6,9 +6,10 @@ namespace YTLiveChat.Contracts.Models;
 public class PollChoice
 {
     /// <summary>
-    /// The display text of the choice.
+    /// The display text of the choice as structured message parts.
+    /// Concatenate <see cref="TextPart.Text"/> values for a plain-text label.
     /// </summary>
-    public required string Text { get; set; }
+    public required MessagePart[] Text { get; set; }
 
     /// <summary>
     /// Whether the authenticated viewer has selected this choice.
@@ -35,9 +36,10 @@ public class PollItem
     public required string PollId { get; set; }
 
     /// <summary>
-    /// The poll question text, or null when the server sends an empty question field.
+    /// The poll question as structured message parts, or null when the server sends an empty
+    /// question field. Concatenate <see cref="TextPart.Text"/> values for a plain-text label.
     /// </summary>
-    public string? Question { get; set; }
+    public MessagePart[]? Question { get; set; }
 
     /// <summary>
     /// The handle of the creator who started the poll (e.g. "@ShirakamiFubuki").

@@ -61,6 +61,22 @@ public class TextPart : MessagePart
     public required string Text { get; set; }
 
     /// <summary>
+    /// Whether this run is rendered in bold.
+    /// </summary>
+    public bool Bold { get; set; }
+
+    /// <summary>
+    /// Whether this run is rendered in italics.
+    /// </summary>
+    public bool Italics { get; set; }
+
+    /// <summary>
+    /// Whether this run is rendered in a deemphasized (subdued) style,
+    /// e.g. the disclaimer line in an AI-generated chat summary banner.
+    /// </summary>
+    public bool IsDeemphasized { get; set; }
+
+    /// <summary>
     /// Return the text
     /// </summary>
     /// <returns>string representation of TextPart</returns>

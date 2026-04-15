@@ -144,6 +144,9 @@ public record MessageText : MessageRun
     [JsonPropertyName("italics")]
     public bool Italics { get; init; }
 
+    [JsonPropertyName("deemphasize")]
+    public bool Deemphasize { get; init; }
+
     [JsonPropertyName("fontFace")]
     public string? FontFace { get; init; }
 }
@@ -572,9 +575,8 @@ public record AddChatItemActionItem
     [JsonPropertyName("liveChatPlaceholderItemRenderer")]
     public LiveChatPlaceholderItemRenderer? LiveChatPlaceholderItemRenderer { get; init; }
 
-    // Add other potential renderers here if observed (e.g., viewer engagement, banners moved inside items)
     [JsonPropertyName("liveChatViewerEngagementMessageRenderer")]
-    public JsonObject? LiveChatViewerEngagementMessageRenderer { get; init; } // Fallback
+    public LiveChatViewerEngagementMessageRenderer? LiveChatViewerEngagementMessageRenderer { get; init; }
 }
 
 public record AddChatItemAction
@@ -1264,6 +1266,36 @@ public record UrlEndpoint
 
     [JsonPropertyName("nofollow")]
     public bool Nofollow { get; init; }
+}
+
+public record LiveChatViewerEngagementMessageRenderer
+{
+    [JsonPropertyName("id")]
+    public string? Id { get; init; }
+
+    [JsonPropertyName("timestampUsec")]
+    public string? TimestampUsec { get; init; }
+
+    [JsonPropertyName("icon")]
+    public Icon? Icon { get; init; }
+
+    [JsonPropertyName("message")]
+    public Message? Message { get; init; }
+
+    [JsonPropertyName("actionButton")]
+    public EngagementActionButton? ActionButton { get; init; }
+}
+
+public record EngagementActionButton
+{
+    [JsonPropertyName("buttonRenderer")]
+    public EngagementButtonRenderer? ButtonRenderer { get; init; }
+}
+
+public record EngagementButtonRenderer
+{
+    [JsonPropertyName("navigationEndpoint")]
+    public NavigationEndpoint? NavigationEndpoint { get; init; }
 }
 
 // ==========================================================================

@@ -1354,9 +1354,9 @@ public class ParserTests
         Assert.AreEqual("@StreamerHandle", poll.CreatorHandle);
         Assert.AreEqual(1234, poll.TotalVotes);
         Assert.AreEqual(2, poll.Choices.Count);
-        Assert.AreEqual("Option A", poll.Choices[0].Text);
+        Assert.AreEqual("Option A", string.Concat(poll.Choices[0].Text.OfType<TextPart>().Select(p => p.Text)));
         Assert.AreEqual(0.28, poll.Choices[0].VoteRatio, 0.001);
-        Assert.AreEqual("Option B", poll.Choices[1].Text);
+        Assert.AreEqual("Option B", string.Concat(poll.Choices[1].Text.OfType<TextPart>().Select(p => p.Text)));
         Assert.AreEqual(0.72, poll.Choices[1].VoteRatio, 0.001);
     }
 
@@ -1377,8 +1377,8 @@ public class ParserTests
         Assert.AreEqual("@holoen_raorapanthera", poll.CreatorHandle);
         Assert.AreEqual(0, poll.TotalVotes);
         Assert.AreEqual(2, poll.Choices.Count);
-        Assert.AreEqual("LET IN", poll.Choices[0].Text);
-        Assert.AreEqual("OUT", poll.Choices[1].Text);
+        Assert.AreEqual("LET IN", string.Concat(poll.Choices[0].Text.OfType<TextPart>().Select(p => p.Text)));
+        Assert.AreEqual("OUT", string.Concat(poll.Choices[1].Text.OfType<TextPart>().Select(p => p.Text)));
         // Fresh polls have no voteRatio (default 0.0 since the field is not present in JSON)
         Assert.AreEqual(0.0, poll.Choices[0].VoteRatio);
         Assert.AreEqual(0.0, poll.Choices[1].VoteRatio);
@@ -1401,9 +1401,9 @@ public class ParserTests
         Assert.AreEqual("@holoen_raorapanthera", poll.CreatorHandle);
         Assert.AreEqual(0, poll.TotalVotes);
         Assert.AreEqual(2, poll.Choices.Count);
-        Assert.AreEqual("LET IN", poll.Choices[0].Text);
+        Assert.AreEqual("LET IN", string.Concat(poll.Choices[0].Text.OfType<TextPart>().Select(p => p.Text)));
         Assert.AreEqual(0.0, poll.Choices[0].VoteRatio, 0.001);
-        Assert.AreEqual("OUT", poll.Choices[1].Text);
+        Assert.AreEqual("OUT", string.Concat(poll.Choices[1].Text.OfType<TextPart>().Select(p => p.Text)));
         Assert.AreEqual(0.0, poll.Choices[1].VoteRatio, 0.001);
     }
 
@@ -1421,12 +1421,13 @@ public class ParserTests
         Assert.IsNotNull(poll);
         Assert.AreEqual("ChwKGkNKTzk4NUNiNzVNREZYWlFUQWdkT2U0VjVR", poll.PollId);
         Assert.IsTrue(poll.IsNew, "showLiveChatActionPanelAction should be marked IsNew.");
-        Assert.AreEqual("for the wood", poll.Question);
+        Assert.IsNotNull(poll.Question);
+        Assert.AreEqual("for the wood", string.Concat(poll.Question.OfType<TextPart>().Select(p => p.Text)));
         Assert.AreEqual("@OuroKronii", poll.CreatorHandle);
         Assert.AreEqual(0, poll.TotalVotes);
         Assert.AreEqual(2, poll.Choices.Count);
-        Assert.AreEqual("wall", poll.Choices[0].Text);
-        Assert.AreEqual("floor", poll.Choices[1].Text);
+        Assert.AreEqual("wall", string.Concat(poll.Choices[0].Text.OfType<TextPart>().Select(p => p.Text)));
+        Assert.AreEqual("floor", string.Concat(poll.Choices[1].Text.OfType<TextPart>().Select(p => p.Text)));
     }
 
     [TestMethod]
@@ -1443,7 +1444,8 @@ public class ParserTests
         Assert.IsNotNull(poll);
         Assert.AreEqual("ChwKGkNKTzk4NUNiNzVNREZYWlFUQWdkT2U0VjVR", poll.PollId);
         Assert.IsFalse(poll.IsNew, "updateLiveChatPollAction should not be marked IsNew.");
-        Assert.AreEqual("for the wood", poll.Question);
+        Assert.IsNotNull(poll.Question);
+        Assert.AreEqual("for the wood", string.Concat(poll.Question.OfType<TextPart>().Select(p => p.Text)));
         Assert.AreEqual(0, poll.TotalVotes);
         Assert.AreEqual(0.0, poll.Choices[0].VoteRatio, 0.001);
         Assert.AreEqual(0.0, poll.Choices[1].VoteRatio, 0.001);
@@ -1620,7 +1622,7 @@ public class ParserTests
     }
 
     [TestMethod]
-    public void ToBannerItem_ChatSummaryBanner_ReturnsChatSummaryBannerItemWithBodyText()
+    public void ToBannerItem_ChatSummaryBanner_ReturnsChatSummaryBannerItemWithStructuredParts()
     {
         Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
             ActionTestData.AddBannerChatSummary(),
@@ -1637,10 +1639,36 @@ public class ParserTests
         Assert.AreEqual("z4B7kTpSbWc_1776232797929176", summary.ActionId);
         Assert.AreEqual(BannerType.ChatSummary, summary.BannerType);
         Assert.AreEqual("z4B7kTpSbWc_1776232797929176", summary.SummaryId);
-        // SummaryText should be the body text, not the bold title or disclaimer
-        StringAssert.Contains(summary.SummaryText, "happy birthday");
-        Assert.IsFalse(summary.SummaryText.Contains("Chat summary"), "Title should not bleed into SummaryText.");
-        Assert.IsFalse(summary.SummaryText.Contains("Auto-generated"), "Disclaimer should not bleed into SummaryText.");
+
+        // All 5 runs preserved as-is: [bold title, "\n", deemphasized disclaimer, "\n", body text].
+        // Newline separators are kept so consumers can faithfully reproduce YouTube's layout.
+        Assert.AreEqual(5, summary.SummaryParts.Length, "All 5 chatSummary runs should be preserved.");
+
+        // Part 0: bold title
+        TextPart title = Assert.IsInstanceOfType<TextPart>(summary.SummaryParts[0]);
+        Assert.AreEqual("Chat summary", title.Text);
+        Assert.IsTrue(title.Bold, "Title run should be bold.");
+        Assert.IsFalse(title.IsDeemphasized);
+
+        // Part 1: newline separator
+        TextPart newline1 = Assert.IsInstanceOfType<TextPart>(summary.SummaryParts[1]);
+        Assert.AreEqual("\n", newline1.Text);
+
+        // Part 2: deemphasized disclaimer
+        TextPart disclaimer = Assert.IsInstanceOfType<TextPart>(summary.SummaryParts[2]);
+        StringAssert.Contains(disclaimer.Text, "Auto-generated");
+        Assert.IsTrue(disclaimer.IsDeemphasized, "Disclaimer run should be deemphasized.");
+        Assert.IsFalse(disclaimer.Bold);
+
+        // Part 3: newline separator
+        TextPart newline2 = Assert.IsInstanceOfType<TextPart>(summary.SummaryParts[3]);
+        Assert.AreEqual("\n", newline2.Text);
+
+        // Part 4: body text — the actual AI-generated summary content
+        TextPart body = Assert.IsInstanceOfType<TextPart>(summary.SummaryParts[4]);
+        StringAssert.Contains(body.Text, "happy birthday");
+        Assert.IsFalse(body.Bold);
+        Assert.IsFalse(body.IsDeemphasized);
     }
 
     [TestMethod]
@@ -1837,15 +1865,14 @@ public class ParserTests
         Assert.AreEqual(EngagementMessageType.SubscribersOnly, item.MessageType);
         // Timestamp from timestampUsec "1775908564579677"
         Assert.AreNotEqual(default, item.Timestamp);
-        Assert.AreEqual(3, item.MessageParts.Length);
-        _ = Assert.IsInstanceOfType<TextPart>(item.MessageParts[0]);
-        Assert.AreEqual("5 minutes", ((TextPart)item.MessageParts[1]).Text);
+        Assert.AreEqual(3, item.Message.Length);
+        _ = Assert.IsInstanceOfType<TextPart>(item.Message[0]);
+        Assert.AreEqual("5 minutes", ((TextPart)item.Message[1]).Text);
         Assert.AreEqual(
             "//support.google.com/youtube/?p=subs_only_chat_viewer&hl=en",
             item.LearnMoreUrl
         );
-        StringAssert.Contains(item.Message, "5 minutes");
-        StringAssert.Contains(item.Message, "Subscribers-only mode");
+        StringAssert.Contains(((TextPart)item.Message[0]).Text, "Subscribers-only mode");
     }
 
     [TestMethod]
@@ -1865,9 +1892,8 @@ public class ParserTests
             item.Id
         );
         Assert.AreEqual(EngagementMessageType.SubscribersOnly, item.MessageType);
-        Assert.AreEqual(3, item.MessageParts.Length);
-        Assert.AreEqual("20 minutes", ((TextPart)item.MessageParts[1]).Text);
-        StringAssert.Contains(item.Message, "20 minutes");
+        Assert.AreEqual(3, item.Message.Length);
+        Assert.AreEqual("20 minutes", ((TextPart)item.Message[1]).Text);
     }
 
     [TestMethod]
@@ -1887,8 +1913,8 @@ public class ParserTests
             item.Id
         );
         Assert.AreEqual(EngagementMessageType.CommunityGuidelines, item.MessageType);
-        Assert.AreEqual(1, item.MessageParts.Length);
-        StringAssert.Contains(item.Message, "community guidelines");
+        Assert.AreEqual(1, item.Message.Length);
+        StringAssert.Contains(((TextPart)item.Message[0]).Text, "community guidelines");
         Assert.AreEqual(
             "//support.google.com/youtube/answer/2853856?hl=en#safe",
             item.LearnMoreUrl
@@ -1909,10 +1935,11 @@ public class ParserTests
         Assert.IsNotNull(item);
         Assert.AreEqual("ChwKGkNNS082cVdsNXBNREZicGJUQWdkME1VN2x3", item.Id);
         Assert.AreEqual(EngagementMessageType.PollResult, item.MessageType);
-        Assert.AreEqual(6, item.MessageParts.Length);
+        Assert.AreEqual(6, item.Message.Length);
         Assert.IsNull(item.LearnMoreUrl);
-        StringAssert.Contains(item.Message, "Poll complete");
-        StringAssert.Contains(item.Message, "DIG (70%)");
+        string pollResultText = string.Concat(item.Message.OfType<TextPart>().Select(p => p.Text));
+        StringAssert.Contains(pollResultText, "Poll complete");
+        StringAssert.Contains(pollResultText, "DIG (70%)");
     }
 
     [TestMethod]
@@ -1929,11 +1956,16 @@ public class ParserTests
         Assert.IsNotNull(item);
         Assert.AreEqual("ChwKGkNKelhuTldmNzVNREZaZHhUQWdkY0JZeDZR", item.Id);
         Assert.AreEqual(EngagementMessageType.PollResult, item.MessageType);
-        Assert.AreEqual(8, item.MessageParts.Length, "Bold question + newline + 2 result lines + 2 newlines + summary = 8 parts.");
+        Assert.AreEqual(8, item.Message.Length, "Bold question + newline + 2 result lines + 2 newlines + summary = 8 parts.");
         Assert.IsNull(item.LearnMoreUrl);
-        StringAssert.Contains(item.Message, "Poll complete: 1.9K votes");
-        StringAssert.Contains(item.Message, "floor (53%)");
-        StringAssert.Contains(item.Message, "for the wood");
+        // Verify bold run for the question text
+        TextPart questionPart = Assert.IsInstanceOfType<TextPart>(item.Message[0]);
+        Assert.IsTrue(questionPart.Bold, "Poll question run should be bold.");
+        StringAssert.Contains(questionPart.Text, "for the wood");
+        // Verify overall content via plain-text concatenation
+        string pollText = string.Concat(item.Message.OfType<TextPart>().Select(p => p.Text));
+        StringAssert.Contains(pollText, "Poll complete: 1.9K votes");
+        StringAssert.Contains(pollText, "floor (53%)");
     }
 
     [TestMethod]

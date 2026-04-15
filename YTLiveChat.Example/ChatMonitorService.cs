@@ -378,10 +378,11 @@ internal class ChatMonitorService : IHostedService, IDisposable
             Console.Write(' ');
 
             // Question + creator header
-            if (!string.IsNullOrWhiteSpace(poll.Question))
+            if (poll.Question is { Length: > 0 })
             {
                 Console.ForegroundColor = ConsoleColor.White;
-                string q = poll.Question.Length > 50 ? poll.Question[..50] + "…" : poll.Question;
+                string q = string.Concat(poll.Question.OfType<TextPart>().Select(p => p.Text));
+                if (q.Length > 50) q = q[..50] + "…";
                 Console.Write($"\"{q}\"");
             }
 
@@ -398,7 +399,8 @@ internal class ChatMonitorService : IHostedService, IDisposable
             string choicesSummary = string.Join(" | ", poll.Choices.Select(c =>
             {
                 string prefix = c.IsSelected ? "• " : "";
-                return poll.IsNew ? $"{prefix}{c.Text}" : $"{prefix}{c.Text} {c.VoteRatio * 100:0}%";
+                string choiceText = string.Concat(c.Text.OfType<TextPart>().Select(p => p.Text));
+                return poll.IsNew ? $"{prefix}{choiceText}" : $"{prefix}{choiceText} {c.VoteRatio * 100:0}%";
             }));
             Console.Write(choicesSummary);
 
@@ -495,7 +497,7 @@ internal class ChatMonitorService : IHostedService, IDisposable
                 Console.ResetColor();
                 Console.Write(' ');
                 Console.ForegroundColor = ConsoleColor.DarkGray;
-                Console.Write(summary.SummaryText);
+                Console.Write(string.Concat(summary.SummaryParts.OfType<TextPart>().Select(p => p.Text)));
             }
 
             Console.ResetColor();
@@ -582,12 +584,15 @@ internal class ChatMonitorService : IHostedService, IDisposable
             WriteTimestamp(engagement.Timestamp);
             WriteSourceTag(session.SourceTag);
             WriteTag(label, color);
-            if (!string.IsNullOrWhiteSpace(engagement.Message))
+            if (engagement.Message.Length > 0)
             {
                 Console.Write(' ');
                 Console.ForegroundColor = ConsoleColor.DarkGray;
-                // Trim newlines for single-line console rendering
-                Console.Write(engagement.Message.Replace('\n', ' ').Trim());
+                // Collapse newlines for single-line console rendering
+                string text = string.Concat(engagement.Message.OfType<TextPart>().Select(p => p.Text))
+                    .Replace('\n', ' ')
+                    .Trim();
+                Console.Write(text);
             }
 
             if (!string.IsNullOrWhiteSpace(engagement.LearnMoreUrl))

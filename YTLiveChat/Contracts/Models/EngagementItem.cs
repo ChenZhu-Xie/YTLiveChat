@@ -42,14 +42,11 @@ public class EngagementItem
     public EngagementMessageType MessageType { get; set; } = EngagementMessageType.Unknown;
 
     /// <summary>
-    /// Full message text, concatenated from all text runs.
+    /// Structured message parts from the message runs, preserving bold, italic,
+    /// deemphasized, and emoji formatting. Concatenate <see cref="TextPart.Text"/> values
+    /// for a plain-text summary.
     /// </summary>
-    public string? Message { get; set; }
-
-    /// <summary>
-    /// Structured message parts (text segments) from the message runs.
-    /// </summary>
-    public MessagePart[] MessageParts { get; set; } = [];
+    public MessagePart[] Message { get; set; } = [];
 
     /// <summary>
     /// URL for a "Learn more" action button, if present.

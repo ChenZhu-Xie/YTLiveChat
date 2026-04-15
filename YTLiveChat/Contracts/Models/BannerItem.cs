@@ -108,10 +108,12 @@ public sealed class ChatSummaryBannerItem : BannerItem
     public string? SummaryId { get; set; }
 
     /// <summary>
-    /// The AI-generated summary text extracted from the banner body (the last non-empty,
-    /// non-newline run in the <c>chatSummary.runs</c> array).
+    /// The full <c>chatSummary.runs</c> content as structured message parts, preserving bold,
+    /// deemphasized, and plain text runs. Typically contains: a bold title run, a newline,
+    /// a deemphasized disclaimer run, a newline, and the body text run.
+    /// Concatenate <see cref="TextPart.Text"/> values for a plain-text summary.
     /// </summary>
-    public required string SummaryText { get; set; }
+    public required MessagePart[] SummaryParts { get; set; }
 }
 
 /// <summary>
