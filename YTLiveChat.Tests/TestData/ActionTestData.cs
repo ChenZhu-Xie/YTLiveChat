@@ -315,7 +315,7 @@ internal static class ActionTestData
 
     /// <summary>
     /// Cross-channel redirect banner with a "Learn more" button (no watchEndpoint/videoId).
-    /// This variant appears when a channel's viewers join via Squad streaming.
+    /// This variant appears when another channel's viewers raid into this stream.
     /// Real data from dump_banner_new.json entry 6 (@holoen_ceciliaimmergreen).
     /// Banner type: LIVE_CHAT_BANNER_TYPE_CROSS_CHANNEL_REDIRECT
     /// </summary>
@@ -540,7 +540,7 @@ internal static class ActionTestData
             """;
 
     /// <summary>
-    /// Cross-channel redirect banner from @KureijiOllie ("Learn more" / Squad join variant).
+    /// Cross-channel redirect banner from @KureijiOllie ("Learn more" / raid variant).
     /// Real data from dump_banners.json (entry 3).
     /// Banner type: LIVE_CHAT_BANNER_TYPE_CROSS_CHANNEL_REDIRECT
     /// isEphemeral: true, bannerTimeoutMs: "20000"

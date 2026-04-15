@@ -1539,8 +1539,8 @@ internal static partial class Parser
                 redirectRenderer.BannerMessage?.Runs?.ToMessageParts() ?? [];
 
             Contracts.Models.CrossChannelRedirectType redirectType = redirectVideoId is not null
-                ? Contracts.Models.CrossChannelRedirectType.StreamRedirect
-                : Contracts.Models.CrossChannelRedirectType.SquadJoin;
+                ? Contracts.Models.CrossChannelRedirectType.Redirect
+                : Contracts.Models.CrossChannelRedirectType.Raid;
 
             return new Contracts.Models.CrossChannelRedirectBannerItem
             {

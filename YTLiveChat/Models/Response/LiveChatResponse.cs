@@ -983,7 +983,7 @@ public record LiveChatBannerRendererProperties
 
 /// <summary>
 /// Properties at the <see cref="AddBannerToLiveChatCommand"/> level for ephemeral banners
-/// (e.g. cross-channel redirect / Squad streaming join notifications).
+/// (e.g. cross-channel redirect and raid notifications).
 /// </summary>
 public record AddBannerCommandProperties
 {

@@ -106,10 +106,10 @@ public interface IYTLiveChat : IDisposable
     ///     (<c>IsOwner</c>, <c>IsModerator</c>, <c>IsVerified</c>).
     ///   </description></item>
     ///   <item><description>
-    ///     <see cref="Models.CrossChannelRedirectBannerItem"/> — a cross-channel stream redirect; carries
-    ///     <c>RedirectChannelHandle</c> (the <c>@handle</c>) and <c>RedirectVideoId</c>
-    ///     (null when no specific video is indicated, e.g. Squad streaming join notifications).
-    ///     Pass either to <c>IYTLiveChat.Start</c> to follow the redirect.
+    ///     <see cref="Models.CrossChannelRedirectBannerItem"/> — a cross-channel banner; check
+    ///     <c>RedirectType</c> to distinguish an owner redirect (<c>Redirect</c>, <c>RedirectVideoId</c> non-null)
+    ///     from viewers raiding into this stream (<c>Raid</c>, <c>RedirectVideoId</c> null).
+    ///     Pass <c>RedirectVideoId</c> or <c>RedirectChannelHandle</c> to <c>IYTLiveChat.Start</c> to follow.
     ///   </description></item>
     /// </list>
     /// Use <see cref="BannerRemovedEventArgs.TargetActionId"/> in the subsequent <see cref="BannerRemoved"/>

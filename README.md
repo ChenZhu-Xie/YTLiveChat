@@ -50,7 +50,7 @@ dotnet add package Agash.YTLiveChat.DependencyInjection
 **Banners**
 - `BannerAdded` — fires with a `BannerItem` subclass; pattern-match to distinguish:
   - `PinnedMessageBannerItem` — pinned chat message; carries `Author`, `Message` (`MessagePart[]`), `PinnedBy`, `Timestamp`, and role flags (`IsOwner`, `IsModerator`, `IsVerified`)
-  - `CrossChannelRedirectBannerItem` — redirect to another stream; carries `RedirectChannelHandle` (the `@handle`), `RedirectVideoId` (null for Squad streaming join notifications), and `BannerMessage` (`MessagePart[]`)
+  - `CrossChannelRedirectBannerItem` — cross-channel banner; check `RedirectType` (`Redirect` = owner redirecting viewers to another stream, `Raid` = another channel's viewers joining here); carries `RedirectChannelHandle` (the `@handle`), `RedirectVideoId` (non-null only for `Redirect`), and `BannerMessage` (`MessagePart[]`)
   - `ChatSummaryBannerItem` — AI-generated chat summary (experimental YouTube feature); carries `Summary` (`MessagePart[]`) with bold title, deemphasized disclaimer, and body text runs, plus `SummaryId`
 - `BannerRemoved` — banner dismissed; `TargetActionId` matches the preceding `BannerAdded`'s `ActionId`
 
