@@ -259,6 +259,24 @@
             width: auto;
             vertical-align: middle;
             object-fit: contain;
+            position: relative;
+            display: inline-block;
+        }
+
+        /* 当 YouTube 表情图片加载失败（通常是网络问题）时，显示 alt 文本并遮盖破裂图标 */
+        .emoji::after {
+            content: attr(alt);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(34, 34, 34, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            visibility: visible;
         }
 
         .sticker-box {
