@@ -61,6 +61,10 @@ internal static class AnalyzeMode
                 "stickerDisplayWidth",
                 "stickerDisplayHeight",
                 "isV2Style",
+                // 1st-purchase novelty fields (~4% of stickers): decorative overlay + bumper + tracking
+                "headerOverlayImage",
+                "lowerBumper",
+                "pdgPurchasedNoveltyLoggingDirectives",
             ],
             ["liveChatMembershipItemRenderer"] =
             [

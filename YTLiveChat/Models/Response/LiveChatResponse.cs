@@ -463,6 +463,27 @@ public record LiveChatPaidStickerRenderer : MessageRendererBase
 
     [JsonPropertyName("isV2Style")]
     public bool IsV2Style { get; init; }
+
+    /// <summary>
+    /// Overlay image shown on 1st-purchase Super Stickers (PDG novelty celebration feature).
+    /// Contains a static thumbnail list (animation .webp). Decorative only.
+    /// </summary>
+    [JsonPropertyName("headerOverlayImage")]
+    public ThumbnailList? HeaderOverlayImage { get; init; }
+
+    /// <summary>
+    /// Lower bumper shown on 1st-purchase Super Stickers ("Let's celebrate their 1st Super…").
+    /// Contains a <c>liveChatItemBumperViewModel</c> with educational text. Decorative only.
+    /// </summary>
+    [JsonPropertyName("lowerBumper")]
+    public JsonElement? LowerBumper { get; init; }
+
+    /// <summary>
+    /// Logging/tracking directives for the PDG novelty celebration feature.
+    /// Present only when <see cref="HeaderOverlayImage"/> is set. Not used by the parser.
+    /// </summary>
+    [JsonPropertyName("pdgPurchasedNoveltyLoggingDirectives")]
+    public JsonElement? PdgPurchasedNoveltyLoggingDirectives { get; init; }
 }
 
 public record LiveChatMembershipItemRenderer : MessageRendererBase

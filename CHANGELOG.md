@@ -1,3 +1,9 @@
+### Added (response model — internal)
+- `liveChatPaidStickerRenderer` now models `headerOverlayImage`, `lowerBumper`, and
+  `pdgPurchasedNoveltyLoggingDirectives` — decorative fields for YouTube's "1st purchase novelty"
+  celebration feature (~4% of paid stickers). These fields are parsed by the response model but not
+  surfaced in contract types; they do not affect `ChatItem` or `Superchat` output.
+
 ### Added (formatting API)
 - `TextPart` now carries `Bold`, `Italics`, and `IsDeemphasized` flags populated via `ToMessagePart()`.
   `ToMessagePart()` is the single point of change for rich-text rendering support going forward.
