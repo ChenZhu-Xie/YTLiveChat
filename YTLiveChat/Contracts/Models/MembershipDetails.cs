@@ -31,6 +31,14 @@ public enum MembershipEventType
     /// The author of the ChatItem is the recipient.
     /// </summary>
     GiftRedemption,
+
+    /// <summary>
+    /// A user upgraded their existing membership to a higher tier.
+    /// Detected from <c>headerSubtext</c> using the runs shape
+    /// <c>["Upgraded membership to ", "{TierName}", "!"]</c>.
+    /// <c>LevelName</c> carries the destination tier name.
+    /// </summary>
+    Upgraded,
 }
 
 /// <summary>

@@ -391,6 +391,64 @@ public class ParserTests
         Assert.AreEqual("Welcome to Rat Boss!!", chatItem.MembershipDetails.HeaderSubtext);
     }
 
+    // ── Tier-upgrade tests (real InnerTube capture) ────────────────────────────
+    // Real event captured 2026-04-15: @rembray upgraded to "Cardinal Archer".
+    // See https://github.com/Agash/YTLiveChat/issues/42 for the tracking issue.
+
+    /// <summary>
+    /// Regression guard: the "Upgraded membership to" prefix must NOT trigger the New-member
+    /// detection path. Verified with a real InnerTube capture.
+    /// </summary>
+    [TestMethod]
+    public void ToChatItem_RealUpgrade_CardinalArcher_DoesNotClassifyAsNew()
+    {
+        string rendererContentJson = MembershipTestData.RealUpgrade_Runs_CardinalArcher();
+        ChatItem? chatItem = ParseRendererContentToChatItem(
+            rendererContentJson,
+            "liveChatMembershipItemRenderer"
+        );
+
+        Assert.IsNotNull(chatItem);
+        Assert.IsNotNull(chatItem.MembershipDetails);
+        Assert.AreNotEqual(
+            MembershipEventType.New,
+            chatItem.MembershipDetails.EventType,
+            "An 'Upgraded membership to' payload must NOT be classified as New."
+        );
+        Assert.IsTrue(chatItem.IsMembership, "IsMembership should be true for upgrade events.");
+    }
+
+    /// <summary>
+    /// Happy path: real capture of runs shape ["Upgraded membership to ", "Cardinal Archer", "!"]
+    /// is classified as Upgraded and tier name "Cardinal Archer" is extracted from the second run.
+    /// </summary>
+    [TestMethod]
+    public void ToChatItem_RealUpgrade_CardinalArcher_ParsesUpgradedEventAndTierName()
+    {
+        string rendererContentJson = MembershipTestData.RealUpgrade_Runs_CardinalArcher();
+        ChatItem? chatItem = ParseRendererContentToChatItem(
+            rendererContentJson,
+            "liveChatMembershipItemRenderer"
+        );
+
+        Assert.IsNotNull(chatItem);
+        Assert.IsNotNull(chatItem.MembershipDetails);
+        Assert.AreEqual(
+            MembershipEventType.Upgraded,
+            chatItem.MembershipDetails.EventType,
+            "EventType should be Upgraded for 'Upgraded membership to' headerSubtext."
+        );
+        Assert.AreEqual(
+            "Cardinal Archer",
+            chatItem.MembershipDetails.LevelName,
+            "Tier name should be extracted from the second run."
+        );
+        Assert.AreEqual("Upgraded membership to Cardinal Archer!", chatItem.MembershipDetails.HeaderSubtext);
+        Assert.AreEqual("@rembray", chatItem.Author.Name);
+        Assert.AreEqual("UCdtey2zoNQ9HVgdK9oEA_RA", chatItem.Author.ChannelId);
+        Assert.IsTrue(chatItem.IsMembership);
+    }
+
     [TestMethod]
     public void ToChatItem_NewMemberFromLatestLog_WithNewMemberBadge_ParsesCorrectly()
     {

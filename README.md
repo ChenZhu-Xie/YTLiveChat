@@ -33,7 +33,7 @@ dotnet add package Agash.YTLiveChat.DependencyInjection
 **Chat messages**
 - Chat messages (`ChatReceived`) — text, emoji, images
 - Super Chats / Super Stickers with parsed amount + currency
-- Membership events — new join, milestone, gift purchase, gift redemption (`MembershipDetails.EventType`)
+- Membership events — new join, milestone, gift purchase, gift redemption, tier upgrade (`MembershipDetails.EventType`)
 - Ticker support (`addLiveChatTickerItemAction`) — paid messages, membership items, gift purchase announcements; ticker items include author channel ID, author thumbnail, and `Author.ChannelHandle` (the `@handle`) when available
 - Viewer leaderboard rank extraction via `ChatItem.ViewerLeaderboardRank` (YouTube points crown tags like `#1`)
 
@@ -202,7 +202,6 @@ The file is written as a valid JSON array, so it is directly parseable by tools/
 ## Current Schema Coverage Gaps
 
 - Creator goals are not mapped yet (awaiting enough stable raw samples).
-- Membership tier upgrades are not mapped yet (observed in the wild but shape is not confirmed).
 
 ## Contributing
 

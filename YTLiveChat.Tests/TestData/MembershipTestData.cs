@@ -323,6 +323,53 @@ internal static class MembershipTestData
             }
             """;
     }
+    // ── Real upgrade event data ──────────────────────────────────────────────────
+    // Captured from a live stream (upgrade_events.json, 2026-04-15).
+    // Author @rembray upgraded to tier "Cardinal Archer". Badge shows "Member (1 year)".
+    // headerSubtext.runs shape: ["Upgraded membership to ", "Cardinal Archer", "!"]
+
+    /// <summary>
+    /// Real InnerTube capture of a membership tier-upgrade event.
+    /// Author @rembray upgraded to "Cardinal Archer"; badge tooltip "Member (1 year)".
+    /// headerSubtext uses the runs shape: ["Upgraded membership to ", "Cardinal Archer", "!"].
+    /// </summary>
+    public static string RealUpgrade_Runs_CardinalArcher() => """
+            {
+              "id": "ChwKGkNNU1ZtdGpJOEpNREZaaFlUQWdkdV9nc1F3",
+              "timestampUsec": "1776280547006206",
+              "authorExternalChannelId": "UCdtey2zoNQ9HVgdK9oEA_RA",
+              "headerSubtext": {
+                "runs": [
+                  { "text": "Upgraded membership to " },
+                  { "text": "Cardinal Archer" },
+                  { "text": "!" }
+                ]
+              },
+              "authorName": { "simpleText": "@rembray" },
+              "authorPhoto": {
+                "thumbnails": [
+                  { "url": "https://yt4.ggpht.com/mJB4A5YFOYgDsqZAZuUcpkS4tk2hcvkZebaeZFnmp9yDrYtgm81Yryi7yluiSzQFFWRNQFTkJO4=s32-c-k-c0x00ffffff-no-rj", "width": 32, "height": 32 },
+                  { "url": "https://yt4.ggpht.com/mJB4A5YFOYgDsqZAZuUcpkS4tk2hcvkZebaeZFnmp9yDrYtgm81Yryi7yluiSzQFFWRNQFTkJO4=s64-c-k-c0x00ffffff-no-rj", "width": 64, "height": 64 }
+                ]
+              },
+              "authorBadges": [
+                {
+                  "liveChatAuthorBadgeRenderer": {
+                    "customThumbnail": {
+                      "thumbnails": [
+                        { "url": "https://yt3.ggpht.com/tKIBMjzE8uZl9tG3YmpH23umrYpX8AAHKZTMy2pb11eVRC1nADLV6IngZL8FSuFE_knwO6j1Zw=s16-c-k", "width": 16, "height": 16 },
+                        { "url": "https://yt3.ggpht.com/tKIBMjzE8uZl9tG3YmpH23umrYpX8AAHKZTMy2pb11eVRC1nADLV6IngZL8FSuFE_knwO6j1Zw=s32-c-k", "width": 32, "height": 32 }
+                      ]
+                    },
+                    "tooltip": "Member (1 year)",
+                    "accessibility": { "accessibilityData": { "label": "Member (1 year)" } }
+                  }
+                }
+              ],
+              "trackingParams": "CAUQ4P0GIhMI8KiF2cjwkwMV_MdJBx3nJxgC"
+            }
+            """;
+
     public static string NewMemberWithExclamationTier_RatBoss()
     {
         long ts = GetTimestampUsec(130); // Unique offset
