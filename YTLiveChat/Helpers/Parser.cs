@@ -1456,6 +1456,8 @@ internal static partial class Parser
                 question = parts;
         }
 
+        string? pollType = pollRenderer.Header?.PollHeaderRenderer?.LiveChatPollType;
+
         return new Contracts.Models.PollItem
         {
             PollId = pollId!,
@@ -1464,6 +1466,7 @@ internal static partial class Parser
             TotalVotes = totalVotes,
             Choices = choices,
             IsNew = isNew,
+            PollType = pollType,
         };
     }
 

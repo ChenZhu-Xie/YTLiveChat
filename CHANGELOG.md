@@ -21,6 +21,9 @@
   uses the runs shape `["Upgraded membership to ", "{TierName}", "!"]`. Tier name is extracted from
   the second run (same mechanism as `New` events). Confirmed against a real InnerTube capture.
 
+### Added (poll)
+- `PollItem.PollType` — the InnerTube poll type string (e.g. `"LIVE_CHAT_POLL_TYPE_CREATOR"`), surfaced from `liveChatPollType` in the poll header renderer. Null when absent.
+
 ### Added (recent)
 - `Author.ChannelHandle` — the author's `@handle`, populated for ticker bar items where YouTube includes it directly in the outer ticker renderer (`liveChatTickerPaidMessageItemRenderer.authorUsername`). Parser also falls back to `authorPhoto.accessibility.accessibilityData.label` which carries the same value on all observed ticker paid-message items.
 - `ChatItem.ViewerLeaderboardRank` — leaderboard rank extracted from `leaderboardBadge.buttonViewModel.title` (e.g. `"#1"`) on paid messages. Previously unmodeled.

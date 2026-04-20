@@ -1416,6 +1416,7 @@ public class ParserTests
         Assert.AreEqual(0.28, poll.Choices[0].VoteRatio, 0.001);
         Assert.AreEqual("Option B", string.Concat(poll.Choices[1].Text.OfType<TextPart>().Select(p => p.Text)));
         Assert.AreEqual(0.72, poll.Choices[1].VoteRatio, 0.001);
+        Assert.AreEqual("LIVE_CHAT_POLL_TYPE_CREATOR", poll.PollType);
     }
 
     [TestMethod]
@@ -1440,6 +1441,7 @@ public class ParserTests
         // Fresh polls have no voteRatio (default 0.0 since the field is not present in JSON)
         Assert.AreEqual(0.0, poll.Choices[0].VoteRatio);
         Assert.AreEqual(0.0, poll.Choices[1].VoteRatio);
+        Assert.AreEqual("LIVE_CHAT_POLL_TYPE_CREATOR", poll.PollType);
     }
 
     [TestMethod]

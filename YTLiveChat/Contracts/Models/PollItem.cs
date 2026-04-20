@@ -21,6 +21,7 @@ public class PollChoice
     /// Multiply by 100 to get the percentage.
     /// </summary>
     public double VoteRatio { get; set; }
+
 }
 
 /// <summary>
@@ -62,4 +63,10 @@ public class PollItem
     /// false when produced by <c>updateLiveChatPollAction</c> (vote-count update).
     /// </summary>
     public bool IsNew { get; set; }
+
+    /// <summary>
+    /// The InnerTube poll type string (e.g. <c>"LIVE_CHAT_POLL_TYPE_CREATOR"</c>).
+    /// Null when absent from the payload.
+    /// </summary>
+    public string? PollType { get; set; }
 }

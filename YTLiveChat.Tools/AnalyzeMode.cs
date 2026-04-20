@@ -128,6 +128,11 @@ internal static class AnalyzeMode
                 "choices", "liveChatPollId", "header",
                 "trackingParams", "clickTrackingParams",
             ],
+            ["pollHeaderRenderer"] =
+            [
+                "pollQuestion", "thumbnail", "metadataText", "liveChatPollType",
+                "trackingParams", "clickTrackingParams",
+            ],
 
             // ── addLiveChatTickerItemAction outer item renderers ──────────────
             ["liveChatTickerPaidMessageItemRenderer"] =
@@ -181,12 +186,217 @@ internal static class AnalyzeMode
             ],
         };
 
-    // Known fields that may appear inside run objects within any `runs` array.
-    // Anything outside this set is flagged in the Unknown Run Fields section.
+    // ── Deep scan baselines ───────────────────────────────────────────────────
+    // Used by the two recursive scanners that walk every action at any depth.
+
+    // All known field names inside run objects.
     private static readonly HashSet<string> KnownRunFields = new(StringComparer.Ordinal)
     {
         "text", "bold", "italics", "strikethrough", "emoji",
         "navigationEndpoint", "fontFace",
+    };
+
+    // Every JSON property name we have ever seen or modelled, at any nesting depth.
+    // Any key not in this set that appears in a log will be flagged as NEW.
+    private static readonly HashSet<string> AllKnownJsonKeys = new(StringComparer.Ordinal)
+    {
+        // ── Top-level InnerTube continuation response ─────────────────────────
+        "continuationContents", "liveChatContinuation", "actions",
+        "responseContext", "mainAppWebResponseContext", "loggedOut",
+        "webResponseContextExtensionData", "hasDecorated",
+
+        // ── Top-level action keys ─────────────────────────────────────────────
+        "clickTrackingParams", "trackingParams",
+        "addChatItemAction",
+        "addLiveChatTickerItemAction",
+        "addBannerToLiveChatCommand",
+        "removeChatItemAction",
+        "replaceChatItemAction",
+        "removeChatItemByAuthorAction",
+        "markChatItemsByAuthorAsDeletedAction",
+        "showLiveChatActionPanelAction",
+        "updateLiveChatPollAction",
+        "closeLiveChatActionPanelAction",
+        "removeBannerForLiveChatCommand",
+        "liveChatReportModerationStateCommand",
+        "signalAction",
+        "changeEngagementPanelVisibilityAction",
+
+        // ── Action payload fields ─────────────────────────────────────────────
+        "item",
+        "targetItemId",
+        "replacementItem",
+        "externalChannelId",
+        "panelToShow",
+        "pollToUpdate",
+        "targetPanelId",
+        "skipOnDismissCommand",
+
+        // ── Renderer container / wrapper keys ─────────────────────────────────
+        "liveChatTextMessageRenderer",
+        "liveChatPaidMessageRenderer",
+        "liveChatPaidStickerRenderer",
+        "liveChatMembershipItemRenderer",
+        "liveChatSponsorshipsGiftPurchaseAnnouncementRenderer",
+        "liveChatSponsorshipsGiftRedemptionAnnouncementRenderer",
+        "liveChatPlaceholderItemRenderer",
+        "liveChatViewerEngagementMessageRenderer",
+        "liveChatModeChangeMessageRenderer",
+        "liveChatTickerPaidMessageItemRenderer",
+        "liveChatTickerSponsorItemRenderer",
+        "liveChatTickerPaidStickerItemRenderer",
+        "liveChatBannerRenderer",
+        "liveChatBannerHeaderRenderer",
+        "liveChatBannerRedirectRenderer",
+        "liveChatActionPanelRenderer",
+        "liveChatSponsorshipsHeaderRenderer",
+        "liveChatItemContextMenuRenderer",
+        "pollRenderer",
+        "pollHeaderRenderer",
+        "bannerRenderer",
+        "contents",
+        "renderer",
+        "header",
+
+        // ── Common renderer base fields ───────────────────────────────────────
+        "id", "timestampUsec",
+        "authorName", "authorPhoto", "authorBadges", "authorExternalChannelId",
+        "contextMenuEndpoint", "contextMenuAccessibility",
+        "message",
+
+        // ── Rich text (runs + run-object fields) ──────────────────────────────
+        "simpleText", "runs",
+        "text", "bold", "italics", "strikethrough", "fontFace",
+        "emoji", "emojiId", "shortcuts", "searchTerms", "image",
+        "isCustomEmoji", "supportsSkinTone", "variantIds",
+        "navigationEndpoint",
+
+        // ── Thumbnail / image ─────────────────────────────────────────────────
+        "thumbnails", "url", "width", "height",
+
+        // ── Accessibility ─────────────────────────────────────────────────────
+        "accessibility", "accessibilityData", "label",
+
+        // ── Badge ─────────────────────────────────────────────────────────────
+        "liveChatAuthorBadgeRenderer", "customThumbnail", "tooltip",
+        "icon", "iconType",
+
+        // ── Paid message ──────────────────────────────────────────────────────
+        "purchaseAmountText",
+        "headerBackgroundColor", "headerTextColor",
+        "bodyBackgroundColor", "bodyTextColor",
+        "authorNameTextColor", "timestampColor",
+        "isV2Style", "textInputBackgroundColor",
+        "leaderboardBadge", "creatorHeartButton", "replyButton", "pdgLikeButton",
+
+        // ── Paid sticker ──────────────────────────────────────────────────────
+        "sticker",
+        "moneyChipBackgroundColor", "moneyChipTextColor", "backgroundColor",
+        "stickerDisplayWidth", "stickerDisplayHeight",
+        "headerOverlayImage", "lowerBumper", "pdgPurchasedNoveltyLoggingDirectives",
+
+        // ── Membership ────────────────────────────────────────────────────────
+        "headerPrimaryText", "headerSubtext",
+        "empty", "beforeContentButtons",
+
+        // ── Gift sponsorship ──────────────────────────────────────────────────
+        "primaryText", "primaryThumbnail",
+
+        // ── Viewer engagement / mode change ───────────────────────────────────
+        "actionButton", "subtext",
+
+        // ── Ticker outer items ────────────────────────────────────────────────
+        "showItemEndpoint", "showLiveChatItemEndpoint",
+        "authorUsername", "sponsorPhoto",
+        "detailText", "detailTextColor", "detailIcon",
+        "startBackgroundColor", "endBackgroundColor", "amountTextColor",
+        "durationSec", "fullDurationSec",
+        "tickerThumbnails",
+        "animationOrigin", "dynamicStateData", "openEngagementPanelCommand",
+
+        // ── Banner ────────────────────────────────────────────────────────────
+        "actionId", "viewerIsCreator", "targetId",
+        "isStackable", "backgroundType", "bannerProperties", "bannerType",
+        "autoCollapseDelay", "seconds", "bannerCollapsedStateEntityKey",
+        "inlineActionButton", "bannerActionButton", "contextMenuButton",
+        "bannerMessage",
+
+        // ── Poll ──────────────────────────────────────────────────────────────
+        "liveChatPollId", "choices", "selected",
+        "signinEndpoint", "signInEndpoint", "nextEndpoint",
+        "liveChatPollQuestion", "pollQuestion", "metadataText",
+        "liveChatPollType", "thumbnail",
+        "voteCount", "voteRatioIfSelected", "voteRatio", "votePercentage",
+
+        // ── Leaderboard badge ─────────────────────────────────────────────────
+        "buttonViewModel", "title", "iconName", "accessibilityText", "onTap",
+
+        // ── InnerTube navigation / button infrastructure ───────────────────────
+        "commandMetadata", "webCommandMetadata",
+        "webPageType", "rootVe", "ignoreNavigation",
+        "urlEndpoint", "target",
+        "watchEndpoint", "videoId",
+        "liveChatItemContextMenuEndpoint", "params",
+        "serviceEndpoint", "feedbackEndpoint", "feedbackToken",
+        "uiActions", "hideEnclosingContainer",
+        "buttonRenderer", "style", "size", "isDisabled", "command",
+
+        // ── Context menu items ────────────────────────────────────────────────
+        "menuItems", "menuNavigationItemRenderer", "menuServiceItemRenderer",
+        "defaultText",
+
+        // ── Thumbnail sources (used in poll header, heart viewmodel, etc.) ───
+        "sources", "clientResource", "imageName", "imageColor",
+
+        // ── Logging / tracking ────────────────────────────────────────────────
+        "loggingDirectives", "visibility", "types", "clientId",
+
+        // ── Content + styleRuns (ViewModel text containers) ───────────────────
+        "content", "styleRuns", "startIndex", "length",
+
+        // ── Engagement panel / reply thread system ────────────────────────────
+        "showEngagementPanelEndpoint", "identifier", "surface", "tag",
+        "globalConfiguration",
+        "engagementPanelPopupPresentationConfig", "engagementPanelPresentationConfigs",
+        "popupType", "innertubeCommand",
+        "replyCountEntityKey", "replyCountPlaceholder",
+        "engagementStateEntityKey", "engagementStateKey",
+        "isFullWidth", "useGreenPath",
+
+        // ── Reply button view models ──────────────────────────────────────────
+        "pdgReplyButtonViewModel", "replyIcon",
+
+        // ── Creator heart view model ──────────────────────────────────────────
+        "creatorHeartViewModel", "creatorThumbnail",
+        "heartedIcon", "unheartedIcon",
+        "heartedAccessibilityLabel", "unheartedAccessibilityLabel", "heartedHoverText",
+        "borderImageProcessor", "imageTint", "processor", "color",
+
+        // ── Like / PDG like view model ────────────────────────────────────────
+        "pdgLikeViewModel",
+        "toggleButton", "toggleButtonViewModel",
+        "defaultButtonViewModel", "toggledButtonViewModel",
+        "likeCountEntityKey", "likeIcon", "likedIcon",
+        "likesEmptyStateText", "emptyStateText",
+        "buttonSize", "customBackgroundColor", "customFontColor", "type",
+
+        // ── Ticker state animation ────────────────────────────────────────────
+        "stateSlideDirection", "stateSlideDurationMs",
+        "stateUpdateDelayAfterMs", "stateUpdateDelayBeforeMs",
+
+        // ── Banner / command properties ───────────────────────────────────────
+        "bannerTimeoutMs", "isEphemeral", "targetActionId",
+
+        // ── Navigation extras ─────────────────────────────────────────────────
+        "nofollow", "playerParams", "gestures",
+
+        // ── 1st-purchase bumper view model ────────────────────────────────────
+        "liveChatItemBumperViewModel", "bumperUserEduContentViewModel",
+        "pdgPurchasedBumperLoggingDirectives",
+
+        // ── Moderation / report state ─────────────────────────────────────────
+        // (liveChatReportModerationStateCommand payload — opaque, not modelled)
+        "moderationState",
     };
 
     // ── Data structures ───────────────────────────────────────────────────────
@@ -267,8 +477,10 @@ internal static class AnalyzeMode
         Dictionary<string, int> actionCounts = new(StringComparer.Ordinal);
         // Renderer types we have no baseline for at all
         HashSet<string> unknownRendererTypes = new(StringComparer.Ordinal);
-        // Unknown run fields: "{location}:{rendererType}.{property}.runs[].{fieldName}" → FieldEntry
+        // Deep scan: any run-object field not in KnownRunFields, keyed by full JSON path
         Dictionary<string, FieldEntry> unknownRunFields = new(StringComparer.Ordinal);
+        // Deep scan: any JSON property name not in AllKnownJsonKeys, keyed by name
+        Dictionary<string, FieldEntry> unknownJsonKeys = new(StringComparer.Ordinal);
         List<string> parseErrors = [];
         int totalActions = 0;
 
@@ -293,20 +505,25 @@ internal static class AnalyzeMode
 
                     if (actionType == "addChatItemAction")
                     {
-                        ProcessAddChatItem(action, stats, unknownRendererTypes, unknownRunFields);
+                        ProcessAddChatItem(action, stats, unknownRendererTypes);
                     }
                     else if (actionType == "addLiveChatTickerItemAction")
                     {
-                        ProcessTickerItem(action, stats, unknownRendererTypes, unknownRunFields);
+                        ProcessTickerItem(action, stats, unknownRendererTypes);
                     }
                     else if (actionType == "addBannerToLiveChatCommand")
                     {
-                        ProcessBannerAction(action, stats, unknownRendererTypes, unknownRunFields);
+                        ProcessBannerAction(action, stats, unknownRendererTypes);
                     }
                     else if (actionType is "showLiveChatActionPanelAction" or "updateLiveChatPollAction")
                     {
-                        ProcessPollAction(actionType, action, stats, unknownRendererTypes, unknownRunFields);
+                        ProcessPollAction(actionType, action, stats, unknownRendererTypes);
                     }
+
+                    // Deep recursive scans on every action regardless of type:
+                    // catches new keys and new run fields at any nesting depth.
+                    WalkForUnknownKeys(action, unknownJsonKeys);
+                    WalkForUnknownRunFields(actionType, action, unknownRunFields);
                 }
             }
             catch (Exception ex)
@@ -435,8 +652,8 @@ internal static class AnalyzeMode
 
         Console.WriteLine();
 
-        // Unknown run fields (new fields inside runs arrays not in KnownRunFields)
-        WriteSectionHeader("Unknown Run Fields (new fields inside runs[] not in known set)");
+        // Unknown run fields — new fields inside runs[] at any depth, any action
+        WriteSectionHeader("Unknown Run Fields (any depth, any action)");
         Console.WriteLine();
         if (unknownRunFields.Count == 0)
         {
@@ -447,8 +664,27 @@ internal static class AnalyzeMode
             foreach (KeyValuePair<string, FieldEntry> kv in unknownRunFields.OrderByDescending(x => x.Value.Count).ThenBy(x => x.Key, StringComparer.Ordinal))
             {
                 Console.Write("  ");
-                WriteColor($"[NEW]  ", ConsoleColor.Yellow);
-                Console.WriteLine($"{kv.Key,-70}  {kv.Value.Count:N0}x  eg: {kv.Value.Example}");
+                WriteColor("[NEW]  ", ConsoleColor.Yellow);
+                Console.WriteLine($"{kv.Key,-80}  {kv.Value.Count:N0}x  eg: {kv.Value.Example}");
+            }
+        }
+
+        Console.WriteLine();
+
+        // Unknown JSON keys — any property name not in AllKnownJsonKeys, at any depth
+        WriteSectionHeader("Unknown JSON Keys (any depth, any action)");
+        Console.WriteLine();
+        if (unknownJsonKeys.Count == 0)
+        {
+            Console.WriteLine("  (none)");
+        }
+        else
+        {
+            foreach (KeyValuePair<string, FieldEntry> kv in unknownJsonKeys.OrderByDescending(x => x.Value.Count).ThenBy(x => x.Key, StringComparer.Ordinal))
+            {
+                Console.Write("  ");
+                WriteColor("[NEW]  ", ConsoleColor.Yellow);
+                Console.WriteLine($"{kv.Key,-50}  {kv.Value.Count:N0}x  eg: {kv.Value.Example}");
             }
         }
 
@@ -471,8 +707,7 @@ internal static class AnalyzeMode
     private static void ProcessAddChatItem(
         JsonElement action,
         Dictionary<string, RendererStats> stats,
-        HashSet<string> unknownRendererTypes,
-        Dictionary<string, FieldEntry> unknownRunFields)
+        HashSet<string> unknownRendererTypes)
     {
         if (!action.TryGetProperty("addChatItemAction", out JsonElement addChat) ||
             !addChat.TryGetProperty("item", out JsonElement item))
@@ -486,14 +721,13 @@ internal static class AnalyzeMode
             return;
         }
 
-        ObserveRenderer("addChatItemAction", rendererType, rendererValue, stats, unknownRendererTypes, unknownRunFields);
+        ObserveRenderer("addChatItemAction", rendererType, rendererValue, stats, unknownRendererTypes);
     }
 
     private static void ProcessTickerItem(
         JsonElement action,
         Dictionary<string, RendererStats> stats,
-        HashSet<string> unknownRendererTypes,
-        Dictionary<string, FieldEntry> unknownRunFields)
+        HashSet<string> unknownRendererTypes)
     {
         if (!action.TryGetProperty("addLiveChatTickerItemAction", out JsonElement tickerAction) ||
             !tickerAction.TryGetProperty("item", out JsonElement tickerItem))
@@ -501,26 +735,23 @@ internal static class AnalyzeMode
             return;
         }
 
-        // Outer item renderer (the ticker bar entry itself)
         if (LogReader.TryGetSingleRenderer(tickerItem, out string? outerRenderer, out JsonElement outerValue) &&
             outerRenderer != null)
         {
-            ObserveRenderer("ticker.item", outerRenderer, outerValue, stats, unknownRendererTypes, unknownRunFields);
+            ObserveRenderer("ticker.item", outerRenderer, outerValue, stats, unknownRendererTypes);
         }
 
-        // Nested renderer inside showItemEndpoint → showLiveChatItemEndpoint → renderer
         if (LogReader.TryGetNestedShowRenderer(tickerItem, out string? nestedRenderer, out JsonElement nestedValue) &&
             nestedRenderer != null)
         {
-            ObserveRenderer("ticker.showLiveChatItemEndpoint", nestedRenderer, nestedValue, stats, unknownRendererTypes, unknownRunFields);
+            ObserveRenderer("ticker.showLiveChatItemEndpoint", nestedRenderer, nestedValue, stats, unknownRendererTypes);
         }
     }
 
     private static void ProcessBannerAction(
         JsonElement action,
         Dictionary<string, RendererStats> stats,
-        HashSet<string> unknownRendererTypes,
-        Dictionary<string, FieldEntry> unknownRunFields)
+        HashSet<string> unknownRendererTypes)
     {
         if (!action.TryGetProperty("addBannerToLiveChatCommand", out JsonElement bannerCmd) ||
             !bannerCmd.TryGetProperty("bannerRenderer", out JsonElement bannerRenderer) ||
@@ -529,15 +760,13 @@ internal static class AnalyzeMode
             return;
         }
 
-        // Analyze the outer liveChatBannerRenderer
-        ObserveRenderer("addBannerToLiveChatCommand", "liveChatBannerRenderer", liveRenderer, stats, unknownRendererTypes, unknownRunFields);
+        ObserveRenderer("addBannerToLiveChatCommand", "liveChatBannerRenderer", liveRenderer, stats, unknownRendererTypes);
 
-        // Analyze the content renderer (liveChatTextMessageRenderer, liveChatBannerRedirectRenderer, etc.)
         if (liveRenderer.TryGetProperty("contents", out JsonElement contents) &&
             LogReader.TryGetSingleRenderer(contents, out string? contentRenderer, out JsonElement contentValue) &&
             contentRenderer != null)
         {
-            ObserveRenderer("addBannerToLiveChatCommand.contents", contentRenderer, contentValue, stats, unknownRendererTypes, unknownRunFields);
+            ObserveRenderer("addBannerToLiveChatCommand.contents", contentRenderer, contentValue, stats, unknownRendererTypes);
         }
     }
 
@@ -545,8 +774,7 @@ internal static class AnalyzeMode
         string actionType,
         JsonElement action,
         Dictionary<string, RendererStats> stats,
-        HashSet<string> unknownRendererTypes,
-        Dictionary<string, FieldEntry> unknownRunFields)
+        HashSet<string> unknownRendererTypes)
     {
         JsonElement pollRenderer = default;
         bool found = false;
@@ -569,9 +797,7 @@ internal static class AnalyzeMode
         }
 
         if (found)
-        {
-            ObserveRenderer(actionType, "pollRenderer", pollRenderer, stats, unknownRendererTypes, unknownRunFields);
-        }
+            ObserveRenderer(actionType, "pollRenderer", pollRenderer, stats, unknownRendererTypes);
     }
 
     // ── Field observation ─────────────────────────────────────────────────────
@@ -581,8 +807,7 @@ internal static class AnalyzeMode
         string rendererType,
         JsonElement rendererValue,
         Dictionary<string, RendererStats> stats,
-        HashSet<string> unknownRendererTypes,
-        Dictionary<string, FieldEntry> unknownRunFields)
+        HashSet<string> unknownRendererTypes)
     {
         string key = $"{location}:{rendererType}";
         if (!stats.TryGetValue(key, out RendererStats? rs))
@@ -634,54 +859,85 @@ internal static class AnalyzeMode
             }
         }
 
-        ScanForUnknownRunFields(location, rendererType, rendererValue, unknownRunFields);
+    }
+
+    // ── Deep recursive scanners ───────────────────────────────────────────────
+
+    /// <summary>
+    /// Recursively walks the entire JSON element and records any property name not in
+    /// <see cref="AllKnownJsonKeys"/>. Keyed by the property name alone (count aggregates
+    /// across all occurrences); the stored example gives enough context to locate it.
+    /// </summary>
+    private static void WalkForUnknownKeys(JsonElement element, Dictionary<string, FieldEntry> unknownKeys)
+    {
+        if (element.ValueKind == JsonValueKind.Object)
+        {
+            foreach (JsonProperty prop in element.EnumerateObject())
+            {
+                if (!AllKnownJsonKeys.Contains(prop.Name))
+                {
+                    if (!unknownKeys.TryGetValue(prop.Name, out FieldEntry? entry))
+                    {
+                        entry = new FieldEntry { Example = LogReader.SummarizeValue(prop.Value, 90) };
+                        unknownKeys[prop.Name] = entry;
+                    }
+                    entry.Count++;
+                }
+                WalkForUnknownKeys(prop.Value, unknownKeys);
+            }
+        }
+        else if (element.ValueKind == JsonValueKind.Array)
+        {
+            foreach (JsonElement item in element.EnumerateArray())
+                WalkForUnknownKeys(item, unknownKeys);
+        }
     }
 
     /// <summary>
-    /// Scans all direct properties of <paramref name="rendererValue"/> whose value is a rich-text
-    /// object (i.e. contains a <c>runs</c> array), and records any run-object field names that are
-    /// not in <see cref="KnownRunFields"/>.
+    /// Recursively walks the entire JSON element looking for any object that has a
+    /// <c>runs</c> property (a rich-text container). Within each run object, records any
+    /// field name not in <see cref="KnownRunFields"/>, keyed by the full JSON path so
+    /// callers can see exactly where in the tree the new field appeared.
     /// </summary>
-    private static void ScanForUnknownRunFields(
-        string location,
-        string rendererType,
-        JsonElement rendererValue,
+    private static void WalkForUnknownRunFields(
+        string path,
+        JsonElement element,
         Dictionary<string, FieldEntry> unknownRunFields)
     {
-        if (rendererValue.ValueKind != JsonValueKind.Object)
-            return;
-
-        foreach (JsonProperty prop in rendererValue.EnumerateObject())
+        if (element.ValueKind == JsonValueKind.Object)
         {
-            if (prop.Value.ValueKind != JsonValueKind.Object)
-                continue;
-
-            if (!prop.Value.TryGetProperty("runs", out JsonElement runs) ||
-                runs.ValueKind != JsonValueKind.Array)
+            // If this object is a rich-text container, scan its runs
+            if (element.TryGetProperty("runs", out JsonElement runs) && runs.ValueKind == JsonValueKind.Array)
             {
-                continue;
-            }
-
-            foreach (JsonElement run in runs.EnumerateArray())
-            {
-                if (run.ValueKind != JsonValueKind.Object)
-                    continue;
-
-                foreach (JsonProperty runField in run.EnumerateObject())
+                foreach (JsonElement run in runs.EnumerateArray())
                 {
-                    if (KnownRunFields.Contains(runField.Name))
+                    if (run.ValueKind != JsonValueKind.Object)
                         continue;
 
-                    string dictKey = $"{location}:{rendererType}.{prop.Name}.runs[].{runField.Name}";
-                    if (!unknownRunFields.TryGetValue(dictKey, out FieldEntry? entry))
+                    foreach (JsonProperty runField in run.EnumerateObject())
                     {
-                        entry = new FieldEntry { Example = LogReader.SummarizeValue(runField.Value, 80) };
-                        unknownRunFields[dictKey] = entry;
-                    }
+                        if (KnownRunFields.Contains(runField.Name))
+                            continue;
 
-                    entry.Count++;
+                        string key = $"{path}.runs[].{runField.Name}";
+                        if (!unknownRunFields.TryGetValue(key, out FieldEntry? entry))
+                        {
+                            entry = new FieldEntry { Example = LogReader.SummarizeValue(runField.Value, 90) };
+                            unknownRunFields[key] = entry;
+                        }
+                        entry.Count++;
+                    }
                 }
             }
+
+            // Recurse into every property
+            foreach (JsonProperty prop in element.EnumerateObject())
+                WalkForUnknownRunFields($"{path}.{prop.Name}", prop.Value, unknownRunFields);
+        }
+        else if (element.ValueKind == JsonValueKind.Array)
+        {
+            foreach (JsonElement item in element.EnumerateArray())
+                WalkForUnknownRunFields(path, item, unknownRunFields);
         }
     }
 
