@@ -256,6 +256,26 @@ internal static class LogReader
         return json.Length <= maxLength ? json : json[..maxLength] + "…";
     }
 
+    /// <summary>
+    /// Expands a list of paths: directories are expanded to all *.jsonl files within them
+    /// (non-recursive, sorted by name). File paths are returned as-is.
+    /// </summary>
+    public static IEnumerable<string> ExpandPaths(IEnumerable<string> paths)
+    {
+        foreach (string path in paths)
+        {
+            if (Directory.Exists(path))
+            {
+                foreach (string file in Directory.EnumerateFiles(path, "*.jsonl").OrderBy(f => f, StringComparer.Ordinal))
+                    yield return file;
+            }
+            else
+            {
+                yield return path;
+            }
+        }
+    }
+
     // ── Private helpers ───────────────────────────────────────────────────────
 
     private static IEnumerable<JsonElement> ExtractActions(JsonElement response)

@@ -503,13 +503,15 @@ static Options ParseOptions(string[] args)
         paths.Add(arg);
     }
 
-    return new(paths, enableVariants, maxVariantRows, dumpRenderer, dumpAction, filterSubtext, dumpOutput);
+    // Expand any directory paths to *.jsonl files within them
+    List<string> expandedPaths = [.. LogReader.ExpandPaths(paths)];
+    return new(expandedPaths, enableVariants, maxVariantRows, dumpRenderer, dumpAction, filterSubtext, dumpOutput);
 }
 
 static Options PromptOptionsInteractive()
 {
     Console.WriteLine("No log paths were passed via args. Switching to interactive mode.");
-    Console.WriteLine("Enter one or more log paths separated by ';' or ',':");
+    Console.WriteLine("Enter one or more log paths or directories separated by ';' or ',':");
     Console.Write("> ");
     string? pathsInput = Console.ReadLine();
 
@@ -544,17 +546,21 @@ static Options PromptOptionsInteractive()
         maxVariantRows = parsed;
     }
 
-    return new(paths, enableVariants, maxVariantRows, DumpRenderer: null, DumpAction: null, FilterSubtext: null, DumpOutput: null);
+    List<string> expandedInteractive = [.. LogReader.ExpandPaths(paths)];
+    return new(expandedInteractive, enableVariants, maxVariantRows, DumpRenderer: null, DumpAction: null, FilterSubtext: null, DumpOutput: null);
 }
 
 static void PrintUsage()
 {
     Console.WriteLine("Usage:");
     Console.WriteLine(
-        "  dotnet run --project YTLiveChat.Tools -- [options] <logPath1> [logPath2 ...]"
+        "  dotnet run --project YTLiveChat.Tools -- [options] <logPath|dir> [logPath|dir ...]"
     );
     Console.WriteLine(
         "  dotnet run --project YTLiveChat.Tools -- watch [watch-options] <@handle|UCxxx|liveId> [...]"
+    );
+    Console.WriteLine(
+        "  dotnet run --project YTLiveChat.Tools -- analyze [analyze-options] <logPath|dir> [...]"
     );
     Console.WriteLine();
     Console.WriteLine("Options:");

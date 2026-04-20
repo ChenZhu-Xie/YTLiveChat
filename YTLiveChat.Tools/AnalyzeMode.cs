@@ -107,6 +107,28 @@ internal static class AnalyzeMode
                 "trackingParams", "clickTrackingParams",
             ],
 
+            // ── addBannerToLiveChatCommand ────────────────────────────────────
+            ["liveChatBannerRenderer"] =
+            [
+                "header", "contents",
+                "actionId", "viewerIsCreator", "targetId",
+                "isStackable", "backgroundType", "bannerProperties", "bannerType",
+                "clickTrackingParams",
+            ],
+            ["liveChatBannerRedirectRenderer"] =
+            [
+                "bannerMessage", "authorPhoto",
+                "inlineActionButton", "bannerActionButton", "contextMenuButton",
+                "clickTrackingParams",
+            ],
+
+            // ── Poll (showLiveChatActionPanelAction / updateLiveChatPollAction) ─
+            ["pollRenderer"] =
+            [
+                "choices", "liveChatPollId", "header",
+                "trackingParams", "clickTrackingParams",
+            ],
+
             // ── addLiveChatTickerItemAction outer item renderers ──────────────
             ["liveChatTickerPaidMessageItemRenderer"] =
             [
@@ -159,6 +181,14 @@ internal static class AnalyzeMode
             ],
         };
 
+    // Known fields that may appear inside run objects within any `runs` array.
+    // Anything outside this set is flagged in the Unknown Run Fields section.
+    private static readonly HashSet<string> KnownRunFields = new(StringComparer.Ordinal)
+    {
+        "text", "bold", "italics", "strikethrough", "emoji",
+        "navigationEndpoint", "fontFace",
+    };
+
     // ── Data structures ───────────────────────────────────────────────────────
 
     private sealed class FieldEntry
@@ -207,7 +237,7 @@ internal static class AnalyzeMode
 
         if (paths.Count == 0)
         {
-            Console.WriteLine("No log paths provided. Enter one or more paths separated by ';' or ',':");
+            Console.WriteLine("No log paths provided. Enter one or more paths or directories separated by ';' or ',':");
             Console.Write("> ");
             string? input = Console.ReadLine();
             if (!string.IsNullOrWhiteSpace(input))
@@ -227,6 +257,9 @@ internal static class AnalyzeMode
             return 1;
         }
 
+        // Expand any directory paths to their contained *.jsonl files
+        List<string> expandedPaths = [.. LogReader.ExpandPaths(paths)];
+
         // (location, rendererType) → stats
         // We use a stable insertion-order dictionary so sections print in encounter order
         Dictionary<string, RendererStats> stats = new(StringComparer.Ordinal);
@@ -234,10 +267,12 @@ internal static class AnalyzeMode
         Dictionary<string, int> actionCounts = new(StringComparer.Ordinal);
         // Renderer types we have no baseline for at all
         HashSet<string> unknownRendererTypes = new(StringComparer.Ordinal);
+        // Unknown run fields: "{location}:{rendererType}.{property}.runs[].{fieldName}" → FieldEntry
+        Dictionary<string, FieldEntry> unknownRunFields = new(StringComparer.Ordinal);
         List<string> parseErrors = [];
         int totalActions = 0;
 
-        foreach (string path in paths)
+        foreach (string path in expandedPaths)
         {
             if (!File.Exists(path))
             {
@@ -258,11 +293,19 @@ internal static class AnalyzeMode
 
                     if (actionType == "addChatItemAction")
                     {
-                        ProcessAddChatItem(action, stats, unknownRendererTypes);
+                        ProcessAddChatItem(action, stats, unknownRendererTypes, unknownRunFields);
                     }
                     else if (actionType == "addLiveChatTickerItemAction")
                     {
-                        ProcessTickerItem(action, stats, unknownRendererTypes);
+                        ProcessTickerItem(action, stats, unknownRendererTypes, unknownRunFields);
+                    }
+                    else if (actionType == "addBannerToLiveChatCommand")
+                    {
+                        ProcessBannerAction(action, stats, unknownRendererTypes, unknownRunFields);
+                    }
+                    else if (actionType is "showLiveChatActionPanelAction" or "updateLiveChatPollAction")
+                    {
+                        ProcessPollAction(actionType, action, stats, unknownRendererTypes, unknownRunFields);
                     }
                 }
             }
@@ -275,7 +318,7 @@ internal static class AnalyzeMode
         // ── Print report ──────────────────────────────────────────────────────
 
         Console.WriteLine();
-        WriteSectionHeader($"FIELD ANALYSIS REPORT — {paths.Count} file(s), {totalActions:N0} actions");
+        WriteSectionHeader($"FIELD ANALYSIS REPORT — {expandedPaths.Count} file(s), {totalActions:N0} actions");
         Console.WriteLine();
 
         // Top-level action summary
@@ -388,8 +431,25 @@ internal static class AnalyzeMode
         }
 
         if (!anyUnknown)
+            Console.WriteLine("  (none)");
+
+        Console.WriteLine();
+
+        // Unknown run fields (new fields inside runs arrays not in KnownRunFields)
+        WriteSectionHeader("Unknown Run Fields (new fields inside runs[] not in known set)");
+        Console.WriteLine();
+        if (unknownRunFields.Count == 0)
         {
             Console.WriteLine("  (none)");
+        }
+        else
+        {
+            foreach (KeyValuePair<string, FieldEntry> kv in unknownRunFields.OrderByDescending(x => x.Value.Count).ThenBy(x => x.Key, StringComparer.Ordinal))
+            {
+                Console.Write("  ");
+                WriteColor($"[NEW]  ", ConsoleColor.Yellow);
+                Console.WriteLine($"{kv.Key,-70}  {kv.Value.Count:N0}x  eg: {kv.Value.Example}");
+            }
         }
 
         Console.WriteLine();
@@ -411,7 +471,8 @@ internal static class AnalyzeMode
     private static void ProcessAddChatItem(
         JsonElement action,
         Dictionary<string, RendererStats> stats,
-        HashSet<string> unknownRendererTypes)
+        HashSet<string> unknownRendererTypes,
+        Dictionary<string, FieldEntry> unknownRunFields)
     {
         if (!action.TryGetProperty("addChatItemAction", out JsonElement addChat) ||
             !addChat.TryGetProperty("item", out JsonElement item))
@@ -425,13 +486,14 @@ internal static class AnalyzeMode
             return;
         }
 
-        ObserveRenderer("addChatItemAction", rendererType, rendererValue, stats, unknownRendererTypes);
+        ObserveRenderer("addChatItemAction", rendererType, rendererValue, stats, unknownRendererTypes, unknownRunFields);
     }
 
     private static void ProcessTickerItem(
         JsonElement action,
         Dictionary<string, RendererStats> stats,
-        HashSet<string> unknownRendererTypes)
+        HashSet<string> unknownRendererTypes,
+        Dictionary<string, FieldEntry> unknownRunFields)
     {
         if (!action.TryGetProperty("addLiveChatTickerItemAction", out JsonElement tickerAction) ||
             !tickerAction.TryGetProperty("item", out JsonElement tickerItem))
@@ -443,14 +505,72 @@ internal static class AnalyzeMode
         if (LogReader.TryGetSingleRenderer(tickerItem, out string? outerRenderer, out JsonElement outerValue) &&
             outerRenderer != null)
         {
-            ObserveRenderer("ticker.item", outerRenderer, outerValue, stats, unknownRendererTypes);
+            ObserveRenderer("ticker.item", outerRenderer, outerValue, stats, unknownRendererTypes, unknownRunFields);
         }
 
         // Nested renderer inside showItemEndpoint → showLiveChatItemEndpoint → renderer
         if (LogReader.TryGetNestedShowRenderer(tickerItem, out string? nestedRenderer, out JsonElement nestedValue) &&
             nestedRenderer != null)
         {
-            ObserveRenderer("ticker.showLiveChatItemEndpoint", nestedRenderer, nestedValue, stats, unknownRendererTypes);
+            ObserveRenderer("ticker.showLiveChatItemEndpoint", nestedRenderer, nestedValue, stats, unknownRendererTypes, unknownRunFields);
+        }
+    }
+
+    private static void ProcessBannerAction(
+        JsonElement action,
+        Dictionary<string, RendererStats> stats,
+        HashSet<string> unknownRendererTypes,
+        Dictionary<string, FieldEntry> unknownRunFields)
+    {
+        if (!action.TryGetProperty("addBannerToLiveChatCommand", out JsonElement bannerCmd) ||
+            !bannerCmd.TryGetProperty("bannerRenderer", out JsonElement bannerRenderer) ||
+            !bannerRenderer.TryGetProperty("liveChatBannerRenderer", out JsonElement liveRenderer))
+        {
+            return;
+        }
+
+        // Analyze the outer liveChatBannerRenderer
+        ObserveRenderer("addBannerToLiveChatCommand", "liveChatBannerRenderer", liveRenderer, stats, unknownRendererTypes, unknownRunFields);
+
+        // Analyze the content renderer (liveChatTextMessageRenderer, liveChatBannerRedirectRenderer, etc.)
+        if (liveRenderer.TryGetProperty("contents", out JsonElement contents) &&
+            LogReader.TryGetSingleRenderer(contents, out string? contentRenderer, out JsonElement contentValue) &&
+            contentRenderer != null)
+        {
+            ObserveRenderer("addBannerToLiveChatCommand.contents", contentRenderer, contentValue, stats, unknownRendererTypes, unknownRunFields);
+        }
+    }
+
+    private static void ProcessPollAction(
+        string actionType,
+        JsonElement action,
+        Dictionary<string, RendererStats> stats,
+        HashSet<string> unknownRendererTypes,
+        Dictionary<string, FieldEntry> unknownRunFields)
+    {
+        JsonElement pollRenderer = default;
+        bool found = false;
+
+        if (actionType == "showLiveChatActionPanelAction" &&
+            action.TryGetProperty("showLiveChatActionPanelAction", out JsonElement show) &&
+            show.TryGetProperty("panelToShow", out JsonElement panel) &&
+            panel.TryGetProperty("liveChatActionPanelRenderer", out JsonElement panelRenderer) &&
+            panelRenderer.TryGetProperty("contents", out JsonElement contents) &&
+            contents.TryGetProperty("pollRenderer", out pollRenderer))
+        {
+            found = true;
+        }
+        else if (actionType == "updateLiveChatPollAction" &&
+            action.TryGetProperty("updateLiveChatPollAction", out JsonElement update) &&
+            update.TryGetProperty("pollToUpdate", out JsonElement pollToUpdate) &&
+            pollToUpdate.TryGetProperty("pollRenderer", out pollRenderer))
+        {
+            found = true;
+        }
+
+        if (found)
+        {
+            ObserveRenderer(actionType, "pollRenderer", pollRenderer, stats, unknownRendererTypes, unknownRunFields);
         }
     }
 
@@ -461,7 +581,8 @@ internal static class AnalyzeMode
         string rendererType,
         JsonElement rendererValue,
         Dictionary<string, RendererStats> stats,
-        HashSet<string> unknownRendererTypes)
+        HashSet<string> unknownRendererTypes,
+        Dictionary<string, FieldEntry> unknownRunFields)
     {
         string key = $"{location}:{rendererType}";
         if (!stats.TryGetValue(key, out RendererStats? rs))
@@ -512,6 +633,56 @@ internal static class AnalyzeMode
                 }
             }
         }
+
+        ScanForUnknownRunFields(location, rendererType, rendererValue, unknownRunFields);
+    }
+
+    /// <summary>
+    /// Scans all direct properties of <paramref name="rendererValue"/> whose value is a rich-text
+    /// object (i.e. contains a <c>runs</c> array), and records any run-object field names that are
+    /// not in <see cref="KnownRunFields"/>.
+    /// </summary>
+    private static void ScanForUnknownRunFields(
+        string location,
+        string rendererType,
+        JsonElement rendererValue,
+        Dictionary<string, FieldEntry> unknownRunFields)
+    {
+        if (rendererValue.ValueKind != JsonValueKind.Object)
+            return;
+
+        foreach (JsonProperty prop in rendererValue.EnumerateObject())
+        {
+            if (prop.Value.ValueKind != JsonValueKind.Object)
+                continue;
+
+            if (!prop.Value.TryGetProperty("runs", out JsonElement runs) ||
+                runs.ValueKind != JsonValueKind.Array)
+            {
+                continue;
+            }
+
+            foreach (JsonElement run in runs.EnumerateArray())
+            {
+                if (run.ValueKind != JsonValueKind.Object)
+                    continue;
+
+                foreach (JsonProperty runField in run.EnumerateObject())
+                {
+                    if (KnownRunFields.Contains(runField.Name))
+                        continue;
+
+                    string dictKey = $"{location}:{rendererType}.{prop.Name}.runs[].{runField.Name}";
+                    if (!unknownRunFields.TryGetValue(dictKey, out FieldEntry? entry))
+                    {
+                        entry = new FieldEntry { Example = LogReader.SummarizeValue(runField.Value, 80) };
+                        unknownRunFields[dictKey] = entry;
+                    }
+
+                    entry.Count++;
+                }
+            }
+        }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -541,14 +712,34 @@ internal static class AnalyzeMode
     private static void PrintUsage()
     {
         Console.WriteLine("Usage:");
-        Console.WriteLine("  dotnet run --project YTLiveChat.Tools -- analyze [options] <logPath1> [logPath2 ...]");
+        Console.WriteLine("  dotnet run --project YTLiveChat.Tools -- analyze [options] <path1> [path2 ...]");
+        Console.WriteLine();
+        Console.WriteLine("  Paths may be individual .jsonl files or directories (expanded to all *.jsonl within).");
         Console.WriteLine();
         Console.WriteLine("Options:");
         Console.WriteLine("  --verbose / -v    Show all fields (known + new + missing). Default: new fields only.");
         Console.WriteLine("  --help            Show this message.");
         Console.WriteLine();
+        Console.WriteLine("Sections in the report:");
+        Console.WriteLine("  Action type counts       All top-level action/command keys seen.");
+        Console.WriteLine("  Per-location renderers   Field presence per renderer per location.");
+        Console.WriteLine("                           Locations: addChatItemAction, ticker.item,");
+        Console.WriteLine("                           ticker.showLiveChatItemEndpoint,");
+        Console.WriteLine("                           addBannerToLiveChatCommand,");
+        Console.WriteLine("                           addBannerToLiveChatCommand.contents,");
+        Console.WriteLine("                           showLiveChatActionPanelAction,");
+        Console.WriteLine("                           updateLiveChatPollAction.");
+        Console.WriteLine("  Unknown Renderer Types   Renderer keys with no baseline entry.");
+        Console.WriteLine("  Unknown Run Fields       Fields inside runs[] arrays not in the known set.");
+        Console.WriteLine();
         Console.WriteLine("Examples:");
-        Console.WriteLine("  dotnet run --project YTLiveChat.Tools -- analyze logs/watch_20260413_194235.jsonl");
-        Console.WriteLine("  dotnet run --project YTLiveChat.Tools -- analyze --verbose logs/_old/*.json");
+        Console.WriteLine("  # Analyze an entire logs directory:");
+        Console.WriteLine("  dotnet run --project YTLiveChat.Tools -- analyze logs/");
+        Console.WriteLine();
+        Console.WriteLine("  # Analyze specific files with all fields shown:");
+        Console.WriteLine("  dotnet run --project YTLiveChat.Tools -- analyze --verbose logs/watch_20260413.jsonl");
+        Console.WriteLine();
+        Console.WriteLine("  # Analyze old logs directory:");
+        Console.WriteLine("  dotnet run --project YTLiveChat.Tools -- analyze logs/_old/");
     }
 }
