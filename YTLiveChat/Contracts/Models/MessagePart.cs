@@ -79,6 +79,13 @@ public class TextPart : MessagePart
     public bool IsDeemphasized { get; set; }
 
     /// <summary>
+    /// Per-run text color as a 6-digit uppercase hex string (e.g. <c>"FFFFFF"</c>), or
+    /// <see langword="null"/> when the run carries no explicit color. Currently observed
+    /// on <c>liveChatBannerRedirectRenderer</c> message runs.
+    /// </summary>
+    public string? TextColor { get; set; }
+
+    /// <summary>
     /// Return the text
     /// </summary>
     /// <returns>string representation of TextPart</returns>

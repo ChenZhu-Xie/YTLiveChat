@@ -120,6 +120,8 @@ internal static class AnalyzeMode
                 "bannerMessage", "authorPhoto",
                 "inlineActionButton", "bannerActionButton", "contextMenuButton",
                 "clickTrackingParams",
+                // Logging/accessibility context — observed on ~12% of redirect banners
+                "rendererContext",
             ],
 
             // ── Poll (showLiveChatActionPanelAction / updateLiveChatPollAction) ─
@@ -194,6 +196,8 @@ internal static class AnalyzeMode
     {
         "text", "bold", "italics", "strikethrough", "emoji",
         "navigationEndpoint", "fontFace",
+        // Per-run ARGB color tint (observed on liveChatBannerRedirectRenderer.bannerMessage runs)
+        "textColor",
     };
 
     // Every JSON property name we have ever seen or modelled, at any nesting depth.
@@ -217,6 +221,9 @@ internal static class AnalyzeMode
         "showLiveChatActionPanelAction",
         "updateLiveChatPollAction",
         "closeLiveChatActionPanelAction",
+        // Fanzone ticker chip — membership-event UI chip, no data content
+        "showFanzoneTickerChipCommand",
+        "removeFanzoneTickerChipCommand",
         "removeBannerForLiveChatCommand",
         "liveChatReportModerationStateCommand",
         "signalAction",
@@ -348,8 +355,22 @@ internal static class AnalyzeMode
         // ── Thumbnail sources (used in poll header, heart viewmodel, etc.) ───
         "sources", "clientResource", "imageName", "imageColor",
 
-        // ── Logging / tracking ────────────────────────────────────────────────
+        // ── Logging / tracking / renderer context ─────────────────────────────
         "loggingDirectives", "visibility", "types", "clientId",
+        "loggingContext", "rendererContext",
+        "accessibilityContext", "commandContext",
+
+        // ── Fanzone ticker chip (membership-event UI chip) ─────────────────────
+        "fanzoneTickerChip", "liveChatTickerFanzoneViewModel",
+        "tickerIcon", "endTimestampMs",
+        "hack",  // removeFanzoneTickerChipCommand payload
+
+        // ── Toast / notification action ───────────────────────────────────────
+        "liveChatAddToToastAction",
+        "notificationActionRenderer", "responseText",
+
+        // ── Run text styling ──────────────────────────────────────────────────
+        "textColor",
 
         // ── Content + styleRuns (ViewModel text containers) ───────────────────
         "content", "styleRuns", "startIndex", "length",

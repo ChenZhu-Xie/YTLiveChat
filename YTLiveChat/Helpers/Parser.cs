@@ -659,6 +659,7 @@ internal static partial class Parser
                 Bold = textRun.Bold,
                 Italics = textRun.Italics,
                 IsDeemphasized = textRun.Deemphasize,
+                TextColor = textRun.TextColor?.ToHex6Color(),
             },
             Models.Response.MessageEmoji { Emoji: not null } emojiRun =>
                 new Contracts.Models.EmojiPart

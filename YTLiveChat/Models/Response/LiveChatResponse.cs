@@ -149,6 +149,9 @@ public record MessageText : MessageRun
 
     [JsonPropertyName("fontFace")]
     public string? FontFace { get; init; }
+
+    [JsonPropertyName("textColor")]
+    public long? TextColor { get; init; }
 }
 
 public record MessageEmoji : MessageRun

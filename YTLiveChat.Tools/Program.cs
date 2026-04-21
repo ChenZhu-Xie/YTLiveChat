@@ -11,7 +11,12 @@ if (args.Length > 0 && args[0].Equals("analyze", StringComparison.OrdinalIgnoreC
     return AnalyzeMode.Run(args[1..]);
 }
 
-Options options = ParseOptions(args);
+// "count" is the explicit name for the default dump/count mode; also accepted without a subcommand.
+string[] countArgs = args.Length > 0 && args[0].Equals("count", StringComparison.OrdinalIgnoreCase)
+    ? args[1..]
+    : args;
+
+Options options = ParseOptions(countArgs);
 if (options.Paths.Count == 0)
 {
     options = PromptOptionsInteractive();
@@ -21,6 +26,7 @@ if (options.Paths.Count == 0)
         return 1;
     }
 }
+
 
 // Dump mode: collect full untruncated JSON for targeted extraction
 List<JsonElement> dumpedRenderers = [];
@@ -55,6 +61,9 @@ HashSet<string> silentActionTypes =
 [
     "signalAction",
     "liveChatReportModerationStateCommand",
+    // Fanzone ticker chip — members-only event UI chip, no parseable data content
+    "showFanzoneTickerChipCommand",
+    "removeFanzoneTickerChipCommand",
 ];
 
 // Combined set for "is this action known at all?" checks
@@ -552,61 +561,68 @@ static Options PromptOptionsInteractive()
 
 static void PrintUsage()
 {
-    Console.WriteLine("Usage:");
-    Console.WriteLine(
-        "  dotnet run --project YTLiveChat.Tools -- [options] <logPath|dir> [logPath|dir ...]"
-    );
-    Console.WriteLine(
-        "  dotnet run --project YTLiveChat.Tools -- watch [watch-options] <@handle|UCxxx|liveId> [...]"
-    );
-    Console.WriteLine(
-        "  dotnet run --project YTLiveChat.Tools -- analyze [analyze-options] <logPath|dir> [...]"
-    );
+    Console.WriteLine("YTLiveChat.Tools — log analysis and live capture for InnerTube chat data");
     Console.WriteLine();
-    Console.WriteLine("Options:");
-    Console.WriteLine(
-        "  --variants                    Enables variant signatures for memberships, super chats/stickers, and unknown renderers."
-    );
-    Console.WriteLine("  --max-variant-rows=<n>        Limits printed rows per variant section. Default: 25.");
-    Console.WriteLine(
-        "  --dump-renderer=<name>        Extract full untruncated JSON for all matching addChatItemAction renderer types."
-    );
-    Console.WriteLine(
-        "  --dump-action=<name>          Extract full untruncated JSON for all matching top-level action types."
-    );
-    Console.WriteLine(
-        "                                Use this for actions that aren't addChatItemAction renderers (polls, banners, etc.)."
-    );
-    Console.WriteLine(
-        "  --filter-subtext=<prefix>     When used with --dump-renderer, only include items whose headerSubtext"
-    );
-    Console.WriteLine(
-        "                                or headerPrimaryText starts with the given prefix (case-insensitive)."
-    );
-    Console.WriteLine(
-        "  --dump-output=<path>          Write dumped JSON array to a file instead of stdout."
-    );
+    Console.WriteLine("Subcommands:");
+    Console.WriteLine("  watch    Capture live chat from one or more streams to .jsonl files.");
+    Console.WriteLine("  count    Count and dump renderer/action types from captured .jsonl logs. (default)");
+    Console.WriteLine("  analyze  Field-level baseline diff + deep recursive scan for new/unknown JSON keys.");
     Console.WriteLine();
-    Console.WriteLine("Examples:");
-    Console.WriteLine("  # Find all membership item renderers in a log:");
-    Console.WriteLine(
-        "  dotnet run --project YTLiveChat.Tools -- --dump-renderer=liveChatMembershipItemRenderer log.json"
-    );
+    Console.WriteLine("━━━ watch ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    Console.WriteLine("  dotnet run --project YTLiveChat.Tools -- watch <@handle|UCxxx|liveId> [...]");
     Console.WriteLine();
-    Console.WriteLine("  # Extract only membership upgrade events (by headerSubtext prefix) to a file:");
-    Console.WriteLine(
-        "  dotnet run --project YTLiveChat.Tools -- --dump-renderer=liveChatMembershipItemRenderer --filter-subtext=\"Upgraded\" --dump-output=upgrade_events.json log.json"
-    );
+    Console.WriteLine("  Watches one or more live streams and appends every raw action JSON to a");
+    Console.WriteLine("  timestamped .jsonl file in the current directory.");
     Console.WriteLine();
-    Console.WriteLine("  # Dump all poll creation actions to a file:");
-    Console.WriteLine(
-        "  dotnet run --project YTLiveChat.Tools -- --dump-action=showLiveChatActionPanelAction --dump-output=polls.json log.jsonl"
-    );
+    Console.WriteLine("━━━ count ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    Console.WriteLine("  dotnet run --project YTLiveChat.Tools -- count [options] <logPath|dir> [...]");
+    Console.WriteLine("  dotnet run --project YTLiveChat.Tools -- [options] <logPath|dir> [...]  (shorthand)");
     Console.WriteLine();
-    Console.WriteLine("  # Dump all banner add actions:");
-    Console.WriteLine(
-        "  dotnet run --project YTLiveChat.Tools -- --dump-action=addBannerToLiveChatCommand log.jsonl"
-    );
+    Console.WriteLine("  Options:");
+    Console.WriteLine("    --variants                  Variant signatures for memberships, super chats/stickers, unknown renderers.");
+    Console.WriteLine("    --max-variant-rows=<n>      Max rows per variant section. Default: 25.");
+    Console.WriteLine("    --dump-renderer=<name>      Extract full JSON for all matching addChatItemAction renderer types.");
+    Console.WriteLine("    --dump-action=<name>        Extract full JSON for all matching top-level action types.");
+    Console.WriteLine("                                Use for non-renderer actions: banners, polls, fanzone chips, etc.");
+    Console.WriteLine("    --filter-subtext=<prefix>   With --dump-renderer: filter by headerSubtext/headerPrimaryText prefix.");
+    Console.WriteLine("    --dump-output=<path>        Write dumped JSON to a file instead of stdout.");
+    Console.WriteLine();
+    Console.WriteLine("  Examples:");
+    Console.WriteLine("    # Count everything in a directory of logs:");
+    Console.WriteLine("    dotnet run --project YTLiveChat.Tools -- count logs/");
+    Console.WriteLine();
+    Console.WriteLine("    # Extract all fanzone chip actions as JSON:");
+    Console.WriteLine("    dotnet run --project YTLiveChat.Tools -- count --dump-action=showFanzoneTickerChipCommand logs/");
+    Console.WriteLine();
+    Console.WriteLine("    # Extract banner redirect actions to a file:");
+    Console.WriteLine("    dotnet run --project YTLiveChat.Tools -- count --dump-action=addBannerToLiveChatCommand --dump-output=banners.json log.jsonl");
+    Console.WriteLine();
+    Console.WriteLine("    # Extract membership upgrades by prefix filter:");
+    Console.WriteLine("    dotnet run --project YTLiveChat.Tools -- count --dump-renderer=liveChatMembershipItemRenderer --filter-subtext=\"Upgraded\" --dump-output=upgrades.json log.json");
+    Console.WriteLine();
+    Console.WriteLine("━━━ analyze ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    Console.WriteLine("  dotnet run --project YTLiveChat.Tools -- analyze [options] <logPath|dir> [...]");
+    Console.WriteLine();
+    Console.WriteLine("  Compares observed renderer fields against C# response model baselines. Recursively");
+    Console.WriteLine("  walks every action's entire JSON tree to surface new property names and new run");
+    Console.WriteLine("  fields (text, bold, emoji, navigationEndpoint, etc.) at any nesting depth.");
+    Console.WriteLine();
+    Console.WriteLine("  Options:");
+    Console.WriteLine("    -v, --verbose               Also print all known/expected fields (not just new ones).");
+    Console.WriteLine();
+    Console.WriteLine("  Report sections:");
+    Console.WriteLine("    Action type counts          All top-level action types seen across all files.");
+    Console.WriteLine("    Per-location renderer diffs  NEW fields vs. baseline for each renderer in each location.");
+    Console.WriteLine("    Unknown Renderer Types       Renderer keys with no baseline at all.");
+    Console.WriteLine("    Unknown Run Fields           Run-object properties not in KnownRunFields (any depth).");
+    Console.WriteLine("    Unknown JSON Keys            Any property name not in AllKnownJsonKeys (any depth).");
+    Console.WriteLine();
+    Console.WriteLine("  Examples:");
+    Console.WriteLine("    # Analyze a single new log:");
+    Console.WriteLine("    dotnet run --project YTLiveChat.Tools -- analyze logs/watch_20260420_060222.jsonl");
+    Console.WriteLine();
+    Console.WriteLine("    # Analyze all logs in a directory:");
+    Console.WriteLine("    dotnet run --project YTLiveChat.Tools -- analyze logs/");
 }
 
 static string BuildVariantSignature(string rendererType, JsonElement renderer, string source)

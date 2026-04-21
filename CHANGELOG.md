@@ -21,6 +21,12 @@
   uses the runs shape `["Upgraded membership to ", "{TierName}", "!"]`. Tier name is extracted from
   the second run (same mechanism as `New` events). Confirmed against a real InnerTube capture.
 
+### Added (text rendering)
+- `TextPart.TextColor` (`string?`) — per-run ARGB text color as a 6-digit uppercase hex string
+  (e.g. `"FFFFFF"`), or `null` when absent. Populated by `ToMessagePart()` from the InnerTube
+  `textColor` field. Currently observed on `liveChatBannerRedirectRenderer` message runs
+  (e.g. white body text, blue hyperlink text). `null` on all regular chat runs.
+
 ### Added (poll)
 - `PollItem.PollType` — the InnerTube poll type string (e.g. `"LIVE_CHAT_POLL_TYPE_CREATOR"`), surfaced from `liveChatPollType` in the poll header renderer. Null when absent.
 
