@@ -21,6 +21,22 @@
   uses the runs shape `["Upgraded membership to ", "{TierName}", "!"]`. Tier name is extracted from
   the second run (same mechanism as `New` events). Confirmed against a real InnerTube capture.
 
+### Added (YouTube Jewels gifting)
+- `GiftItem` — new contract model for virtual gifts sent via YouTube Jewels
+  (`giftMessageViewModel` in `addChatItemAction`). Fields: `Id`, `AuthorHandle`
+  (trimmed @handle), `Text` (pre-formatted, e.g. `"sent Gold coin for 10 Jewels"`),
+  `GiftImageName` (client symbol e.g. `"GIFT"`), `GiftImageColor` (hex ARGB e.g. `"FF0000"`).
+- `IYTLiveChat.GiftReceived` event + `GiftReceivedEventArgs` — fires whenever a viewer
+  sends a virtual gift; distinct from gift memberships
+  (`liveChatSponsorshipsGiftPurchaseAnnouncementRenderer`).
+- `Parser.ToGiftItem()` extension method maps `giftMessageViewModel` to `GiftItem`.
+  The `giftMessageViewModel` items do not produce a `ChatItem`; subscribe to
+  `GiftReceived` to observe them.
+- `GiftMessageViewModel`, `ViewModelStyledText`, `ViewModelStyleRun`,
+  `ViewModelClientResourceImage`, `ViewModelClientResourceSource`,
+  `ViewModelClientResource` — internal response model records for the new gift
+  view-model renderer.
+
 ### Added (text rendering)
 - `TextPart.TextColor` (`string?`) — per-run ARGB text color as a 6-digit uppercase hex string
   (e.g. `"FFFFFF"`), or `null` when absent. Populated by `ToMessagePart()` from the InnerTube

@@ -68,6 +68,9 @@ public class YTLiveChat : IYTLiveChat // Changed to public for direct instantiat
     public event EventHandler<EngagementMessageReceivedEventArgs>? EngagementMessageReceived;
 
     /// <inheritdoc />
+    public event EventHandler<GiftReceivedEventArgs>? GiftReceived;
+
+    /// <inheritdoc />
     public event EventHandler<ErrorOccurredEventArgs>? ErrorOccurred;
 
     private static readonly Random s_random = new();
@@ -1472,8 +1475,9 @@ public class YTLiveChat : IYTLiveChat // Changed to public for direct instantiat
         bool hasBannerRemove = BannerRemoved != null;
         bool hasReplace = ChatItemReplaced != null;
         bool hasEngagement = EngagementMessageReceived != null;
+        bool hasGift = GiftReceived != null;
 
-        if (!hasPoll && !hasPollClosed && !hasDelete && !hasDeleteByAuthor && !hasBannerAdd && !hasBannerRemove && !hasReplace && !hasEngagement)
+        if (!hasPoll && !hasPollClosed && !hasDelete && !hasDeleteByAuthor && !hasBannerAdd && !hasBannerRemove && !hasReplace && !hasEngagement && !hasGift)
             return;
 
         foreach (Models.Response.Action action in actions)
@@ -1533,6 +1537,13 @@ public class YTLiveChat : IYTLiveChat // Changed to public for direct instantiat
                 Contracts.Models.EngagementItem? engagement = action.ToEngagementItem();
                 if (engagement is not null)
                     OnEngagementMessageReceived(new() { Engagement = engagement });
+            }
+
+            if (hasGift)
+            {
+                Contracts.Models.GiftItem? gift = action.ToGiftItem();
+                if (gift is not null)
+                    OnGiftReceived(new() { Gift = gift });
             }
         }
     }
@@ -1638,6 +1649,19 @@ public class YTLiveChat : IYTLiveChat // Changed to public for direct instantiat
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error invoking EngagementMessageReceived event handler for engagement {Id}.", e.Engagement?.Id);
+        }
+    }
+
+    /// <summary>Invokes the GiftReceived event.</summary>
+    protected virtual void OnGiftReceived(GiftReceivedEventArgs e)
+    {
+        try
+        {
+            GiftReceived?.Invoke(this, e);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error invoking GiftReceived event handler for gift {Id}.", e.Gift?.Id);
         }
     }
 

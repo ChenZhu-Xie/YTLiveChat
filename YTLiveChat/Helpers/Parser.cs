@@ -2044,6 +2044,38 @@ internal static partial class Parser
             ) ?? []
         );
     }
+
+    /// <summary>
+    /// Extracts a <see cref="Contracts.Models.GiftItem"/> from a <c>giftMessageViewModel</c>
+    /// nested inside an <c>addChatItemAction</c>.
+    /// Returns null for other action types or when required fields are absent.
+    /// </summary>
+    public static Contracts.Models.GiftItem? ToGiftItem(this Action action)
+    {
+        Models.Response.GiftMessageViewModel? vm =
+            action.AddChatItemAction?.Item?.GiftMessageViewModel;
+        if (vm is null)
+            return null;
+
+        string? id = vm.Id;
+        if (string.IsNullOrWhiteSpace(id))
+            return null;
+
+        string authorHandle = vm.AuthorName?.Content?.Trim() ?? string.Empty;
+        string text = vm.Text?.Content ?? string.Empty;
+
+        Models.Response.ViewModelClientResource? resource =
+            vm.Image?.Sources?.FirstOrDefault()?.ClientResource;
+
+        return new Contracts.Models.GiftItem
+        {
+            Id = id!,
+            AuthorHandle = authorHandle,
+            Text = text,
+            GiftImageName = resource?.ImageName,
+            GiftImageColor = resource?.ImageColor?.ToHex6Color(),
+        };
+    }
 }
 
 internal readonly record struct StreamPageCandidate(

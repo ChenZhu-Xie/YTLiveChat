@@ -86,6 +86,8 @@ HashSet<string> knownItemRenderers =
     // System/engagement messages — no public event, treated as informational noise
     "liveChatViewerEngagementMessageRenderer",
     "liveChatModeChangeMessageRenderer",
+    // YouTube Jewels virtual gift — fires GiftReceived dedicated event, not ChatItem
+    "giftMessageViewModel",
 ];
 
 HashSet<string> membershipRenderers =

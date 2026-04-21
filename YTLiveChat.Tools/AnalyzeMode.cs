@@ -136,6 +136,12 @@ internal static class AnalyzeMode
                 "trackingParams", "clickTrackingParams",
             ],
 
+            // ── YouTube Jewels virtual gift ───────────────────────────────────
+            ["giftMessageViewModel"] =
+            [
+                "id", "text", "authorName", "image", "imageA11yLabel", "rendererContext",
+            ],
+
             // ── addLiveChatTickerItemAction outer item renderers ──────────────
             ["liveChatTickerPaidMessageItemRenderer"] =
             [
@@ -240,6 +246,7 @@ internal static class AnalyzeMode
         "skipOnDismissCommand",
 
         // ── Renderer container / wrapper keys ─────────────────────────────────
+        "giftMessageViewModel",
         "liveChatTextMessageRenderer",
         "liveChatPaidMessageRenderer",
         "liveChatPaidStickerRenderer",
@@ -371,6 +378,9 @@ internal static class AnalyzeMode
 
         // ── Run text styling ──────────────────────────────────────────────────
         "textColor",
+
+        // ── YouTube Jewels gift view model ────────────────────────────────────
+        "imageA11yLabel",
 
         // ── Content + styleRuns (ViewModel text containers) ───────────────────
         "content", "styleRuns", "startIndex", "length",

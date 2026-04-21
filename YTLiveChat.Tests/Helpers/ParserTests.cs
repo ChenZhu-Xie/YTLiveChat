@@ -2071,4 +2071,38 @@ public class ParserTests
 
         Assert.IsNull(item);
     }
+
+    // ── ToGiftItem ────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void ToGiftItem_GiftMessageViewModel_ReturnsParsedGiftItem()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.GiftMessageViewModelAction(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+
+        GiftItem? gift = Parser.ToGiftItem(action);
+
+        Assert.IsNotNull(gift, "ToGiftItem should return a non-null GiftItem.");
+        Assert.AreEqual("ChwKGkNPdXhoY09XX3BNREZWZ0kxZ0FkY0tzNlRR", gift.Id);
+        Assert.AreEqual("@yaniescobar2170", gift.AuthorHandle);
+        Assert.AreEqual("sent Gold coin for 10 Jewels", gift.Text);
+        Assert.AreEqual("GIFT", gift.GiftImageName);
+        // imageColor 4294901760 = 0xFFFF0000 → RGB FF0000
+        Assert.AreEqual("FF0000", gift.GiftImageColor);
+    }
+
+    [TestMethod]
+    public void ToGiftItem_UnrelatedAction_ReturnsNull()
+    {
+        Models.Response.Action? action = JsonSerializer.Deserialize<Models.Response.Action>(
+            ActionTestData.RemoveChatItem(),
+            s_jsonOptions
+        );
+        Assert.IsNotNull(action);
+
+        Assert.IsNull(Parser.ToGiftItem(action));
+    }
 }

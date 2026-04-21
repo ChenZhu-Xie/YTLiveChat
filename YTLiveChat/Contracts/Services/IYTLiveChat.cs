@@ -145,6 +145,12 @@ public interface IYTLiveChat : IDisposable
     event EventHandler<EngagementMessageReceivedEventArgs>? EngagementMessageReceived;
 
     /// <summary>
+    /// Fires when a viewer sends a virtual gift using YouTube Jewels
+    /// (<c>giftMessageViewModel</c> in <c>addChatItemAction</c>).
+    /// </summary>
+    event EventHandler<GiftReceivedEventArgs>? GiftReceived;
+
+    /// <summary>
     /// Fires on any error from backend or within service
     /// </summary>
     event EventHandler<ErrorOccurredEventArgs>? ErrorOccurred;
@@ -388,4 +394,15 @@ public class EngagementMessageReceivedEventArgs : EventArgs
     /// The viewer engagement message that was received.
     /// </summary>
     public required EngagementItem Engagement { get; set; }
+}
+
+/// <summary>
+/// EventArgs for GiftReceived event.
+/// </summary>
+public class GiftReceivedEventArgs : EventArgs
+{
+    /// <summary>
+    /// The virtual gift that was sent.
+    /// </summary>
+    public required GiftItem Gift { get; set; }
 }

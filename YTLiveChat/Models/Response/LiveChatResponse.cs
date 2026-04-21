@@ -575,6 +575,75 @@ public record LiveChatPlaceholderItemRenderer // Used for deleted/pending messag
     public string? TimestampUsec { get; init; }
 }
 
+// ── YouTube Jewels / virtual gifting ─────────────────────────────────────────
+
+// Shared styled-text container used by view-model renderers (content + optional style ranges).
+public record ViewModelStyledText
+{
+    [JsonPropertyName("content")]
+    public string? Content { get; init; }
+
+    [JsonPropertyName("styleRuns")]
+    public List<ViewModelStyleRun>? StyleRuns { get; init; }
+}
+
+public record ViewModelStyleRun
+{
+    [JsonPropertyName("startIndex")]
+    public int StartIndex { get; init; }
+
+    [JsonPropertyName("length")]
+    public int Length { get; init; }
+}
+
+// Image container that references a client-side resource (symbol name + ARGB color tint)
+// rather than a URL-based thumbnail. Used in giftMessageViewModel.image and
+// liveChatTickerFanzoneViewModel.tickerIcon.
+public record ViewModelClientResourceImage
+{
+    [JsonPropertyName("sources")]
+    public List<ViewModelClientResourceSource>? Sources { get; init; }
+}
+
+public record ViewModelClientResourceSource
+{
+    [JsonPropertyName("clientResource")]
+    public ViewModelClientResource? ClientResource { get; init; }
+}
+
+public record ViewModelClientResource
+{
+    [JsonPropertyName("imageName")]
+    public string? ImageName { get; init; }
+
+    [JsonPropertyName("imageColor")]
+    public long? ImageColor { get; init; }
+}
+
+// giftMessageViewModel — virtual gift sent by a viewer using YouTube Jewels
+public record GiftMessageViewModel
+{
+    [JsonPropertyName("id")]
+    public string? Id { get; init; }
+
+    [JsonPropertyName("text")]
+    public ViewModelStyledText? Text { get; init; }
+
+    [JsonPropertyName("authorName")]
+    public ViewModelStyledText? AuthorName { get; init; }
+
+    [JsonPropertyName("image")]
+    public ViewModelClientResourceImage? Image { get; init; }
+
+    [JsonPropertyName("imageA11yLabel")]
+    public string? ImageA11yLabel { get; init; }
+
+    [JsonPropertyName("rendererContext")]
+    public JsonElement? RendererContext { get; init; }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 // Polymorphic container for the 'item' in AddChatItemAction
 public record AddChatItemActionItem
 {
@@ -601,6 +670,9 @@ public record AddChatItemActionItem
 
     [JsonPropertyName("liveChatViewerEngagementMessageRenderer")]
     public LiveChatViewerEngagementMessageRenderer? LiveChatViewerEngagementMessageRenderer { get; init; }
+
+    [JsonPropertyName("giftMessageViewModel")]
+    public GiftMessageViewModel? GiftMessageViewModel { get; init; }
 }
 
 public record AddChatItemAction

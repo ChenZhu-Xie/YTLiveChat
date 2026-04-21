@@ -1265,4 +1265,43 @@ internal static class ActionTestData
               }
             }
             """;
+
+    public static string GiftMessageViewModelAction() => """
+            {
+              "addChatItemAction": {
+                "item": {
+                  "giftMessageViewModel": {
+                    "text": {
+                      "content": "sent Gold coin for 10 Jewels",
+                      "styleRuns": [{ "startIndex": 0, "length": 28 }]
+                    },
+                    "authorName": {
+                      "content": "@yaniescobar2170 ",
+                      "styleRuns": [{ "startIndex": 0, "length": 17 }]
+                    },
+                    "image": {
+                      "sources": [
+                        {
+                          "clientResource": {
+                            "imageName": "GIFT",
+                            "imageColor": 4294901760
+                          }
+                        }
+                      ]
+                    },
+                    "id": "ChwKGkNPdXhoY09XX3BNREZWZ0kxZ0FkY0tzNlRR",
+                    "imageA11yLabel": "Gifts",
+                    "rendererContext": {
+                      "loggingContext": {
+                        "loggingDirectives": {
+                          "trackingParams": "CLABEPaeDyITCNOI4ZSw_pMDFeFUQQIdNnQiFA==",
+                          "visibility": { "types": "12" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            """;
 }
