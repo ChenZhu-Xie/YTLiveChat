@@ -28,9 +28,24 @@ public class GiftItem
     public required string Text { get; set; }
 
     /// <summary>
+    /// The gift item name, parsed from <see cref="Text"/>
+    /// (e.g. <c>"Gold coin"</c>, <c>"Happy poop"</c>, <c>"Floating heart"</c>).
+    /// Null when the text does not match the expected pattern.
+    /// </summary>
+    public string? GiftItemName { get; set; }
+
+    /// <summary>
+    /// Number of Jewels spent on this gift, parsed from <see cref="Text"/>
+    /// (e.g. <c>10</c> from <c>"sent Gold coin for 10 Jewels"</c>).
+    /// Null when the text does not match the expected pattern.
+    /// </summary>
+    public int? JewelAmount { get; set; }
+
+    /// <summary>
     /// Client-side image name for the gift icon (e.g. <c>"GIFT"</c>).
-    /// This is a symbol identifier, not a URL — render it using YouTube's
-    /// client resource system or treat it as a display label.
+    /// This is an internal YouTube client symbol identifier, not a URL.
+    /// All gift types currently share the same generic icon; the specific
+    /// item name is only available via <see cref="GiftItemName"/>.
     /// </summary>
     public string? GiftImageName { get; set; }
 

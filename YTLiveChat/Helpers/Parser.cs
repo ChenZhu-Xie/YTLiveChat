@@ -1855,6 +1855,10 @@ internal static partial class Parser
     // Regex to extract gifter name from redemption message like "GifterName gifted you..."
     [GeneratedRegex(@"^(.*?) gifted you", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
     private static partial Regex GiftRedemptionGifterRegex();
+
+    // Regex to extract gift item name and Jewel amount from "sent {item} for {n} Jewels"
+    [GeneratedRegex(@"^sent (.+) for (\d+) Jewels?$", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    private static partial Regex JewelsGiftTextRegex();
 #else
     // Fallback for .NET Standard 2.1
     private static readonly Regex _liveIdRegex = new(
@@ -2024,6 +2028,13 @@ internal static partial class Parser
     );
 
     private static Regex GiftRedemptionGifterRegex() => _giftRedemptionGifterRegex;
+
+    private static readonly Regex _jewelsGiftTextRegex = new(
+        @"^sent (.+) for (\d+) Jewels?$",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled
+    );
+
+    private static Regex JewelsGiftTextRegex() => _jewelsGiftTextRegex;
 #endif
 
     #endregion
@@ -2064,6 +2075,16 @@ internal static partial class Parser
         string authorHandle = vm.AuthorName?.Content?.Trim() ?? string.Empty;
         string text = vm.Text?.Content ?? string.Empty;
 
+        string? giftItemName = null;
+        int? jewelAmount = null;
+        Match giftMatch = JewelsGiftTextRegex().Match(text);
+        if (giftMatch.Success)
+        {
+            giftItemName = giftMatch.Groups[1].Value;
+            if (int.TryParse(giftMatch.Groups[2].Value, out int parsed))
+                jewelAmount = parsed;
+        }
+
         Models.Response.ViewModelClientResource? resource =
             vm.Image?.Sources?.FirstOrDefault()?.ClientResource;
 
@@ -2072,6 +2093,8 @@ internal static partial class Parser
             Id = id!,
             AuthorHandle = authorHandle,
             Text = text,
+            GiftItemName = giftItemName,
+            JewelAmount = jewelAmount,
             GiftImageName = resource?.ImageName,
             GiftImageColor = resource?.ImageColor?.ToHex6Color(),
         };

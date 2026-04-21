@@ -2089,6 +2089,8 @@ public class ParserTests
         Assert.AreEqual("ChwKGkNPdXhoY09XX3BNREZWZ0kxZ0FkY0tzNlRR", gift.Id);
         Assert.AreEqual("@yaniescobar2170", gift.AuthorHandle);
         Assert.AreEqual("sent Gold coin for 10 Jewels", gift.Text);
+        Assert.AreEqual("Gold coin", gift.GiftItemName);
+        Assert.AreEqual(10, gift.JewelAmount);
         Assert.AreEqual("GIFT", gift.GiftImageName);
         // imageColor 4294901760 = 0xFFFF0000 → RGB FF0000
         Assert.AreEqual("FF0000", gift.GiftImageColor);
