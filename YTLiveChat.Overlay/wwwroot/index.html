@@ -16,6 +16,10 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --ui-scale: 1;
+        }
+
         body {
             margin: 0;
             padding: 0;
@@ -28,9 +32,7 @@
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             text-rendering: geometricPrecision;
-            transform: translateZ(0);
             /* 强制 GPU 渲染 */
-            image-rendering: -webkit-optimize-contrast;
         }
 
         #chat-container {
@@ -39,23 +41,22 @@
             justify-content: flex-end;
             height: 100%;
             width: 100%;
-            padding: 10px;
-            padding-bottom: 15px;
-            gap: 6px;
+            padding: calc(10px * var(--ui-scale));
+            padding-bottom: calc(15px * var(--ui-scale));
+            gap: calc(6px * var(--ui-scale));
         }
 
         .message-box {
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            padding: 6px 10px;
+            background: rgba(0, 0, 0, 0.52);
+            border: calc(1px * var(--ui-scale)) solid rgba(255, 255, 255, 0.18);
+            border-radius: calc(8px * var(--ui-scale));
+            padding: calc(6px * var(--ui-scale)) calc(10px * var(--ui-scale));
             color: white;
             /* 移除默认 animation，改由动态 class 分配 */
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
             display: flex;
             align-items: flex-start;
-            gap: 8px;
+            gap: calc(8px * var(--ui-scale));
+            font-size: calc(16px * var(--ui-scale));
         }
 
         /* 动画库 (10 种) */
@@ -65,7 +66,7 @@
 
         @keyframes animLeft {
             from {
-                transform: translateX(-30px);
+                transform: translateX(calc(-30px * var(--ui-scale)));
                 opacity: 0;
             }
 
@@ -81,7 +82,7 @@
 
         @keyframes animRight {
             from {
-                transform: translateX(30px);
+                transform: translateX(calc(30px * var(--ui-scale)));
                 opacity: 0;
             }
 
@@ -97,7 +98,7 @@
 
         @keyframes animUp {
             from {
-                transform: translateY(20px);
+                transform: translateY(calc(20px * var(--ui-scale)));
                 opacity: 0;
             }
 
@@ -129,7 +130,7 @@
 
         @keyframes animRotate {
             from {
-                transform: translateX(-20px) rotate(-5deg);
+                transform: translateX(calc(-20px * var(--ui-scale))) rotate(-5deg);
                 opacity: 0;
             }
 
@@ -145,7 +146,7 @@
 
         @keyframes animDown {
             from {
-                transform: translateY(-20px);
+                transform: translateY(calc(-20px * var(--ui-scale)));
                 opacity: 0;
             }
 
@@ -161,12 +162,12 @@
 
         @keyframes animFlip {
             from {
-                transform: perspective(400px) rotateX(90deg);
+                transform: perspective(calc(400px * var(--ui-scale))) rotateX(90deg);
                 opacity: 0;
             }
 
             to {
-                transform: perspective(400px) rotateX(0);
+                transform: perspective(calc(400px * var(--ui-scale))) rotateX(0);
                 opacity: 1;
             }
         }
@@ -177,7 +178,7 @@
 
         @keyframes animBounce {
             from {
-                transform: translateY(40px) scale(0.8);
+                transform: translateY(calc(40px * var(--ui-scale))) scale(0.8);
                 opacity: 0;
             }
 
@@ -193,15 +194,13 @@
 
         @keyframes animBlur {
             from {
-                filter: blur(10px);
                 opacity: 0;
-                transform: scale(1.1);
+                transform: translateY(calc(12px * var(--ui-scale)));
             }
 
             to {
-                filter: blur(0);
                 opacity: 1;
-                transform: scale(1);
+                transform: translateY(0);
             }
         }
 
@@ -211,7 +210,7 @@
 
         @keyframes animSkew {
             from {
-                transform: skewX(-20deg) translateX(-50px);
+                transform: skewX(-20deg) translateX(calc(-50px * var(--ui-scale)));
                 opacity: 0;
             }
 
@@ -223,10 +222,10 @@
 
 
         .avatar {
-            width: 32px;
-            height: 32px;
+            width: calc(32px * var(--ui-scale));
+            height: calc(32px * var(--ui-scale));
             border-radius: 50%;
-            border: 1px solid rgba(255, 75, 75, 0.5);
+            border: calc(1px * var(--ui-scale)) solid rgba(255, 75, 75, 0.6);
             object-fit: cover;
         }
 
@@ -239,34 +238,32 @@
             font-weight: bold;
             font-size: 1.0em;
             color: #ff9d9d;
-            margin-bottom: 2px;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            margin-bottom: calc(2px * var(--ui-scale));
         }
 
         .text {
-            font-size: 0.5em;
+            font-size: 0.75em;
             line-height: 1.4;
             word-break: break-all;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
             display: flex;
             align-items: center;
             flex-wrap: wrap;
-            gap: 4px;
+            gap: calc(4px * var(--ui-scale));
         }
 
         .emoji {
-            height: 24px;
+            height: calc(24px * var(--ui-scale));
             width: auto;
             vertical-align: middle;
             object-fit: contain;
         }
 
         .sticker-box {
-            margin-top: 4px;
+            margin-top: calc(4px * var(--ui-scale));
         }
 
         .sticker {
-            height: 64px;
+            height: calc(64px * var(--ui-scale));
             width: auto;
             object-fit: contain;
         }
@@ -274,7 +271,7 @@
         /* 打赏特殊样式 */
         .message-box.superchat {
             background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 140, 0, 0.3));
-            border: 1px solid rgba(255, 215, 0, 0.5);
+            border: calc(1px * var(--ui-scale)) solid rgba(255, 215, 0, 0.5);
         }
 
         .superchat .author {
@@ -284,7 +281,7 @@
         /* 会员特殊样式 */
         .message-box.membership {
             background: linear-gradient(135deg, rgba(0, 255, 0, 0.2), rgba(0, 100, 0, 0.2));
-            border: 1px solid rgba(0, 255, 0, 0.4);
+            border: calc(1px * var(--ui-scale)) solid rgba(0, 255, 0, 0.4);
         }
 
         .membership .author {
@@ -293,7 +290,7 @@
 
         @keyframes slideIn {
             from {
-                transform: translateX(-50px);
+                transform: translateX(calc(-50px * var(--ui-scale)));
                 opacity: 0;
             }
 
@@ -310,7 +307,7 @@
         @keyframes fadeOut {
             to {
                 opacity: 0;
-                transform: translateY(-20px);
+                transform: translateY(calc(-20px * var(--ui-scale)));
             }
         }
     </style>
@@ -320,6 +317,19 @@
     <div id="chat-container"></div>
 
     <script>
+        const designWidth = 210;
+        const designHeight = 680;
+
+        function updateUiScale() {
+            const widthScale = window.innerWidth / designWidth;
+            const heightScale = window.innerHeight / designHeight;
+            const scale = Math.max(1, Math.min(widthScale, heightScale));
+            document.documentElement.style.setProperty("--ui-scale", scale.toString());
+        }
+
+        updateUiScale();
+        window.addEventListener("resize", updateUiScale);
+
         const container = document.getElementById('chat-container');
         const seenIds = new Set();
         let socket;

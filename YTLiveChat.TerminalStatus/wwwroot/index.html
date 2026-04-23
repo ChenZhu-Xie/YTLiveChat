@@ -14,6 +14,10 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --ui-scale: 1;
+        }
+
         body {
             margin: 0;
             padding: 0;
@@ -26,38 +30,35 @@
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             text-rendering: geometricPrecision;
-            transform: translateZ(0); /* 强制 GPU 渲染 */
         }
 
         .terminal {
-            background: rgba(26, 27, 38, 0.8); 
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(26, 27, 38, 0.86);
+            border: calc(1px * var(--ui-scale)) solid rgba(255, 255, 255, 0.22);
             width: 100%;
             height: 100%;
             display: flex;
             flex-direction: column;
-            box-shadow: inset 0 0 60px rgba(0,0,0,0.5);
         }
 
         .title-bar {
-            background: rgba(36, 40, 59, 0.9);
+            background: rgba(36, 40, 59, 0.94);
             /* 进一步压缩高度：上下 padding 从 12px 减为 6px */
-            padding: 6px 15px; 
+            padding: calc(6px * var(--ui-scale)) calc(15px * var(--ui-scale));
             display: flex;
             align-items: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: calc(1px * var(--ui-scale)) solid rgba(255, 255, 255, 0.16);
         }
 
         .dots {
             display: flex;
-            gap: 6px;
-            margin-right: 15px;
+            gap: calc(6px * var(--ui-scale));
+            margin-right: calc(15px * var(--ui-scale));
         }
 
         .dot {
-            width: 10px; /* 圆点也稍微缩小一点，更精致 */
-            height: 10px;
+            width: calc(10px * var(--ui-scale));
+            height: calc(10px * var(--ui-scale));
             border-radius: 50%;
         }
 
@@ -66,11 +67,11 @@
         .green { background: #27c93f; }
 
         .title-text {
-            font-size: 24px;
+            font-size: calc(24px * var(--ui-scale));
             font-weight: bold;
             flex-grow: 1;
             text-align: center;
-            margin-right: 31px;
+            margin-right: calc(31px * var(--ui-scale));
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -80,14 +81,13 @@
             background: linear-gradient(to right, #4a95e3, #c16781);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 10px rgba(255,255,255,0.1);
         }
 
         .content {
             /* 极大压缩边距：padding 从 30px 减为 10px (上) 和 12px (左) */
-            padding: 10px 12px; 
+            padding: calc(10px * var(--ui-scale)) calc(12px * var(--ui-scale));
             color: #9ece6a; 
-            font-size: 22px;
+            font-size: calc(22px * var(--ui-scale));
             line-height: 1.4; /* 稍微压缩行高，允许更多行 */
             white-space: pre-wrap;
             flex-grow: 1;
@@ -103,9 +103,8 @@
             background: #9ece6a; 
             color: #1a1b26;
             animation: blink 1s infinite;
-            box-shadow: 0 0 6px #9ece6a;
             display: inline; /* 关键：改为 inline 避免破坏换行 */
-            padding: 1px 0;
+            padding: calc(1px * var(--ui-scale)) 0;
         }
 
         .selection {
@@ -115,9 +114,9 @@
 
         .selection-cursor {
             display: inline-block;
-            width: 2px;
+            width: calc(2px * var(--ui-scale));
             height: 1em;
-            margin: 0 -1px;
+            margin: 0 calc(-1px * var(--ui-scale));
             vertical-align: -0.14em;
             animation: blink 1s infinite;
         }
@@ -141,12 +140,20 @@
         <div id="content" class="content">Initializing...<span class="cursor"></span></div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
     <script>
-        const connection = new signalR.HubConnectionBuilder()
-            .withUrl("/statusHub")
-            .withAutomaticReconnect()
-            .build();
+        const designWidth = 291;
+        const designHeight = 159;
+        const signalRScriptUrl = "https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js";
+
+        function updateUiScale() {
+            const widthScale = window.innerWidth / designWidth;
+            const heightScale = window.innerHeight / designHeight;
+            const scale = Math.max(1, Math.min(widthScale, heightScale));
+            document.documentElement.style.setProperty("--ui-scale", scale.toString());
+        }
+
+        updateUiScale();
+        window.addEventListener("resize", updateUiScale);
 
         const colors = [
             '#7aa2f7', // blue
@@ -201,7 +208,7 @@
             const startSpan = (idx) => `<span style="color: ${colors[idx % colors.length]}">`;
             const selectionCursor = (idx) => {
                 const color = colors[idx % colors.length];
-                return `<span class="selection-cursor" style="background: ${color}; box-shadow: 0 0 6px ${color};"></span>`;
+                return `<span class="selection-cursor" style="background: ${color};"></span>`;
             };
             
             resultHtml += startSpan(currentLineIndex);
@@ -215,9 +222,9 @@
                     const color = colors[currentLineIndex % colors.length];
                     const charAtCursor = msg[i] || " ";
                     if (charAtCursor === '\n') {
-                        resultHtml += `<span class="cursor" style="background: ${color}; color: #1a1b26; box-shadow: 0 0 6px ${color};">&nbsp;</span>`;
+                        resultHtml += `<span class="cursor" style="background: ${color}; color: #1a1b26;">&nbsp;</span>`;
                     } else {
-                        resultHtml += `<span class="cursor" style="background: ${color}; color: #1a1b26; box-shadow: 0 0 6px ${color};">${escapeHtml(charAtCursor)}</span>`;
+                        resultHtml += `<span class="cursor" style="background: ${color}; color: #1a1b26;">${escapeHtml(charAtCursor)}</span>`;
                         continue; // Skip the character we just rendered as cursor
                     }
                 }
@@ -241,16 +248,74 @@
             return resultHtml;
         }
 
-        connection.on("ReceiveStatus", (message, cursorPosition, selectionStart, selectionEnd, selectionDirection) => {
+        function applyStatus(message, cursorPosition, selectionStart, selectionEnd, selectionDirection) {
             const contentDiv = document.getElementById("content");
             contentDiv.innerHTML = renderColoredContent(message, cursorPosition, selectionStart, selectionEnd, selectionDirection);
-        });
+        }
 
-        connection.on("ReceiveTitle", (title) => {
+        function applyTitle(title) {
             document.getElementById("title").innerText = title;
-        });
+        }
 
-        connection.start().catch(err => console.error(err.toString()));
+        async function loadInitialStatus() {
+            try {
+                const response = await fetch("/api/status", { cache: "no-store" });
+                if (!response.ok) {
+                    return;
+                }
+
+                const state = await response.json();
+                applyTitle(state.title || "");
+                applyStatus(
+                    state.status || "",
+                    Number.isInteger(state.cursorPosition) ? state.cursorPosition : 0,
+                    Number.isInteger(state.selectionStart) ? state.selectionStart : state.cursorPosition,
+                    Number.isInteger(state.selectionEnd) ? state.selectionEnd : state.cursorPosition,
+                    state.selectionDirection || "none");
+            } catch (err) {
+                console.error("Failed to load initial status", err);
+            }
+        }
+
+        function loadSignalRClient() {
+            return new Promise((resolve, reject) => {
+                if (window.signalR) {
+                    resolve();
+                    return;
+                }
+
+                const script = document.createElement("script");
+                script.src = signalRScriptUrl;
+                script.onload = resolve;
+                script.onerror = () => reject(new Error("SignalR client script failed to load."));
+                document.head.appendChild(script);
+            });
+        }
+
+        async function startRealtimeConnection() {
+            try {
+                await loadSignalRClient();
+
+                const connection = new signalR.HubConnectionBuilder()
+                    .withUrl("/statusHub")
+                    .withAutomaticReconnect()
+                    .build();
+
+                connection.on("ReceiveStatus", (message, cursorPosition, selectionStart, selectionEnd, selectionDirection) => {
+                    applyStatus(message, cursorPosition, selectionStart, selectionEnd, selectionDirection);
+                });
+
+                connection.on("ReceiveTitle", applyTitle);
+
+                await connection.start();
+            } catch (err) {
+                console.error(err);
+                setTimeout(startRealtimeConnection, 5000);
+            }
+        }
+
+        loadInitialStatus();
+        startRealtimeConnection();
     </script>
 </body>
 </html>
