@@ -535,6 +535,243 @@ internal static partial class Parser
         return null;
     }
 
+    // --- Membership tier extraction ---
+
+    /// <summary>
+    /// Extracts the <c>ypcGetOffersEndpoint.params</c> token (itemParams) and InnerTube
+    /// credentials from a channel home page HTML string.
+    /// </summary>
+    public static (string? ItemParams, string? ApiKey, string? ClientVersion) ExtractMembershipOffersParams(string html)
+    {
+        Match keyMatch = ApiKeyRegex().Match(html);
+        string? apiKey = keyMatch.Success ? keyMatch.Groups[1].Value : null;
+        Match verMatch = ClientVersionRegex().Match(html);
+        string? clientVersion = verMatch.Success ? verMatch.Groups[1].Value : null;
+
+        string? json = ExtractJsonObjectAfterMarker(html, "ytInitialData");
+        if (string.IsNullOrWhiteSpace(json))
+            return (null, apiKey, clientVersion);
+
+        try
+        {
+            using JsonDocument doc = JsonDocument.Parse(json!);
+            string? itemParams = FindYpcGetOffersParams(doc.RootElement);
+            return (itemParams, apiKey, clientVersion);
+        }
+        catch
+        {
+            return (null, apiKey, clientVersion);
+        }
+    }
+
+    private static string? FindYpcGetOffersParams(JsonElement element)
+    {
+        switch (element.ValueKind)
+        {
+            case JsonValueKind.Object:
+                if (element.TryGetProperty("ypcGetOffersEndpoint", out JsonElement endpoint)
+                    && endpoint.TryGetProperty("params", out JsonElement paramsEl)
+                    && paramsEl.ValueKind == JsonValueKind.String)
+                {
+                    return paramsEl.GetString();
+                }
+                foreach (JsonProperty prop in element.EnumerateObject())
+                {
+                    string? found = FindYpcGetOffersParams(prop.Value);
+                    if (found != null) return found;
+                }
+                break;
+            case JsonValueKind.Array:
+                foreach (JsonElement item in element.EnumerateArray())
+                {
+                    string? found = FindYpcGetOffersParams(item);
+                    if (found != null) return found;
+                }
+                break;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Parses the raw JSON response from <c>/youtubei/v1/ypc/get_offers</c> into a list of
+    /// <see cref="Contracts.Models.MembershipTier"/> objects.
+    /// Returns an empty list when the response contains no tier data.
+    /// </summary>
+    public static IReadOnlyList<Contracts.Models.MembershipTier> ParseMembershipTiersResponse(string json)
+    {
+        try
+        {
+            using JsonDocument doc = JsonDocument.Parse(json);
+            JsonElement root = doc.RootElement;
+
+            // Navigate: actions[0].openPopupAction.popup.sponsorshipsOfferRenderer.tiers
+            if (!root.TryGetProperty("actions", out JsonElement actions)
+                || actions.ValueKind != JsonValueKind.Array
+                || actions.GetArrayLength() == 0)
+                return [];
+
+            JsonElement firstAction = actions[0];
+            if (!firstAction.TryGetProperty("openPopupAction", out JsonElement openPopup)
+                || !openPopup.TryGetProperty("popup", out JsonElement popup)
+                || !popup.TryGetProperty("sponsorshipsOfferRenderer", out JsonElement offerRenderer)
+                || !offerRenderer.TryGetProperty("tiers", out JsonElement tiers)
+                || tiers.ValueKind != JsonValueKind.Array)
+                return [];
+
+            List<Contracts.Models.MembershipTier> result = [];
+            foreach (JsonElement tierWrapper in tiers.EnumerateArray())
+            {
+                if (!tierWrapper.TryGetProperty("sponsorshipsTierRenderer", out JsonElement tier))
+                    continue;
+
+                Contracts.Models.MembershipTier? parsed = ParseTierRenderer(tier);
+                if (parsed != null)
+                    result.Add(parsed);
+            }
+            return result;
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    private static Contracts.Models.MembershipTier? ParseTierRenderer(JsonElement tier)
+    {
+        string name = GetRunsOrSimpleText(tier, "title") ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(name))
+            return null;
+
+        string priceText = GetConcatenatedRuns(tier, "subtitle")
+            ?? GetConcatenatedRuns(tier, "abovePurchaseButtonText")
+            ?? string.Empty;
+
+        List<Contracts.Models.MembershipPerk> perks = [];
+        List<string> badgeUrls = [];
+        List<Contracts.Models.MembershipEmoji> emojis = [];
+
+        if (tier.TryGetProperty("perks", out JsonElement perksContainer)
+            && perksContainer.TryGetProperty("sponsorshipsPerksRenderer", out JsonElement perksRenderer)
+            && perksRenderer.TryGetProperty("perks", out JsonElement perkList)
+            && perkList.ValueKind == JsonValueKind.Array)
+        {
+            foreach (JsonElement perkWrapper in perkList.EnumerateArray())
+            {
+                if (!perkWrapper.TryGetProperty("sponsorshipsPerkRenderer", out JsonElement perk))
+                    continue;
+
+                string perkTitle = GetRunsOrSimpleText(perk, "title") ?? string.Empty;
+                string? perkDesc = GetSimpleText(perk, "description");
+                perks.Add(new Contracts.Models.MembershipPerk { Title = perkTitle, Description = perkDesc });
+
+                // Classify images as badges or emojis based on thumbnail size metadata
+                if (!perk.TryGetProperty("images", out JsonElement images)
+                    || images.ValueKind != JsonValueKind.Array)
+                    continue;
+
+                foreach (JsonElement image in images.EnumerateArray())
+                {
+                    string? label = null;
+                    if (image.TryGetProperty("accessibility", out JsonElement acc)
+                        && acc.TryGetProperty("accessibilityData", out JsonElement accData)
+                        && accData.TryGetProperty("label", out JsonElement labelEl))
+                    {
+                        label = labelEl.GetString();
+                    }
+
+                    if (!image.TryGetProperty("thumbnails", out JsonElement thumbnails)
+                        || thumbnails.ValueKind != JsonValueKind.Array
+                        || thumbnails.GetArrayLength() == 0)
+                        continue;
+
+                    JsonElement firstThumb = thumbnails[0];
+                    bool hasExplicitSize = firstThumb.TryGetProperty("width", out _);
+
+                    if (hasExplicitSize)
+                    {
+                        // Emoji: prefer the 48 px thumbnail (index 1), fall back to first
+                        string? url = thumbnails.GetArrayLength() > 1
+                            ? thumbnails[1].TryGetProperty("url", out JsonElement u2) ? u2.GetString() : null
+                            : null;
+                        url ??= firstThumb.TryGetProperty("url", out JsonElement u1) ? u1.GetString() : null;
+
+                        if (!string.IsNullOrWhiteSpace(url))
+                            emojis.Add(new Contracts.Models.MembershipEmoji
+                            {
+                                Label = label ?? string.Empty,
+                                ImageUrl = url!,
+                            });
+                    }
+                    else
+                    {
+                        // Badge: no width metadata
+                        if (firstThumb.TryGetProperty("url", out JsonElement badgeUrl))
+                        {
+                            string? bu = badgeUrl.GetString();
+                            if (!string.IsNullOrWhiteSpace(bu))
+                                badgeUrls.Add(bu!);
+                        }
+                    }
+                }
+            }
+        }
+
+        return new Contracts.Models.MembershipTier
+        {
+            Name = name,
+            PriceText = priceText,
+            Perks = perks,
+            BadgeImageUrls = badgeUrls,
+            CustomEmojis = emojis,
+        };
+    }
+
+    private static string? GetRunsOrSimpleText(JsonElement parent, string property)
+    {
+        if (!parent.TryGetProperty(property, out JsonElement el))
+            return null;
+
+        if (el.TryGetProperty("simpleText", out JsonElement simple))
+            return simple.GetString();
+
+        if (el.TryGetProperty("runs", out JsonElement runs) && runs.ValueKind == JsonValueKind.Array)
+        {
+            System.Text.StringBuilder sb = new();
+            foreach (JsonElement run in runs.EnumerateArray())
+            {
+                if (run.TryGetProperty("text", out JsonElement t))
+                    sb.Append(t.GetString());
+            }
+            return sb.Length > 0 ? sb.ToString() : null;
+        }
+
+        return null;
+    }
+
+    private static string? GetConcatenatedRuns(JsonElement parent, string property)
+    {
+        if (!parent.TryGetProperty(property, out JsonElement el)
+            || !el.TryGetProperty("runs", out JsonElement runs)
+            || runs.ValueKind != JsonValueKind.Array)
+            return null;
+
+        System.Text.StringBuilder sb = new();
+        foreach (JsonElement run in runs.EnumerateArray())
+        {
+            if (run.TryGetProperty("text", out JsonElement t))
+                sb.Append(t.GetString());
+        }
+        return sb.Length > 0 ? sb.ToString() : null;
+    }
+
+    private static string? GetSimpleText(JsonElement parent, string property)
+    {
+        if (parent.TryGetProperty(property, out JsonElement el)
+            && el.TryGetProperty("simpleText", out JsonElement simple))
+            return simple.GetString();
+        return null;
+    }
+
     private static string? TryExtractViewCountText(string window)
     {
         Match shortText = StreamsShortViewCountSimpleTextRegex().Match(window);

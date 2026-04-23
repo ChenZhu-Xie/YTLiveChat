@@ -43,6 +43,9 @@ internal static class WatchMode
     {
         "signalAction",
         "liveChatReportModerationStateCommand",
+        // Fanzone ticker chip — members-only event UI chip, no parseable data content.
+        "showFanzoneTickerChipCommand",
+        "removeFanzoneTickerChipCommand",
     };
 
     // Combined set used to gate the default-mode "is this action unknown?" check.
@@ -55,6 +58,8 @@ internal static class WatchMode
     {
         // Fires EngagementMessageReceived (CommunityGuidelines, SubscribersOnly, PollResult).
         "liveChatViewerEngagementMessageRenderer",
+        // Fires GiftReceived — YouTube Jewels virtual gift; no ChatItem produced.
+        "giftMessageViewModel",
     };
 
     // addChatItemAction item renderers the library recognizes but intentionally discards

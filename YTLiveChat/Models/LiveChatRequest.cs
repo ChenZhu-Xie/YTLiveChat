@@ -25,5 +25,20 @@ public sealed record ClientInfo
 
     [JsonPropertyName("clientName")]
     public required string ClientName { get; init; }
+
+    [JsonPropertyName("hl")]
+    public string? Hl { get; init; }
+
+    [JsonPropertyName("gl")]
+    public string? Gl { get; init; }
+}
+
+public sealed record GetOffersRequest
+{
+    [JsonPropertyName("context")]
+    public required RequestContext Context { get; init; }
+
+    [JsonPropertyName("itemParams")]
+    public required string ItemParams { get; init; }
 }
 #pragma warning restore CS1591

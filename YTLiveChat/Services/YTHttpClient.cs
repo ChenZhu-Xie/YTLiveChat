@@ -172,6 +172,72 @@ public class YTHttpClient(HttpClient httpClient, ILogger<YTHttpClient>? logger =
     }
 
     /// <summary>
+    /// Fetches the channel home page HTML for a given handle or channel ID.
+    /// Used to extract membership offer tokens from <c>ytInitialData</c>.
+    /// </summary>
+    public virtual async Task<string> GetChannelPageAsync(
+        string? handle,
+        string? channelId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        string urlPath = BuildChannelHomePath(handle, channelId);
+        return await GetPageHtmlWithConsentFallbackAsync(urlPath, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// POSTs to <c>/youtubei/v1/ypc/get_offers</c> and returns the raw JSON response string.
+    /// </summary>
+    public virtual async Task<string> PostGetOffersAsync(
+        string apiKey,
+        string clientVersion,
+        string itemParams,
+        CancellationToken cancellationToken = default
+    )
+    {
+        string url = $"/youtubei/v1/ypc/get_offers?key={apiKey}&prettyPrint=false";
+
+        Models.GetOffersRequest payload = new()
+        {
+            Context = new Models.RequestContext
+            {
+                Client = new Models.ClientInfo
+                {
+                    ClientName = "WEB",
+                    ClientVersion = clientVersion,
+                    Hl = "en",
+                    Gl = "US",
+                },
+            },
+            ItemParams = itemParams,
+        };
+
+        string jsonPayload = System.Text.Json.JsonSerializer.Serialize(
+            payload,
+            YTLiveChatJsonSerializerContext.Default.GetOffersRequest
+        );
+
+        using StringContent content = new(
+            jsonPayload,
+            System.Text.Encoding.UTF8,
+            "application/json"
+        );
+
+        using HttpResponseMessage response = await _httpClient
+            .PostAsync(url, content, cancellationToken)
+            .ConfigureAwait(false);
+
+        response.EnsureSuccessStatusCode();
+
+#if NETSTANDARD2_1 || NETSTANDARD2_0
+        return await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+#else
+        return await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+#endif
+    }
+
+    /// <summary>
     /// Fetches the streams tab HTML page for a given channel handle or ID.
     /// </summary>
     public virtual async Task<string> GetStreamsPageAsync(
@@ -280,6 +346,20 @@ public class YTHttpClient(HttpClient httpClient, ILogger<YTHttpClient>? logger =
             : throw new ArgumentException(
                 "At least one identifier (handle, channelId, or liveId) must be provided."
             );
+    }
+
+    private static string BuildChannelHomePath(string? handle, string? channelId)
+    {
+        if (!string.IsNullOrEmpty(handle))
+        {
+            string normalizedHandle = handle!.StartsWith("@", StringComparison.Ordinal)
+                ? handle
+                : '@' + handle;
+            return normalizedHandle;
+        }
+
+        return !string.IsNullOrEmpty(channelId) ? $"/channel/{channelId}"
+            : throw new ArgumentException("A channel handle or channelId must be provided.");
     }
 
     private static string BuildStreamsPagePath(string? handle, string? channelId)

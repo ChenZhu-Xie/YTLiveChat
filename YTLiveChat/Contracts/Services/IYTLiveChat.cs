@@ -156,6 +156,28 @@ public interface IYTLiveChat : IDisposable
     event EventHandler<ErrorOccurredEventArgs>? ErrorOccurred;
 
     /// <summary>
+    /// Fetches the channel's membership tier definitions on demand.
+    /// Makes two HTTP requests: one to the channel home page to extract the offer token,
+    /// and one to YouTube's <c>/youtubei/v1/ypc/get_offers</c> endpoint to retrieve tier data.
+    /// </summary>
+    /// <param name="handle">Channel @handle (e.g. <c>"@HakosBaelz"</c>).</param>
+    /// <param name="channelId">Channel ID (e.g. <c>"UCgmPnx-EEeOrZSg5Tiw7ZRQ"</c>).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>
+    /// Ordered list of membership tiers from cheapest to most expensive.
+    /// Returns an empty list when the channel does not have memberships enabled
+    /// or the offer token could not be extracted from the channel page.
+    /// </returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when neither <paramref name="handle"/> nor <paramref name="channelId"/> is provided.
+    /// </exception>
+    Task<IReadOnlyList<MembershipTier>> GetMembershipTiersAsync(
+        string? handle = null,
+        string? channelId = null,
+        CancellationToken cancellationToken = default
+    );
+
+    /// <summary>
     /// Starts the Listeners for the LiveChat and fires InitialPageLoaded when successful. Either <paramref name="handle"/>, <paramref name="channelId"/> or <paramref name="liveId"/> must be given.
     /// </summary>
     /// <remarks>

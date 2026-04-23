@@ -1787,6 +1787,48 @@ public class YTLiveChat : IYTLiveChat // Changed to public for direct instantiat
         }
     }
 
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<Contracts.Models.MembershipTier>> GetMembershipTiersAsync(
+        string? handle = null,
+        string? channelId = null,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (string.IsNullOrWhiteSpace(handle) && string.IsNullOrWhiteSpace(channelId))
+            throw new ArgumentException("Either handle or channelId must be provided.");
+
+        string pageHtml = await _ytHttpClient
+            .GetChannelPageAsync(handle, channelId, cancellationToken)
+            .ConfigureAwait(false);
+
+        (string? itemParams, string? apiKey, string? clientVersion) =
+            Parser.ExtractMembershipOffersParams(pageHtml);
+
+        if (string.IsNullOrWhiteSpace(itemParams))
+        {
+            _logger.LogDebug(
+                "No ypcGetOffersEndpoint.params found in channel page for {Target}. Channel may not have memberships.",
+                handle ?? channelId
+            );
+            return [];
+        }
+
+        if (string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(clientVersion))
+        {
+            _logger.LogWarning(
+                "Missing InnerTube API key or client version on channel page for {Target}.",
+                handle ?? channelId
+            );
+            return [];
+        }
+
+        string offersJson = await _ytHttpClient
+            .PostGetOffersAsync(apiKey!, clientVersion!, itemParams!, cancellationToken)
+            .ConfigureAwait(false);
+
+        return Parser.ParseMembershipTiersResponse(offersJson);
+    }
+
     /// <summary>Invokes the LivestreamInaccessible event.</summary>
     protected virtual void OnLivestreamInaccessible(LivestreamInaccessibleEventArgs e)
     {
