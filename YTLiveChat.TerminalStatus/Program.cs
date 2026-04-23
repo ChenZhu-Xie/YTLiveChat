@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging.Console;
 using YTLiveChat.TerminalStatus.Hubs;
 
 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -38,6 +40,9 @@ if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole(options => options.FormatterName = GrayCategoryConsoleFormatter.FormatterName);
+builder.Logging.AddConsoleFormatter<GrayCategoryConsoleFormatter, ConsoleFormatterOptions>();
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<StatusStore>();
 
@@ -78,3 +83,59 @@ app.MapGet("/api/status", (StatusStore store) => Results.Json(new
 app.MapHub<StatusHub>("/statusHub");
 
 app.Run();
+
+internal sealed class GrayCategoryConsoleFormatter() : ConsoleFormatter(FormatterName)
+{
+    public const string FormatterName = "gray-category";
+    private const string Reset = "\x1b[0m";
+    private const string Dim = "\x1b[90m";
+    private const string Info = "\x1b[38;2;158;206;106m";
+    private const string Warn = "\x1b[38;2;224;175;104m";
+    private const string Error = "\x1b[38;2;247;118;142m";
+
+    public override void Write<TState>(
+        in LogEntry<TState> logEntry,
+        IExternalScopeProvider? scopeProvider,
+        TextWriter textWriter)
+    {
+        string message = logEntry.Formatter?.Invoke(logEntry.State, logEntry.Exception) ?? string.Empty;
+        if (string.IsNullOrEmpty(message) && logEntry.Exception is null)
+        {
+            return;
+        }
+
+        (string levelName, string levelColor) = logEntry.LogLevel switch
+        {
+            LogLevel.Trace => ("trce", Dim),
+            LogLevel.Debug => ("dbug", Dim),
+            LogLevel.Information => ("info", Info),
+            LogLevel.Warning => ("warn", Warn),
+            LogLevel.Error => ("fail", Error),
+            LogLevel.Critical => ("crit", Error),
+            _ => ("    ", Reset)
+        };
+
+        textWriter.Write(levelColor);
+        textWriter.Write(levelName);
+        textWriter.Write(':');
+        textWriter.Write(Reset);
+        textWriter.Write(' ');
+        textWriter.Write(Dim);
+        textWriter.Write(logEntry.Category);
+        textWriter.Write('[');
+        textWriter.Write(logEntry.EventId.Id);
+        textWriter.Write(']');
+        textWriter.WriteLine(Reset);
+
+        if (!string.IsNullOrEmpty(message))
+        {
+            textWriter.Write("      ");
+            textWriter.WriteLine(message);
+        }
+
+        if (logEntry.Exception is not null)
+        {
+            textWriter.WriteLine(logEntry.Exception);
+        }
+    }
+}

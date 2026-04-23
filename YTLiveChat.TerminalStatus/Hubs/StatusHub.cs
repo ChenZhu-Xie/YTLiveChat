@@ -180,7 +180,8 @@ public class StatusHub(StatusStore store) : Hub
     private void PrintTerminalStatus()
     {
         string gradientTitle = ApplyGeminiGradient(store.CurrentTitle);
-        Console.Write($"\r \x1b[2K > {gradientTitle}\x1b[0m | {store.CurrentStatus} (Pos: {store.CursorPosition}, Sel: {store.SelectionStart}-{store.SelectionEnd})");
+        string coloredStatus = ApplyStatusLineColors(store.CurrentStatus);
+        Console.Write($"\r \x1b[2K > {gradientTitle}\x1b[0m | {coloredStatus}\x1b[0m (Pos: {store.CursorPosition}, Sel: {store.SelectionStart}-{store.SelectionEnd})");
     }
 
     private Task SendStatusAsync(IClientProxy client)
@@ -214,5 +215,46 @@ public class StatusHub(StatusStore store) : Hub
         }
 
         return sb.ToString();
+    }
+
+    private static string ApplyStatusLineColors(string text)
+    {
+        if (string.IsNullOrEmpty(text))
+        {
+            return text;
+        }
+
+        (int R, int G, int B)[] colors =
+        [
+            (122, 162, 247),
+            (187, 154, 247),
+            (125, 207, 255),
+            (224, 175, 104),
+            (247, 118, 142),
+            (158, 206, 106),
+            (180, 249, 248),
+            (255, 158, 100)
+        ];
+
+        var sb = new StringBuilder();
+        int lineIndex = 0;
+        AppendColor(sb, colors[lineIndex]);
+
+        foreach (char character in text)
+        {
+            sb.Append(character);
+            if (character == '\n')
+            {
+                lineIndex++;
+                AppendColor(sb, colors[lineIndex % colors.Length]);
+            }
+        }
+
+        return sb.ToString();
+    }
+
+    private static void AppendColor(StringBuilder sb, (int R, int G, int B) color)
+    {
+        sb.Append($"\x1b[38;2;{color.R};{color.G};{color.B}m");
     }
 }
