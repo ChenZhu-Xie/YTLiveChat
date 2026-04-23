@@ -1801,13 +1801,29 @@ public class YTLiveChat : IYTLiveChat // Changed to public for direct instantiat
             .GetChannelPageAsync(handle, channelId, cancellationToken)
             .ConfigureAwait(false);
 
+        bool hasInitialData = pageHtml.Contains("ytInitialData", StringComparison.Ordinal);
+        bool hasOffersEndpoint = pageHtml.Contains("ypcGetOffersEndpoint", StringComparison.Ordinal);
+        bool hasApiKey = pageHtml.Contains("INNERTUBE_API_KEY", StringComparison.Ordinal);
+        _logger.LogInformation(
+            "GetMembershipTiersAsync [{Target}]: page={Length} chars, ytInitialData={HasInitialData}, ypcGetOffersEndpoint={HasOffersEndpoint}, INNERTUBE_API_KEY={HasApiKey}",
+            handle ?? channelId, pageHtml.Length, hasInitialData, hasOffersEndpoint, hasApiKey
+        );
+
         (string? itemParams, string? apiKey, string? clientVersion) =
             Parser.ExtractMembershipOffersParams(pageHtml);
 
+        _logger.LogInformation(
+            "GetMembershipTiersAsync [{Target}]: itemParams={ItemParamsFound}, apiKey={ApiKeyFound}, clientVersion={ClientVersionFound}",
+            handle ?? channelId,
+            itemParams != null ? $"found ({itemParams.Length} chars)" : "null",
+            apiKey != null ? "found" : "null",
+            clientVersion != null ? "found" : "null"
+        );
+
         if (string.IsNullOrWhiteSpace(itemParams))
         {
-            _logger.LogDebug(
-                "No ypcGetOffersEndpoint.params found in channel page for {Target}. Channel may not have memberships.",
+            _logger.LogWarning(
+                "GetMembershipTiersAsync [{Target}]: No ypcGetOffersEndpoint.params found. Channel may not have memberships or the token is on a different page.",
                 handle ?? channelId
             );
             return [];
@@ -1816,7 +1832,7 @@ public class YTLiveChat : IYTLiveChat // Changed to public for direct instantiat
         if (string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(clientVersion))
         {
             _logger.LogWarning(
-                "Missing InnerTube API key or client version on channel page for {Target}.",
+                "GetMembershipTiersAsync [{Target}]: Missing InnerTube API key or client version.",
                 handle ?? channelId
             );
             return [];
@@ -1826,7 +1842,17 @@ public class YTLiveChat : IYTLiveChat // Changed to public for direct instantiat
             .PostGetOffersAsync(apiKey!, clientVersion!, itemParams!, cancellationToken)
             .ConfigureAwait(false);
 
-        return Parser.ParseMembershipTiersResponse(offersJson);
+        _logger.LogInformation(
+            "GetMembershipTiersAsync [{Target}]: get_offers response = {Length} chars",
+            handle ?? channelId, offersJson.Length
+        );
+
+        IReadOnlyList<Contracts.Models.MembershipTier> tiers = Parser.ParseMembershipTiersResponse(offersJson);
+        _logger.LogInformation(
+            "GetMembershipTiersAsync [{Target}]: parsed {Count} tier(s)",
+            handle ?? channelId, tiers.Count
+        );
+        return tiers;
     }
 
     /// <summary>Invokes the LivestreamInaccessible event.</summary>

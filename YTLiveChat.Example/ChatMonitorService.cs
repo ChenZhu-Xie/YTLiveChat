@@ -24,6 +24,35 @@ internal class ChatMonitorService : IHostedService, IDisposable
 
     private static readonly object s_consoleLock = new();
 
+    // Top-level action types fully handled by the library (dedicated event or intentional silence).
+    // These must NOT surface as [RAW] — they already fired their own events.
+    private static readonly HashSet<string> s_handledActionTypes = new(StringComparer.Ordinal)
+    {
+        "removeChatItemAction",
+        "replaceChatItemAction",
+        "removeChatItemByAuthorAction",
+        "markChatItemsByAuthorAsDeletedAction",
+        "changeEngagementPanelVisibilityAction",
+        "showLiveChatActionPanelAction",
+        "updateLiveChatPollAction",
+        "closeLiveChatActionPanelAction",
+        "addBannerToLiveChatCommand",
+        "removeBannerForLiveChatCommand",
+        "signalAction",
+        "liveChatReportModerationStateCommand",
+        "showFanzoneTickerChipCommand",
+        "removeFanzoneTickerChipCommand",
+    };
+
+    // addChatItemAction renderer types that the library handles (dedicated event or silent).
+    private static readonly HashSet<string> s_handledRendererTypes = new(StringComparer.Ordinal)
+    {
+        "liveChatViewerEngagementMessageRenderer",
+        "giftMessageViewModel",
+        "liveChatPlaceholderItemRenderer",
+        "liveChatModeChangeMessageRenderer",
+    };
+
     public ChatMonitorService(
         ILogger<ChatMonitorService> logger,
         IReadOnlyList<ExampleRunOptions> runOptions,
@@ -346,18 +375,52 @@ internal class ChatMonitorService : IHostedService, IDisposable
 
     private static void OnRawActionReceived(MonitorSession session, RawActionReceivedEventArgs e)
     {
+        // Regular chat messages are already handled by ChatReceived.
         if (e.ParsedChatItem != null)
-        {
             return;
+
+        if (e.RawAction.ValueKind != JsonValueKind.Object)
+            return;
+
+        // Walk top-level properties to find the action type.
+        // Pure clickTrackingParams-only objects are YouTube telemetry pings — no payload.
+        string? actionType = null;
+        bool hasNonTrackingProp = false;
+        foreach (JsonProperty prop in e.RawAction.EnumerateObject())
+        {
+            if (prop.Name == "clickTrackingParams")
+                continue;
+            hasNonTrackingProp = true;
+            if (prop.Name.EndsWith("Action", StringComparison.Ordinal)
+                || prop.Name.EndsWith("Command", StringComparison.Ordinal))
+            {
+                actionType = prop.Name;
+                break;
+            }
+            actionType ??= prop.Name;
         }
 
-        string actionKind = "unknownAction";
-        if (e.RawAction.ValueKind == JsonValueKind.Object)
+        if (!hasNonTrackingProp)
+            return;
+
+        // Known action handled by a dedicated event handler — don't double-report.
+        if (actionType != null && s_handledActionTypes.Contains(actionType))
+            return;
+
+        // For addChatItemAction, resolve the renderer type and filter known ones.
+        string displayKind = actionType ?? "unknown";
+        if (actionType == "addChatItemAction"
+            && e.RawAction.TryGetProperty("addChatItemAction", out JsonElement addChat)
+            && addChat.TryGetProperty("item", out JsonElement item)
+            && item.ValueKind == JsonValueKind.Object)
         {
-            using JsonElement.ObjectEnumerator enumerator = e.RawAction.EnumerateObject();
-            if (enumerator.MoveNext())
+            using JsonElement.ObjectEnumerator itemEnum = item.EnumerateObject();
+            if (itemEnum.MoveNext())
             {
-                actionKind = enumerator.Current.Name;
+                string rendererType = itemEnum.Current.Name;
+                if (s_handledRendererTypes.Contains(rendererType))
+                    return;
+                displayKind = rendererType;
             }
         }
 
@@ -368,7 +431,7 @@ internal class ChatMonitorService : IHostedService, IDisposable
             WriteTag("RAW", ConsoleColor.DarkGray);
             Console.Write(' ');
             Console.ForegroundColor = ConsoleColor.DarkYellow;
-            Console.Write(actionKind);
+            Console.Write(displayKind);
             Console.ResetColor();
             Console.WriteLine();
         }
@@ -947,7 +1010,9 @@ internal class ChatMonitorService : IHostedService, IDisposable
             switch (part)
             {
                 case TextPart textPart:
-                    Console.ForegroundColor = ConsoleColor.Gray;
+                    Console.ForegroundColor = textPart.Bold ? ConsoleColor.White
+                        : textPart.IsDeemphasized ? ConsoleColor.DarkGray
+                        : ConsoleColor.Gray;
                     Console.Write(textPart.Text);
                     break;
                 case EmojiPart emojiPart:
