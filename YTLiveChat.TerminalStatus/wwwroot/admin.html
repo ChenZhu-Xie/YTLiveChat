@@ -124,15 +124,21 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
     <script>
-        const connection = new signalR.HubConnectionBuilder()
-            .withUrl("/statusHub")
-            .withAutomaticReconnect()
-            .build();
-
         const statusInput = document.getElementById("statusInput");
         const backdrop = document.getElementById("backdrop");
         const titleInput = document.getElementById("titleInput");
         const syncStatus = document.getElementById("syncStatus");
+        const draftStorageKey = "ytlivechat-terminalstatus-draft";
+        const lockStorageKey = "ytlivechat-terminalstatus-editor-lock";
+        const tabId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        const lockDurationMs = 4000;
+        let hasReceivedInitialStatus = false;
+        let hasReceivedInitialTitle = false;
+        let isApplyingRemoteState = false;
+        let lockRenewTimer = null;
+        let connection = null;
+        let lastSentStatus = "";
+        let lastSentCursorPosition = 0;
 
         const colors = [
             '#7aa2f7', // blue
@@ -180,56 +186,277 @@
             backdrop.innerHTML = renderColoredContent(statusInput.value) + (statusInput.value.endsWith('\n') ? '<br>&nbsp;' : '');
         }
 
+        function applyState(state) {
+            if (!state) {
+                return;
+            }
+
+            isApplyingRemoteState = true;
+
+            if (typeof state.title === "string") {
+                titleInput.value = state.title;
+                hasReceivedInitialTitle = true;
+            }
+
+            if (typeof state.status === "string") {
+                const shouldPreserveSelection = document.activeElement === statusInput && hasReceivedInitialStatus;
+                const selectionStart = statusInput.selectionStart ?? 0;
+                const selectionEnd = statusInput.selectionEnd ?? selectionStart;
+
+                statusInput.value = state.status;
+                const cursorPosition = Number.isInteger(state.cursorPosition)
+                    ? Math.max(0, Math.min(state.cursorPosition, statusInput.value.length))
+                    : statusInput.value.length;
+
+                if (shouldPreserveSelection) {
+                    statusInput.selectionStart = Math.max(0, Math.min(selectionStart, statusInput.value.length));
+                    statusInput.selectionEnd = Math.max(0, Math.min(selectionEnd, statusInput.value.length));
+                } else {
+                    statusInput.selectionStart = statusInput.selectionEnd = cursorPosition;
+                }
+
+                hasReceivedInitialStatus = true;
+                updateBackdrop();
+            }
+
+            saveDraftToLocal();
+            isApplyingRemoteState = false;
+        }
+
+        function saveDraftToLocal() {
+            const draft = {
+                status: statusInput.value,
+                cursorPosition: statusInput.selectionStart ?? 0,
+                title: titleInput.value,
+                updatedAt: Date.now()
+            };
+            localStorage.setItem(draftStorageKey, JSON.stringify(draft));
+        }
+
+        function loadDraftFromLocal() {
+            try {
+                const raw = localStorage.getItem(draftStorageKey);
+                if (!raw) return;
+
+                const draft = JSON.parse(raw);
+                if (typeof draft.status === "string") {
+                    statusInput.value = draft.status;
+                }
+                if (typeof draft.title === "string" && draft.title.length > 0) {
+                    titleInput.value = draft.title;
+                }
+
+                const cursorPosition = Number.isInteger(draft.cursorPosition)
+                    ? Math.max(0, Math.min(draft.cursorPosition, statusInput.value.length))
+                    : statusInput.value.length;
+
+                statusInput.selectionStart = statusInput.selectionEnd = cursorPosition;
+                updateBackdrop();
+            } catch (err) {
+                console.error("Failed to load local draft", err);
+            }
+        }
+
+        function getLock() {
+            try {
+                const raw = localStorage.getItem(lockStorageKey);
+                if (!raw) return null;
+
+                const lock = JSON.parse(raw);
+                if (!lock?.tabId || !lock?.expiresAt) return null;
+                if (lock.expiresAt <= Date.now()) return null;
+                return lock;
+            } catch {
+                return null;
+            }
+        }
+
+        function applyLockUi() {
+            const lock = getLock();
+            const isOwnedByAnotherTab = lock && lock.tabId !== tabId;
+            const isConnected = connection?.state === "Connected";
+
+            statusInput.readOnly = Boolean(isOwnedByAnotherTab);
+            titleInput.readOnly = Boolean(isOwnedByAnotherTab);
+            syncStatus.innerText = isOwnedByAnotherTab ? "LOCKED" : (isConnected ? "CONNECTED" : "OFFLINE");
+            syncStatus.style.color = isOwnedByAnotherTab ? "#e0af68" : (isConnected ? "#9ece6a" : "#f7768e");
+        }
+
+        function acquireLock() {
+            const existingLock = getLock();
+            if (existingLock && existingLock.tabId !== tabId) {
+                applyLockUi();
+                return false;
+            }
+
+            localStorage.setItem(lockStorageKey, JSON.stringify({
+                tabId,
+                expiresAt: Date.now() + lockDurationMs
+            }));
+            applyLockUi();
+            return true;
+        }
+
+        function renewLock() {
+            const existingLock = getLock();
+            if (!existingLock || existingLock.tabId === tabId) {
+                acquireLock();
+            }
+        }
+
+        function releaseLock() {
+            const existingLock = getLock();
+            if (existingLock?.tabId === tabId) {
+                localStorage.removeItem(lockStorageKey);
+            }
+            applyLockUi();
+        }
+
+        function startLockRenewal() {
+            if (lockRenewTimer !== null) return;
+            lockRenewTimer = setInterval(renewLock, Math.max(1000, Math.floor(lockDurationMs / 2)));
+        }
+
+        function stopLockRenewal() {
+            if (lockRenewTimer !== null) {
+                clearInterval(lockRenewTimer);
+                lockRenewTimer = null;
+            }
+        }
+
         async function start() {
             try {
+                const response = await fetch("/api/status", { cache: "no-store" });
+                if (response.ok) {
+                    applyState(await response.json());
+                }
+
+                if (!window.signalR) {
+                    console.warn("SignalR client script was not loaded. Initial state is available, but realtime sync is disabled.");
+                    applyLockUi();
+                    return;
+                }
+
+                connection = new signalR.HubConnectionBuilder()
+                    .withUrl("/statusHub")
+                    .withAutomaticReconnect()
+                    .build();
+
+                connection.onclose(() => {
+                    applyLockUi();
+                });
+
+                connection.on("ReceiveStatus", (message, cursorPosition) => {
+                    applyState({
+                        title: titleInput.value,
+                        status: message,
+                        cursorPosition
+                    });
+                });
+
+                connection.on("ReceiveTitle", (title) => {
+                    applyState({
+                        title,
+                        status: statusInput.value,
+                        cursorPosition: statusInput.selectionStart ?? 0
+                    });
+                });
+
                 await connection.start();
-                syncStatus.innerText = "CONNECTED";
-                syncStatus.style.color = "#9ece6a";
-                // Initial sync after connection
-                sync();
+                applyLockUi();
             } catch (err) {
                 console.error(err);
                 setTimeout(start, 5000);
             }
         };
 
-        connection.onclose(() => {
-            syncStatus.innerText = "DISCONNECTED";
-            syncStatus.style.color = "#f7768e";
-        });
-
         function sync() {
+            if (isApplyingRemoteState || !hasReceivedInitialStatus || statusInput.readOnly) {
+                saveDraftToLocal();
+                return;
+            }
+
+            saveDraftToLocal();
             updateBackdrop();
-            connection.invoke("UpdateStatus", statusInput.value, statusInput.selectionStart)
+            lastSentStatus = statusInput.value;
+            lastSentCursorPosition = statusInput.selectionStart ?? 0;
+            if (!connection || connection.state !== "Connected") {
+                return;
+            }
+
+            connection.invoke("UpdateStatus", lastSentStatus, lastSentCursorPosition)
                 .catch(err => console.error(err));
         }
 
+        function saveSelectionOnly() {
+            if (isApplyingRemoteState || statusInput.readOnly) {
+                return;
+            }
+
+            saveDraftToLocal();
+            updateBackdrop();
+        }
+
         statusInput.addEventListener("input", sync);
-        statusInput.addEventListener("keyup", sync);
-        statusInput.addEventListener("click", sync);
+        statusInput.addEventListener("keyup", saveSelectionOnly);
+        statusInput.addEventListener("click", saveSelectionOnly);
+        statusInput.addEventListener("select", saveSelectionOnly);
+        statusInput.addEventListener("mouseup", saveSelectionOnly);
         statusInput.addEventListener("scroll", () => {
             backdrop.scrollTop = statusInput.scrollTop;
         });
 
         titleInput.addEventListener("input", () => {
-            connection.invoke("UpdateTitle", titleInput.value).catch(err => console.error(err));
-        });
+            if (titleInput.readOnly) {
+                return;
+            }
 
-        // Initialize values from server
-        connection.on("ReceiveStatus", (message, cursorPosition) => {
-            if (document.activeElement !== statusInput) {
-                statusInput.value = message;
-                statusInput.selectionStart = statusInput.selectionEnd = cursorPosition;
-                updateBackdrop();
+            saveDraftToLocal();
+            if (connection && connection.state === "Connected") {
+                connection.invoke("UpdateTitle", titleInput.value).catch(err => console.error(err));
             }
         });
 
-        connection.on("ReceiveTitle", (title) => {
-            if (document.activeElement !== titleInput) {
-                titleInput.value = title;
+        statusInput.addEventListener("focus", () => {
+            if (acquireLock()) {
+                startLockRenewal();
             }
         });
 
+        titleInput.addEventListener("focus", () => {
+            if (acquireLock()) {
+                startLockRenewal();
+            }
+        });
+
+        statusInput.addEventListener("blur", () => {
+            stopLockRenewal();
+            releaseLock();
+        });
+
+        titleInput.addEventListener("blur", () => {
+            stopLockRenewal();
+            releaseLock();
+        });
+
+        window.addEventListener("storage", (event) => {
+            if (event.key === draftStorageKey && event.newValue && document.activeElement !== statusInput && document.activeElement !== titleInput) {
+                loadDraftFromLocal();
+            }
+
+            if (event.key === lockStorageKey) {
+                applyLockUi();
+            }
+        });
+
+        window.addEventListener("beforeunload", () => {
+            saveDraftToLocal();
+            stopLockRenewal();
+            releaseLock();
+        });
+
+        loadDraftFromLocal();
+        applyLockUi();
         start();
     </script>
 </body>

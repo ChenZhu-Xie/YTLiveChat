@@ -386,3 +386,6 @@ logs/
 
 # Local release drafting
 CHANGELOG.md
+
+# Terminal Status Persistence
+status_persistence.json
