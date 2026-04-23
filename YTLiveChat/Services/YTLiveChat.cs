@@ -1797,39 +1797,19 @@ public class YTLiveChat : IYTLiveChat // Changed to public for direct instantiat
         if (string.IsNullOrWhiteSpace(handle) && string.IsNullOrWhiteSpace(channelId))
             throw new ArgumentException("Either handle or channelId must be provided.");
 
-        string pageHtml = await _ytHttpClient
-            .GetChannelPageAsync(handle, channelId, cancellationToken)
+        // The /join page is the only unauthenticated page that embeds ypcGetOffersEndpoint.params.
+        string joinHtml = await _ytHttpClient
+            .GetJoinPageAsync(handle, channelId, cancellationToken)
             .ConfigureAwait(false);
 
         _logger.LogInformation(
-            "GetMembershipTiersAsync [{Target}]: home page={Length} chars, ypcGetOffersEndpoint={HasOffersEndpoint}",
-            handle ?? channelId, pageHtml.Length,
-            pageHtml.Contains("ypcGetOffersEndpoint", StringComparison.Ordinal)
+            "GetMembershipTiersAsync [{Target}]: join page={Length} chars, ypcGetOffersEndpoint={HasOffersEndpoint}",
+            handle ?? channelId, joinHtml.Length,
+            joinHtml.Contains("ypcGetOffersEndpoint", StringComparison.Ordinal)
         );
 
         (string? itemParams, string? apiKey, string? clientVersion) =
-            Parser.ExtractMembershipOffersParams(pageHtml);
-
-        if (string.IsNullOrWhiteSpace(itemParams))
-        {
-            // Home page doesn't embed the token for unauthenticated requests — try the membership tab.
-            _logger.LogInformation(
-                "GetMembershipTiersAsync [{Target}]: token absent on home page, trying /@handle/membership tab",
-                handle ?? channelId
-            );
-
-            string membershipHtml = await _ytHttpClient
-                .GetMembershipPageAsync(handle, channelId, cancellationToken)
-                .ConfigureAwait(false);
-
-            _logger.LogInformation(
-                "GetMembershipTiersAsync [{Target}]: membership tab={Length} chars, ypcGetOffersEndpoint={HasOffersEndpoint}",
-                handle ?? channelId, membershipHtml.Length,
-                membershipHtml.Contains("ypcGetOffersEndpoint", StringComparison.Ordinal)
-            );
-
-            (itemParams, apiKey, clientVersion) = Parser.ExtractMembershipOffersParams(membershipHtml);
-        }
+            Parser.ExtractMembershipOffersParams(joinHtml);
 
         _logger.LogInformation(
             "GetMembershipTiersAsync [{Target}]: itemParams={ItemParamsFound}",
@@ -1839,7 +1819,7 @@ public class YTLiveChat : IYTLiveChat // Changed to public for direct instantiat
         if (string.IsNullOrWhiteSpace(itemParams))
         {
             _logger.LogWarning(
-                "GetMembershipTiersAsync [{Target}]: No ypcGetOffersEndpoint.params found on home page or membership tab. Channel may not have memberships.",
+                "GetMembershipTiersAsync [{Target}]: No ypcGetOffersEndpoint.params found on /join page. Channel may not have memberships.",
                 handle ?? channelId
             );
             return [];

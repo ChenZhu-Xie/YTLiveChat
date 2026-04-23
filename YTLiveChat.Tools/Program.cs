@@ -6,6 +6,11 @@ if (args.Length > 0 && args[0].Equals("watch", StringComparison.OrdinalIgnoreCas
     return await WatchMode.RunAsync(args[1..]);
 }
 
+if (args.Length > 0 && args[0].Equals("snapshot", StringComparison.OrdinalIgnoreCase))
+{
+    return await SnapshotMode.RunAsync(args[1..]);
+}
+
 if (args.Length > 0 && args[0].Equals("analyze", StringComparison.OrdinalIgnoreCase))
 {
     return AnalyzeMode.Run(args[1..]);
@@ -566,9 +571,10 @@ static void PrintUsage()
     Console.WriteLine("YTLiveChat.Tools — log analysis and live capture for InnerTube chat data");
     Console.WriteLine();
     Console.WriteLine("Subcommands:");
-    Console.WriteLine("  watch    Capture live chat from one or more streams to .jsonl files.");
-    Console.WriteLine("  count    Count and dump renderer/action types from captured .jsonl logs. (default)");
-    Console.WriteLine("  analyze  Field-level baseline diff + deep recursive scan for new/unknown JSON keys.");
+    Console.WriteLine("  watch     Capture live chat from one or more streams to .jsonl files.");
+    Console.WriteLine("  snapshot  Fetch and save YouTube page HTML snapshots for test fixtures.");
+    Console.WriteLine("  count     Count and dump renderer/action types from captured .jsonl logs. (default)");
+    Console.WriteLine("  analyze   Field-level baseline diff + deep recursive scan for new/unknown JSON keys.");
     Console.WriteLine();
     Console.WriteLine("━━━ watch ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     Console.WriteLine("  dotnet run --project YTLiveChat.Tools -- watch <@handle|UCxxx|liveId> [...]");
@@ -625,6 +631,8 @@ static void PrintUsage()
     Console.WriteLine();
     Console.WriteLine("    # Analyze all logs in a directory:");
     Console.WriteLine("    dotnet run --project YTLiveChat.Tools -- analyze logs/");
+    Console.WriteLine();
+    SnapshotMode.PrintSnapshotUsage();
 }
 
 static string BuildVariantSignature(string rendererType, JsonElement renderer, string source)

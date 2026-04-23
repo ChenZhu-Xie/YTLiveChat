@@ -254,6 +254,20 @@ public class YTHttpClient(HttpClient httpClient, ILogger<YTHttpClient>? logger =
     }
 
     /// <summary>
+    /// Fetches the join/membership offer HTML page for a given channel handle or ID.
+    /// </summary>
+    public virtual async Task<string> GetJoinPageAsync(
+        string? handle,
+        string? channelId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        string urlPath = BuildJoinPagePath(handle, channelId);
+        return await GetPageHtmlWithConsentFallbackAsync(urlPath, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Fetches the streams tab HTML page for a given channel handle or ID.
     /// </summary>
     public virtual async Task<string> GetStreamsPageAsync(
@@ -389,6 +403,20 @@ public class YTHttpClient(HttpClient httpClient, ILogger<YTHttpClient>? logger =
         }
 
         return !string.IsNullOrEmpty(channelId) ? $"/channel/{channelId}/membership"
+            : throw new ArgumentException("A channel handle or channelId must be provided.");
+    }
+
+    private static string BuildJoinPagePath(string? handle, string? channelId)
+    {
+        if (!string.IsNullOrEmpty(handle))
+        {
+            string normalizedHandle = handle!.StartsWith("@", StringComparison.Ordinal)
+                ? handle
+                : '@' + handle;
+            return $"/{normalizedHandle}/join";
+        }
+
+        return !string.IsNullOrEmpty(channelId) ? $"/channel/{channelId}/join"
             : throw new ArgumentException("A channel handle or channelId must be provided.");
     }
 
