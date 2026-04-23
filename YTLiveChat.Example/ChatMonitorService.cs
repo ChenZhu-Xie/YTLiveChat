@@ -167,6 +167,7 @@ internal class ChatMonitorService : IHostedService, IDisposable
         session.ChatItemsDeletedByAuthorHandler = (_, e) => OnChatItemsDeletedByAuthor(session, e);
         session.ChatItemReplacedHandler = (_, e) => OnChatItemReplaced(session, e);
         session.EngagementMessageReceivedHandler = (_, e) => OnEngagementMessageReceived(session, e);
+        session.GiftReceivedHandler = (_, e) => OnGiftReceived(session, e);
         session.ChatStoppedHandler = (_, e) => OnChatStopped(session, e);
         session.ErrorOccurredHandler = (_, e) => OnErrorOccurred(session, e);
 
@@ -186,6 +187,7 @@ internal class ChatMonitorService : IHostedService, IDisposable
         session.Chat.ChatItemsDeletedByAuthor += session.ChatItemsDeletedByAuthorHandler;
         session.Chat.ChatItemReplaced += session.ChatItemReplacedHandler;
         session.Chat.EngagementMessageReceived += session.EngagementMessageReceivedHandler;
+        session.Chat.GiftReceived += session.GiftReceivedHandler;
         session.Chat.ChatStopped += session.ChatStoppedHandler;
         session.Chat.ErrorOccurred += session.ErrorOccurredHandler;
     }
@@ -262,6 +264,11 @@ internal class ChatMonitorService : IHostedService, IDisposable
         if (session.EngagementMessageReceivedHandler != null)
         {
             session.Chat.EngagementMessageReceived -= session.EngagementMessageReceivedHandler;
+        }
+
+        if (session.GiftReceivedHandler != null)
+        {
+            session.Chat.GiftReceived -= session.GiftReceivedHandler;
         }
 
         if (session.ChatStoppedHandler != null)
@@ -609,6 +616,29 @@ internal class ChatMonitorService : IHostedService, IDisposable
                 Console.Write(" [?]");
             }
 
+            Console.ResetColor();
+            Console.WriteLine();
+        }
+    }
+
+    private static void OnGiftReceived(MonitorSession session, GiftReceivedEventArgs e)
+    {
+        GiftItem gift = e.Gift;
+        lock (s_consoleLock)
+        {
+            WriteTimestamp(DateTimeOffset.UtcNow);
+            WriteSourceTag(session.SourceTag);
+            WriteTag("GIFT", ConsoleColor.Magenta);
+            Console.Write(' ');
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.Write(gift.AuthorHandle);
+            Console.ResetColor();
+            Console.Write(": ");
+            Console.ForegroundColor = ConsoleColor.Magenta;
+            if (gift.GiftItemName != null && gift.JewelAmount.HasValue)
+                Console.Write($"{gift.GiftItemName} ({gift.JewelAmount} Jewels)");
+            else
+                Console.Write(gift.Text);
             Console.ResetColor();
             Console.WriteLine();
         }
@@ -1003,6 +1033,7 @@ internal class ChatMonitorService : IHostedService, IDisposable
         public EventHandler<ChatItemsDeletedByAuthorEventArgs>? ChatItemsDeletedByAuthorHandler { get; set; }
         public EventHandler<ChatItemReplacedEventArgs>? ChatItemReplacedHandler { get; set; }
         public EventHandler<EngagementMessageReceivedEventArgs>? EngagementMessageReceivedHandler { get; set; }
+        public EventHandler<GiftReceivedEventArgs>? GiftReceivedHandler { get; set; }
         public EventHandler<ChatStoppedEventArgs>? ChatStoppedHandler { get; set; }
         public EventHandler<ErrorOccurredEventArgs>? ErrorOccurredHandler { get; set; }
     }

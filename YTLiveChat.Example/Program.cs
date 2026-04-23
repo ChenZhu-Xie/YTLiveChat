@@ -4,7 +4,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
+using YTLiveChat.Contracts;
+using YTLiveChat.Contracts.Models;
 using YTLiveChat.Example;
+using YTLiveChat.Services;
 
 Console.WriteLine("YTLiveChat Example Monitor");
 Console.WriteLine("-------------------------");
@@ -132,6 +135,96 @@ foreach (ExampleRunOptions options in runOptionsList)
     Console.WriteLine(
         $"{options.Handle ?? options.ChannelId ?? options.LiveId} | monitor={options.EnableContinuousMonitor} | rawLog={options.EnableJsonLogging}"
     );
+}
+
+// Offer membership tier lookup for targets with a handle or channel ID
+List<ExampleRunOptions> tierTargets = runOptionsList
+    .Where(o => !string.IsNullOrWhiteSpace(o.Handle) || !string.IsNullOrWhiteSpace(o.ChannelId))
+    .ToList();
+
+if (tierTargets.Count > 0)
+{
+    Console.Write("Fetch membership tiers for handle/channel targets? (y/N): ");
+    string? tiersResponse = Console.ReadLine();
+    if (
+        !string.IsNullOrWhiteSpace(tiersResponse)
+        && tiersResponse.Trim().Equals("y", StringComparison.OrdinalIgnoreCase)
+    )
+    {
+        using HttpClient tiersHttpClient = new() { BaseAddress = new Uri("https://www.youtube.com") };
+        YTHttpClient ytHttpClient = new(tiersHttpClient);
+        YTLiveChatOptions ytOptions = new() { YoutubeBaseUrl = "https://www.youtube.com" };
+        YTLiveChat.Services.YTLiveChat ytService = new(ytOptions, ytHttpClient);
+
+        foreach (ExampleRunOptions target in tierTargets)
+        {
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.Write($"[{target.SourceTag}] ");
+            Console.ResetColor();
+            Console.WriteLine("Fetching membership tiers...");
+
+            try
+            {
+                IReadOnlyList<MembershipTier> tiers = await ytService.GetMembershipTiersAsync(
+                    handle: target.Handle,
+                    channelId: target.ChannelId
+                );
+
+                if (tiers.Count == 0)
+                {
+                    Console.ForegroundColor = ConsoleColor.DarkGray;
+                    Console.WriteLine("  (No membership tiers found — channel may not have memberships enabled.)");
+                    Console.ResetColor();
+                }
+                else
+                {
+                    for (int i = 0; i < tiers.Count; i++)
+                    {
+                        MembershipTier tier = tiers[i];
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.Write($"  Tier {i + 1}: ");
+                        Console.ForegroundColor = ConsoleColor.White;
+                        Console.Write(tier.Name);
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        Console.WriteLine($"  ({tier.PriceText})");
+                        Console.ResetColor();
+
+                        foreach (MembershipPerk perk in tier.Perks)
+                        {
+                            Console.ForegroundColor = ConsoleColor.Gray;
+                            Console.Write($"    \u2022 {perk.Title}");
+                            if (!string.IsNullOrWhiteSpace(perk.Description))
+                                Console.Write($": {perk.Description}");
+                            Console.WriteLine();
+                            Console.ResetColor();
+                        }
+
+                        if (tier.BadgeImageUrls.Count > 0)
+                        {
+                            Console.ForegroundColor = ConsoleColor.DarkCyan;
+                            Console.WriteLine($"    Badges: {tier.BadgeImageUrls.Count} badge image(s)");
+                            Console.ResetColor();
+                        }
+
+                        if (tier.CustomEmojis.Count > 0)
+                        {
+                            Console.ForegroundColor = ConsoleColor.DarkCyan;
+                            string emojiLabels = string.Join(", ", tier.CustomEmojis.Take(5).Select(em => em.Label));
+                            string overflow = tier.CustomEmojis.Count > 5 ? $" +{tier.CustomEmojis.Count - 5} more" : "";
+                            Console.WriteLine($"    Emojis: {emojiLabels}{overflow}");
+                            Console.ResetColor();
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"  Error fetching tiers: {ex.Message}");
+                Console.ResetColor();
+            }
+        }
+    }
 }
 
 Console.WriteLine("Attempting to connect...");
