@@ -98,6 +98,14 @@ public class StatusHub(StatusStore store) : Hub
         store.Save();
     }
 
+    public async Task UpdateCursor(int cursorPosition)
+    {
+        store.CursorPosition = Math.Clamp(cursorPosition, 0, store.CurrentStatus.Length);
+        await Clients.All.SendAsync("ReceiveStatus", store.CurrentStatus, store.CursorPosition);
+        PrintTerminalStatus();
+        store.Save();
+    }
+
     public async Task UpdateTitle(string title)
     {
         store.CurrentTitle = title;

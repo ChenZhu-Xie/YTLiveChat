@@ -139,6 +139,7 @@
         let connection = null;
         let lastSentStatus = "";
         let lastSentCursorPosition = 0;
+        let cursorSyncTimer = null;
 
         const colors = [
             '#7aa2f7', // blue
@@ -395,6 +396,30 @@
 
             saveDraftToLocal();
             updateBackdrop();
+
+            if (statusInput.selectionStart !== statusInput.selectionEnd) {
+                return;
+            }
+
+            syncCursorPosition();
+        }
+
+        function syncCursorPosition() {
+            if (!hasReceivedInitialStatus || !connection || connection.state !== "Connected") {
+                return;
+            }
+
+            const cursorPosition = statusInput.selectionStart ?? 0;
+            if (cursorPosition === lastSentCursorPosition && statusInput.value === lastSentStatus) {
+                return;
+            }
+
+            lastSentCursorPosition = cursorPosition;
+            clearTimeout(cursorSyncTimer);
+            cursorSyncTimer = setTimeout(() => {
+                connection.invoke("UpdateCursor", cursorPosition)
+                    .catch(err => console.error(err));
+            }, 30);
         }
 
         statusInput.addEventListener("input", sync);
@@ -402,6 +427,7 @@
         statusInput.addEventListener("click", saveSelectionOnly);
         statusInput.addEventListener("select", saveSelectionOnly);
         statusInput.addEventListener("mouseup", saveSelectionOnly);
+        statusInput.addEventListener("selectionchange", saveSelectionOnly);
         statusInput.addEventListener("scroll", () => {
             backdrop.scrollTop = statusInput.scrollTop;
         });
