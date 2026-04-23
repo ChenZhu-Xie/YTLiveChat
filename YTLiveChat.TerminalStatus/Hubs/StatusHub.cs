@@ -14,6 +14,9 @@ public class StatusStore
 
     public string CurrentStatus { get; set; } = "Initializing...";
     public int CursorPosition { get; set; }
+    public int SelectionStart { get; set; }
+    public int SelectionEnd { get; set; }
+    public string SelectionDirection { get; set; } = "none";
     public string CurrentTitle { get; set; } = "KanBan 看板";
     public string PersistencePath => PersistenceFilePath;
 
@@ -21,6 +24,9 @@ public class StatusStore
     {
         public string CurrentStatus { get; set; } = string.Empty;
         public int CursorPosition { get; set; }
+        public int SelectionStart { get; set; }
+        public int SelectionEnd { get; set; }
+        public string SelectionDirection { get; set; } = "none";
         public string CurrentTitle { get; set; } = string.Empty;
     }
 
@@ -39,6 +45,9 @@ public class StatusStore
             {
                 CurrentStatus = CurrentStatus,
                 CursorPosition = Math.Clamp(CursorPosition, 0, CurrentStatus.Length),
+                SelectionStart = Math.Clamp(SelectionStart, 0, CurrentStatus.Length),
+                SelectionEnd = Math.Clamp(SelectionEnd, 0, CurrentStatus.Length),
+                SelectionDirection = NormalizeSelectionDirection(SelectionDirection),
                 CurrentTitle = CurrentTitle
             };
 
@@ -50,6 +59,34 @@ public class StatusStore
         {
             Console.WriteLine($"\n\x1b[31m[Error]\x1b[0m Failed to save status: {ex.Message}");
         }
+    }
+
+    public void SetSelection(int cursorPosition, int? selectionStart, int? selectionEnd, string? selectionDirection)
+    {
+        int normalizedStart = Math.Clamp(selectionStart ?? cursorPosition, 0, CurrentStatus.Length);
+        int normalizedEnd = Math.Clamp(selectionEnd ?? normalizedStart, 0, CurrentStatus.Length);
+        if (normalizedStart > normalizedEnd)
+        {
+            (normalizedStart, normalizedEnd) = (normalizedEnd, normalizedStart);
+        }
+
+        SelectionStart = normalizedStart;
+        SelectionEnd = normalizedEnd;
+        SelectionDirection = NormalizeSelectionDirection(selectionDirection);
+        CursorPosition = Math.Clamp(cursorPosition, 0, CurrentStatus.Length);
+    }
+
+    public object ToClientState()
+    {
+        return new
+        {
+            title = CurrentTitle,
+            status = CurrentStatus,
+            cursorPosition = Math.Clamp(CursorPosition, 0, CurrentStatus.Length),
+            selectionStart = Math.Clamp(SelectionStart, 0, CurrentStatus.Length),
+            selectionEnd = Math.Clamp(SelectionEnd, 0, CurrentStatus.Length),
+            selectionDirection = NormalizeSelectionDirection(SelectionDirection)
+        };
     }
 
     private void Load()
@@ -70,6 +107,17 @@ public class StatusStore
 
             CurrentStatus = !string.IsNullOrEmpty(data.CurrentStatus) ? data.CurrentStatus : CurrentStatus;
             CursorPosition = Math.Clamp(data.CursorPosition, 0, CurrentStatus.Length);
+            int persistedSelectionStart = data.SelectionStart;
+            int persistedSelectionEnd = data.SelectionEnd;
+            if (persistedSelectionStart == 0 && persistedSelectionEnd == 0 && CursorPosition != 0)
+            {
+                persistedSelectionStart = CursorPosition;
+                persistedSelectionEnd = CursorPosition;
+            }
+
+            SelectionStart = Math.Clamp(persistedSelectionStart, 0, CurrentStatus.Length);
+            SelectionEnd = Math.Clamp(persistedSelectionEnd, SelectionStart, CurrentStatus.Length);
+            SelectionDirection = NormalizeSelectionDirection(data.SelectionDirection);
             CurrentTitle = !string.IsNullOrEmpty(data.CurrentTitle) ? data.CurrentTitle : CurrentTitle;
             Console.WriteLine($"\x1b[90m[StatusStore]\x1b[0m Loaded state from: {PersistenceFilePath}");
         }
@@ -78,30 +126,44 @@ public class StatusStore
             Console.WriteLine($"\n\x1b[31m[Error]\x1b[0m Failed to load status: {ex.Message}");
         }
     }
+
+    private static string NormalizeSelectionDirection(string? selectionDirection)
+    {
+        return selectionDirection is "forward" or "backward" ? selectionDirection : "none";
+    }
 }
 
 public class StatusHub(StatusStore store) : Hub
 {
     public override async Task OnConnectedAsync()
     {
-        await Clients.Caller.SendAsync("ReceiveStatus", store.CurrentStatus, store.CursorPosition);
+        await SendStatusAsync(Clients.Caller);
         await Clients.Caller.SendAsync("ReceiveTitle", store.CurrentTitle);
         await base.OnConnectedAsync();
     }
 
-    public async Task UpdateStatus(string message, int cursorPosition)
+    public async Task UpdateStatus(
+        string message,
+        int cursorPosition,
+        int? selectionStart = null,
+        int? selectionEnd = null,
+        string? selectionDirection = null)
     {
         store.CurrentStatus = message;
-        store.CursorPosition = Math.Clamp(cursorPosition, 0, message.Length);
-        await Clients.All.SendAsync("ReceiveStatus", store.CurrentStatus, store.CursorPosition);
+        store.SetSelection(cursorPosition, selectionStart, selectionEnd, selectionDirection);
+        await SendStatusAsync(Clients.All);
         PrintTerminalStatus();
         store.Save();
     }
 
-    public async Task UpdateCursor(int cursorPosition)
+    public async Task UpdateCursor(
+        int cursorPosition,
+        int? selectionStart = null,
+        int? selectionEnd = null,
+        string? selectionDirection = null)
     {
-        store.CursorPosition = Math.Clamp(cursorPosition, 0, store.CurrentStatus.Length);
-        await Clients.All.SendAsync("ReceiveStatus", store.CurrentStatus, store.CursorPosition);
+        store.SetSelection(cursorPosition, selectionStart, selectionEnd, selectionDirection);
+        await SendStatusAsync(Clients.All);
         PrintTerminalStatus();
         store.Save();
     }
@@ -118,7 +180,18 @@ public class StatusHub(StatusStore store) : Hub
     private void PrintTerminalStatus()
     {
         string gradientTitle = ApplyGeminiGradient(store.CurrentTitle);
-        Console.Write($"\r \x1b[2K > {gradientTitle}\x1b[0m | {store.CurrentStatus} (Pos: {store.CursorPosition})");
+        Console.Write($"\r \x1b[2K > {gradientTitle}\x1b[0m | {store.CurrentStatus} (Pos: {store.CursorPosition}, Sel: {store.SelectionStart}-{store.SelectionEnd})");
+    }
+
+    private Task SendStatusAsync(IClientProxy client)
+    {
+        return client.SendAsync(
+            "ReceiveStatus",
+            store.CurrentStatus,
+            store.CursorPosition,
+            store.SelectionStart,
+            store.SelectionEnd,
+            store.SelectionDirection);
     }
 
     private static string ApplyGeminiGradient(string text)

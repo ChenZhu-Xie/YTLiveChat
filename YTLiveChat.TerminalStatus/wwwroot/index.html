@@ -108,6 +108,20 @@
             padding: 1px 0;
         }
 
+        .selection {
+            background: rgba(158, 206, 106, 0.28);
+            color: #d7ffb5;
+        }
+
+        .selection-cursor {
+            display: inline-block;
+            width: 2px;
+            height: 1em;
+            margin: 0 -1px;
+            vertical-align: -0.14em;
+            animation: blink 1s infinite;
+        }
+
         @keyframes blink {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.4; }
@@ -152,17 +166,52 @@
                 .replace(/>/g, "&gt;");
         }
 
-        function renderColoredContent(message, cursorPosition) {
+        function normalizeSelectionDirection(direction) {
+            return direction === "forward" || direction === "backward" ? direction : "none";
+        }
+
+        function normalizeSelection(message, cursorPosition, selectionStart, selectionEnd, selectionDirection) {
+            const length = message.length;
+            const clamp = (value) => Math.max(0, Math.min(Number.isInteger(value) ? value : 0, length));
+            const start = clamp(Number.isInteger(selectionStart) ? selectionStart : cursorPosition);
+            const end = clamp(Number.isInteger(selectionEnd) ? selectionEnd : start);
+            const normalizedStart = Math.min(start, end);
+            const normalizedEnd = Math.max(start, end);
+            const direction = normalizeSelectionDirection(selectionDirection);
+            const cursor = clamp(Number.isInteger(cursorPosition)
+                ? cursorPosition
+                : direction === "backward" && normalizedStart !== normalizedEnd
+                    ? normalizedStart
+                    : normalizedEnd);
+
+            return {
+                cursorPosition: cursor,
+                selectionStart: normalizedStart,
+                selectionEnd: normalizedEnd,
+                hasSelection: normalizedStart !== normalizedEnd
+            };
+        }
+
+        function renderColoredContent(message, cursorPosition, selectionStart, selectionEnd, selectionDirection) {
             const msg = message || "";
+            const selection = normalizeSelection(msg, cursorPosition, selectionStart, selectionEnd, selectionDirection);
             let resultHtml = "";
             let currentLineIndex = 0;
             
             const startSpan = (idx) => `<span style="color: ${colors[idx % colors.length]}">`;
+            const selectionCursor = (idx) => {
+                const color = colors[idx % colors.length];
+                return `<span class="selection-cursor" style="background: ${color}; box-shadow: 0 0 6px ${color};"></span>`;
+            };
             
             resultHtml += startSpan(currentLineIndex);
             
             for (let i = 0; i <= msg.length; i++) {
-                if (i === cursorPosition) {
+                if (selection.hasSelection && (i === selection.selectionStart || i === selection.selectionEnd)) {
+                    resultHtml += selectionCursor(currentLineIndex);
+                }
+
+                if (!selection.hasSelection && i === selection.cursorPosition) {
                     const color = colors[currentLineIndex % colors.length];
                     const charAtCursor = msg[i] || " ";
                     if (charAtCursor === '\n') {
@@ -180,7 +229,10 @@
                         currentLineIndex++;
                         resultHtml += startSpan(currentLineIndex);
                     } else {
-                        resultHtml += escapeHtml(char);
+                        const escapedChar = escapeHtml(char);
+                        resultHtml += selection.hasSelection && i >= selection.selectionStart && i < selection.selectionEnd
+                            ? `<span class="selection">${escapedChar}</span>`
+                            : escapedChar;
                     }
                 }
             }
@@ -189,9 +241,9 @@
             return resultHtml;
         }
 
-        connection.on("ReceiveStatus", (message, cursorPosition) => {
+        connection.on("ReceiveStatus", (message, cursorPosition, selectionStart, selectionEnd, selectionDirection) => {
             const contentDiv = document.getElementById("content");
-            contentDiv.innerHTML = renderColoredContent(message, cursorPosition);
+            contentDiv.innerHTML = renderColoredContent(message, cursorPosition, selectionStart, selectionEnd, selectionDirection);
         });
 
         connection.on("ReceiveTitle", (title) => {

@@ -62,6 +62,9 @@ app.MapGet("/api/status", (StatusStore store) => Results.Json(new
     title = store.CurrentTitle,
     status = store.CurrentStatus,
     cursorPosition = Math.Clamp(store.CursorPosition, 0, store.CurrentStatus.Length),
+    selectionStart = Math.Clamp(store.SelectionStart, 0, store.CurrentStatus.Length),
+    selectionEnd = Math.Clamp(store.SelectionEnd, 0, store.CurrentStatus.Length),
+    selectionDirection = store.SelectionDirection,
     persistencePath = store.PersistencePath
 }));
 

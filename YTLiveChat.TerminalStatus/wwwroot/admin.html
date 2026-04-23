@@ -139,6 +139,9 @@
         let connection = null;
         let lastSentStatus = "";
         let lastSentCursorPosition = 0;
+        let lastSentSelectionStart = 0;
+        let lastSentSelectionEnd = 0;
+        let lastSentSelectionDirection = "none";
         let cursorSyncTimer = null;
 
         const colors = [
@@ -187,6 +190,40 @@
             backdrop.innerHTML = renderColoredContent(statusInput.value) + (statusInput.value.endsWith('\n') ? '<br>&nbsp;' : '');
         }
 
+        function clampPosition(value) {
+            return Math.max(0, Math.min(Number.isInteger(value) ? value : 0, statusInput.value.length));
+        }
+
+        function normalizeSelectionDirection(direction) {
+            return direction === "forward" || direction === "backward" ? direction : "none";
+        }
+
+        function getSelectionState() {
+            const selectionStart = clampPosition(statusInput.selectionStart ?? 0);
+            const selectionEnd = clampPosition(statusInput.selectionEnd ?? selectionStart);
+            const selectionDirection = normalizeSelectionDirection(statusInput.selectionDirection);
+            const cursorPosition = selectionDirection === "backward" && selectionStart !== selectionEnd
+                ? selectionStart
+                : selectionEnd;
+
+            return {
+                cursorPosition,
+                selectionStart,
+                selectionEnd,
+                selectionDirection
+            };
+        }
+
+        function applySelectionState(state) {
+            const selectionStart = clampPosition(Number.isInteger(state?.selectionStart) ? state.selectionStart : state?.cursorPosition);
+            const selectionEnd = clampPosition(Number.isInteger(state?.selectionEnd) ? state.selectionEnd : selectionStart);
+            const selectionDirection = normalizeSelectionDirection(state?.selectionDirection);
+            statusInput.setSelectionRange(
+                Math.min(selectionStart, selectionEnd),
+                Math.max(selectionStart, selectionEnd),
+                selectionDirection);
+        }
+
         function applyState(state) {
             if (!state) {
                 return;
@@ -201,8 +238,7 @@
 
             if (typeof state.status === "string") {
                 const shouldPreserveSelection = document.activeElement === statusInput && hasReceivedInitialStatus;
-                const selectionStart = statusInput.selectionStart ?? 0;
-                const selectionEnd = statusInput.selectionEnd ?? selectionStart;
+                const selectionState = getSelectionState();
 
                 statusInput.value = state.status;
                 const cursorPosition = Number.isInteger(state.cursorPosition)
@@ -210,10 +246,14 @@
                     : statusInput.value.length;
 
                 if (shouldPreserveSelection) {
-                    statusInput.selectionStart = Math.max(0, Math.min(selectionStart, statusInput.value.length));
-                    statusInput.selectionEnd = Math.max(0, Math.min(selectionEnd, statusInput.value.length));
+                    applySelectionState(selectionState);
                 } else {
-                    statusInput.selectionStart = statusInput.selectionEnd = cursorPosition;
+                    applySelectionState({
+                        cursorPosition,
+                        selectionStart: Number.isInteger(state.selectionStart) ? state.selectionStart : cursorPosition,
+                        selectionEnd: Number.isInteger(state.selectionEnd) ? state.selectionEnd : cursorPosition,
+                        selectionDirection: state.selectionDirection
+                    });
                 }
 
                 hasReceivedInitialStatus = true;
@@ -225,9 +265,13 @@
         }
 
         function saveDraftToLocal() {
+            const selectionState = getSelectionState();
             const draft = {
                 status: statusInput.value,
-                cursorPosition: statusInput.selectionStart ?? 0,
+                cursorPosition: selectionState.cursorPosition,
+                selectionStart: selectionState.selectionStart,
+                selectionEnd: selectionState.selectionEnd,
+                selectionDirection: selectionState.selectionDirection,
                 title: titleInput.value,
                 updatedAt: Date.now()
             };
@@ -251,7 +295,12 @@
                     ? Math.max(0, Math.min(draft.cursorPosition, statusInput.value.length))
                     : statusInput.value.length;
 
-                statusInput.selectionStart = statusInput.selectionEnd = cursorPosition;
+                applySelectionState({
+                    cursorPosition,
+                    selectionStart: Number.isInteger(draft.selectionStart) ? draft.selectionStart : cursorPosition,
+                    selectionEnd: Number.isInteger(draft.selectionEnd) ? draft.selectionEnd : cursorPosition,
+                    selectionDirection: draft.selectionDirection
+                });
                 updateBackdrop();
             } catch (err) {
                 console.error("Failed to load local draft", err);
@@ -347,19 +396,26 @@
                     applyLockUi();
                 });
 
-                connection.on("ReceiveStatus", (message, cursorPosition) => {
+                connection.on("ReceiveStatus", (message, cursorPosition, selectionStart, selectionEnd, selectionDirection) => {
                     applyState({
                         title: titleInput.value,
                         status: message,
-                        cursorPosition
+                        cursorPosition,
+                        selectionStart,
+                        selectionEnd,
+                        selectionDirection
                     });
                 });
 
                 connection.on("ReceiveTitle", (title) => {
+                    const selectionState = getSelectionState();
                     applyState({
                         title,
                         status: statusInput.value,
-                        cursorPosition: statusInput.selectionStart ?? 0
+                        cursorPosition: selectionState.cursorPosition,
+                        selectionStart: selectionState.selectionStart,
+                        selectionEnd: selectionState.selectionEnd,
+                        selectionDirection: selectionState.selectionDirection
                     });
                 });
 
@@ -379,13 +435,23 @@
 
             saveDraftToLocal();
             updateBackdrop();
+            const selectionState = getSelectionState();
             lastSentStatus = statusInput.value;
-            lastSentCursorPosition = statusInput.selectionStart ?? 0;
+            lastSentCursorPosition = selectionState.cursorPosition;
+            lastSentSelectionStart = selectionState.selectionStart;
+            lastSentSelectionEnd = selectionState.selectionEnd;
+            lastSentSelectionDirection = selectionState.selectionDirection;
             if (!connection || connection.state !== "Connected") {
                 return;
             }
 
-            connection.invoke("UpdateStatus", lastSentStatus, lastSentCursorPosition)
+            connection.invoke(
+                "UpdateStatus",
+                lastSentStatus,
+                lastSentCursorPosition,
+                lastSentSelectionStart,
+                lastSentSelectionEnd,
+                lastSentSelectionDirection)
                 .catch(err => console.error(err));
         }
 
@@ -397,10 +463,6 @@
             saveDraftToLocal();
             updateBackdrop();
 
-            if (statusInput.selectionStart !== statusInput.selectionEnd) {
-                return;
-            }
-
             syncCursorPosition();
         }
 
@@ -409,15 +471,28 @@
                 return;
             }
 
-            const cursorPosition = statusInput.selectionStart ?? 0;
-            if (cursorPosition === lastSentCursorPosition && statusInput.value === lastSentStatus) {
+            const selectionState = getSelectionState();
+            if (
+                selectionState.cursorPosition === lastSentCursorPosition &&
+                selectionState.selectionStart === lastSentSelectionStart &&
+                selectionState.selectionEnd === lastSentSelectionEnd &&
+                selectionState.selectionDirection === lastSentSelectionDirection &&
+                statusInput.value === lastSentStatus) {
                 return;
             }
 
-            lastSentCursorPosition = cursorPosition;
+            lastSentCursorPosition = selectionState.cursorPosition;
+            lastSentSelectionStart = selectionState.selectionStart;
+            lastSentSelectionEnd = selectionState.selectionEnd;
+            lastSentSelectionDirection = selectionState.selectionDirection;
             clearTimeout(cursorSyncTimer);
             cursorSyncTimer = setTimeout(() => {
-                connection.invoke("UpdateCursor", cursorPosition)
+                connection.invoke(
+                    "UpdateCursor",
+                    selectionState.cursorPosition,
+                    selectionState.selectionStart,
+                    selectionState.selectionEnd,
+                    selectionState.selectionDirection)
                     .catch(err => console.error(err));
             }, 30);
         }
