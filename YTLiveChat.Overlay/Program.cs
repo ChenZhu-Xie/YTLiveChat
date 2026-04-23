@@ -36,6 +36,9 @@ if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 }
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Logging.AddFilter("System.Net.Http.HttpClient", LogLevel.Warning);
+builder.Logging.AddFilter("Microsoft.AspNetCore.Hosting.Diagnostics", LogLevel.Warning);
+builder.Logging.AddFilter("Microsoft.AspNetCore.Routing.EndpointMiddleware", LogLevel.Warning);
 builder.Services.AddYTLiveChat(builder.Configuration);
 
 // 配置选项
@@ -48,6 +51,21 @@ builder.Services.Configure<YTLiveChat.Contracts.YTLiveChatOptions>(options => {
 });
 
 var app = builder.Build();
+
+Console.OutputEncoding = Encoding.UTF8;
+Console.Title = "YTLiveChat Overlay";
+
+const string reset = "\x1b[0m";
+const string dim = "\x1b[90m";
+const string label = "\x1b[38;2;224;175;104m";
+const string overlayUrl = "\x1b[38;2;122;162;247m";
+const string testUrl = "\x1b[38;2;187;154;247m";
+const string socketUrl = "\x1b[38;2;125;207;255m";
+const string systemColor = "\x1b[38;2;158;206;106m";
+const string errorColor = "\x1b[38;2;247;118;142m";
+const string timeColor = "\x1b[38;2;86;95;137m";
+const string authorColor = "\x1b[38;2;255;158;100m";
+const string messageColor = "\x1b[38;2;192;202;245m";
 
 var jsonOptions = new JsonSerializerOptions
 {
@@ -68,7 +86,8 @@ const int MaxSeenMessagesCache = 1000;
 // 监听 YouTube 聊天
 var chatService = app.Services.GetRequiredService<IYTLiveChat>();
 
-chatService.InitialPageLoaded += (s, e) => Console.WriteLine($"[系统] 已连接到直播间: {e.LiveId}");
+chatService.InitialPageLoaded += (s, e) =>
+    Console.WriteLine($"{systemColor}[SYSTEM]{reset} Connected to live: {overlayUrl}{e.LiveId}{reset}");
 
 chatService.ChatReceived += async (sender, e) =>
 {
@@ -90,7 +109,8 @@ chatService.ChatReceived += async (sender, e) =>
     var authorName = e.ChatItem.Author.Name;
     var messageText = string.Join("", e.ChatItem.Message.Select(p => p is YTLiveChat.Contracts.Models.TextPart t ? t.Text : (p is YTLiveChat.Contracts.Models.EmojiPart em ? em.EmojiText : "")));
 
-    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] {authorName}: {messageText}");
+    Console.WriteLine(
+        $"{timeColor}[{DateTime.Now:HH:mm:ss}]{reset} {authorColor}{authorName}{reset}: {messageColor}{messageText}{reset}");
 
     var message = new
     {
@@ -129,21 +149,21 @@ chatService.ChatReceived += async (sender, e) =>
 };
 
 chatService.ErrorOccurred += (s, e) => {
-    Console.WriteLine($"[错误] {DateTime.Now:HH:mm:ss} - {e.GetException().Message}");
+    Console.WriteLine($"{errorColor}[ERROR]{reset} {timeColor}{DateTime.Now:HH:mm:ss}{reset} {e.GetException().Message}");
 };
 
 // --- 自动重连逻辑 ---
 chatService.ChatStopped += async (s, e) =>
 {
-    Console.WriteLine($"[系统] {DateTime.Now:HH:mm:ss} - 监控已停止。原因: {e.Reason}");
+    Console.WriteLine($"{systemColor}[SYSTEM]{reset} {timeColor}{DateTime.Now:HH:mm:ss}{reset} Monitor stopped. Reason: {e.Reason}");
     
     // 延迟 30 秒后尝试重连，避免频繁请求
     const int reconnectDelayMs = 30000;
-    Console.WriteLine($"[系统] 将在 {reconnectDelayMs / 1000} 秒后尝试自动重新连接...");
+    Console.WriteLine($"{systemColor}[SYSTEM]{reset} Reconnecting in {reconnectDelayMs / 1000}s...");
     
     await Task.Delay(reconnectDelayMs);
     
-    Console.WriteLine($"[系统] 正在尝试重新启动监控...");
+    Console.WriteLine($"{systemColor}[SYSTEM]{reset} Restarting monitor...");
     chatService.Start(handle: "@xczphysics");
 };
 
@@ -204,7 +224,14 @@ app.MapGet("/test", async () => {
     return "测试成功！";
 });
 
-Console.WriteLine("Starting YTLiveChat Overlay (Monitor Mode)...");
+Console.WriteLine();
+Console.WriteLine($"{dim} ----------------------------------------{reset}");
+Console.WriteLine($" {label}URL:{reset} {overlayUrl}http://localhost:5000{reset}");
+Console.WriteLine($"      {testUrl}http://localhost:5000/test{reset}");
+Console.WriteLine($"      {socketUrl}ws://localhost:5000/ws{reset}");
+Console.WriteLine($"{dim} ----------------------------------------{reset}");
+Console.WriteLine($"{systemColor}[SYSTEM]{reset} Starting YTLiveChat Overlay (monitor mode)...");
+Console.WriteLine();
 chatService.Start(handle: "@xczphysics");
 
 app.Run();

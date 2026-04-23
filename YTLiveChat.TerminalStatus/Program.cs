@@ -46,12 +46,19 @@ var app = builder.Build();
 Console.OutputEncoding = Encoding.UTF8;
 Console.Title = "KanBan 看板";
 
+const string reset = "\x1b[0m";
+const string dim = "\x1b[90m";
+const string label = "\x1b[38;2;224;175;104m";
+const string overlayUrl = "\x1b[38;2;122;162;247m";
+const string adminUrl = "\x1b[38;2;187;154;247m";
+const string apiUrl = "\x1b[38;2;125;207;255m";
+
 Console.WriteLine();
-Console.WriteLine(" ----------------------------------------");
-Console.WriteLine(" URL: http://localhost:5150");
-Console.WriteLine("      http://localhost:5150/admin.html");
-Console.WriteLine("      http://localhost:5150/api/status");
-Console.WriteLine(" ----------------------------------------");
+Console.WriteLine($"{dim} ----------------------------------------{reset}");
+Console.WriteLine($" {label}URL:{reset} {overlayUrl}http://localhost:5150{reset}");
+Console.WriteLine($"      {adminUrl}http://localhost:5150/admin.html{reset}");
+Console.WriteLine($"      {apiUrl}http://localhost:5150/api/status{reset}");
+Console.WriteLine($"{dim} ----------------------------------------{reset}");
 Console.WriteLine();
 
 app.UseDefaultFiles();
