@@ -151,10 +151,13 @@ if (tierTargets.Count > 0)
         && tiersResponse.Trim().Equals("y", StringComparison.OrdinalIgnoreCase)
     )
     {
+        using ILoggerFactory tiersLogFactory = LoggerFactory.Create(b =>
+            b.AddConsole().SetMinimumLevel(LogLevel.Information));
         using HttpClient tiersHttpClient = new() { BaseAddress = new Uri("https://www.youtube.com") };
-        YTHttpClient ytHttpClient = new(tiersHttpClient);
+        YTHttpClient ytHttpClient = new(tiersHttpClient, tiersLogFactory.CreateLogger<YTHttpClient>());
         YTLiveChatOptions ytOptions = new() { YoutubeBaseUrl = "https://www.youtube.com" };
-        YTLiveChat.Services.YTLiveChat ytService = new(ytOptions, ytHttpClient);
+        YTLiveChat.Services.YTLiveChat ytService = new(ytOptions, ytHttpClient,
+            tiersLogFactory.CreateLogger<YTLiveChat.Services.YTLiveChat>());
 
         foreach (ExampleRunOptions target in tierTargets)
         {
@@ -165,19 +168,6 @@ if (tierTargets.Count > 0)
 
             try
             {
-                // Diagnostic: check what the channel page actually contains before parsing.
-                string channelHtml = await ytHttpClient.GetChannelPageAsync(
-                    handle: target.Handle, channelId: target.ChannelId);
-                bool hasInitialData = channelHtml.Contains("ytInitialData", StringComparison.Ordinal);
-                bool hasOffersEndpoint = channelHtml.Contains("ypcGetOffersEndpoint", StringComparison.Ordinal);
-                bool hasApiKey = channelHtml.Contains("INNERTUBE_API_KEY", StringComparison.Ordinal);
-                Console.ForegroundColor = ConsoleColor.DarkGray;
-                Console.WriteLine($"  [diag] page={channelHtml.Length:N0} chars  " +
-                    $"ytInitialData={hasInitialData}  " +
-                    $"ypcGetOffersEndpoint={hasOffersEndpoint}  " +
-                    $"INNERTUBE_API_KEY={hasApiKey}");
-                Console.ResetColor();
-
                 IReadOnlyList<MembershipTier> tiers = await ytService.GetMembershipTiersAsync(
                     handle: target.Handle,
                     channelId: target.ChannelId
