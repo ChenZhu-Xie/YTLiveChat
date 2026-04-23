@@ -355,7 +355,7 @@ public class YTHttpClient(HttpClient httpClient, ILogger<YTHttpClient>? logger =
             string normalizedHandle = handle!.StartsWith("@", StringComparison.Ordinal)
                 ? handle
                 : '@' + handle;
-            return normalizedHandle;
+            return $"/{normalizedHandle}";
         }
 
         return !string.IsNullOrEmpty(channelId) ? $"/channel/{channelId}"
