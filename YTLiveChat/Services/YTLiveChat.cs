@@ -1843,11 +1843,25 @@ public class YTLiveChat : IYTLiveChat // Changed to public for direct instantiat
             handle ?? channelId, offersJson.Length
         );
 
+        // get_offers returns ypcTransactionErrorMessageRenderer for unauthenticated clients.
+        // Tier data is only available when the HttpClient carries a valid YouTube session cookie.
         IReadOnlyList<Contracts.Models.MembershipTier> tiers = Parser.ParseMembershipTiersResponse(offersJson);
-        _logger.LogInformation(
-            "GetMembershipTiersAsync [{Target}]: parsed {Count} tier(s)",
-            handle ?? channelId, tiers.Count
-        );
+        if (tiers.Count == 0)
+        {
+            _logger.LogWarning(
+                "GetMembershipTiersAsync [{Target}]: get_offers returned no tiers. " +
+                "YouTube's get_offers API requires an authenticated session (SAPISID/HSID cookies). " +
+                "Configure the HttpClient with a valid session cookie to retrieve tier data.",
+                handle ?? channelId
+            );
+        }
+        else
+        {
+            _logger.LogInformation(
+                "GetMembershipTiersAsync [{Target}]: parsed {Count} tier(s)",
+                handle ?? channelId, tiers.Count
+            );
+        }
         return tiers;
     }
 

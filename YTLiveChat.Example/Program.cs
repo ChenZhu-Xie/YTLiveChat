@@ -144,7 +144,7 @@ List<ExampleRunOptions> tierTargets = runOptionsList
 
 if (tierTargets.Count > 0)
 {
-    Console.Write("Fetch membership tiers for handle/channel targets? (y/N): ");
+    Console.Write("Fetch membership tiers for handle/channel targets? (requires YouTube session cookie — y/N): ");
     string? tiersResponse = Console.ReadLine();
     if (
         !string.IsNullOrWhiteSpace(tiersResponse)
@@ -176,7 +176,7 @@ if (tierTargets.Count > 0)
                 if (tiers.Count == 0)
                 {
                     Console.ForegroundColor = ConsoleColor.DarkGray;
-                    Console.WriteLine("  (No membership tiers found — channel may not have memberships enabled.)");
+                    Console.WriteLine("  (No membership tiers returned — channel may not have memberships, or the HttpClient is not authenticated.)");
                     Console.ResetColor();
                 }
                 else
