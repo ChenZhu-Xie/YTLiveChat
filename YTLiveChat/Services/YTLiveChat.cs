@@ -1787,6 +1787,28 @@ public class YTLiveChat : IYTLiveChat // Changed to public for direct instantiat
         }
     }
 
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<Contracts.Models.StreamInfo>> GetStreamsAsync(
+        string? handle = null,
+        string? channelId = null,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (string.IsNullOrWhiteSpace(handle) && string.IsNullOrWhiteSpace(channelId))
+            throw new ArgumentException("Either handle or channelId must be provided.");
+
+        string html = await _ytHttpClient
+            .GetStreamsPageAsync(handle, channelId, cancellationToken)
+            .ConfigureAwait(false);
+
+        IReadOnlyList<Contracts.Models.StreamInfo> streams = Parser.ExtractStreamsFromPage(html);
+        _logger.LogInformation(
+            "GetStreamsAsync [{Target}]: found {Count} stream(s)",
+            handle ?? channelId, streams.Count
+        );
+        return streams;
+    }
+
     /// <summary>Invokes the LivestreamInaccessible event.</summary>
     protected virtual void OnLivestreamInaccessible(LivestreamInaccessibleEventArgs e)
     {

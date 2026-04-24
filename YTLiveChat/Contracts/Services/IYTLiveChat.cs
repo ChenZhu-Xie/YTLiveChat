@@ -156,6 +156,21 @@ public interface IYTLiveChat : IDisposable
     event EventHandler<ErrorOccurredEventArgs>? ErrorOccurred;
 
     /// <summary>
+    /// Fetches the list of streams (live, upcoming, and recent past) from a channel's streams page.
+    /// Returns title, thumbnail, live status, viewer/view count, scheduled time, published time, and duration for each entry.
+    /// </summary>
+    /// <param name="handle">Channel @handle (e.g. <c>"@IRyS"</c>).</param>
+    /// <param name="channelId">Channel ID (e.g. <c>"UC8rcEBzJSleTkf_-agPM20g"</c>).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Ordered list of stream entries as shown on the channel's streams tab.</returns>
+    /// <exception cref="ArgumentException">Thrown when neither handle nor channelId is provided.</exception>
+    Task<IReadOnlyList<StreamInfo>> GetStreamsAsync(
+        string? handle = null,
+        string? channelId = null,
+        CancellationToken cancellationToken = default
+    );
+
+    /// <summary>
     /// Starts the Listeners for the LiveChat and fires InitialPageLoaded when successful. Either <paramref name="handle"/>, <paramref name="channelId"/> or <paramref name="liveId"/> must be given.
     /// </summary>
     /// <remarks>

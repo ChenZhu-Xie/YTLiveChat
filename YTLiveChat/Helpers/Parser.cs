@@ -161,7 +161,11 @@ internal static partial class Parser
                 isLive,
                 isUpcoming,
                 upcomingStartTime,
-                viewCountText
+                viewCountText,
+                null,
+                null,
+                null,
+                null
             );
 
             if (!byId.ContainsKey(liveId))
@@ -177,7 +181,11 @@ internal static partial class Parser
                 existing.IsLive || candidate.IsLive,
                 existing.IsUpcoming || candidate.IsUpcoming,
                 MergeUpcomingStartTime(existing.UpcomingStartTime, candidate.UpcomingStartTime),
-                existing.ViewCountText ?? candidate.ViewCountText
+                existing.ViewCountText ?? candidate.ViewCountText,
+                existing.Title ?? candidate.Title,
+                existing.ThumbnailUrl ?? candidate.ThumbnailUrl,
+                existing.PublishedTimeText ?? candidate.PublishedTimeText,
+                existing.LengthText ?? candidate.LengthText
             );
         }
 
@@ -283,12 +291,43 @@ internal static partial class Parser
             || upcomingStartTime.HasValue
             || (viewCountText?.IndexOf("waiting", StringComparison.OrdinalIgnoreCase) >= 0);
 
+        // Extract title
+        string? title = null;
+        if (videoRenderer.TryGetProperty("title", out JsonElement titleEl))
+            TryReadTextFromRunsOrSimple(titleEl, out title);
+
+        // Extract best thumbnail (last entry = highest resolution)
+        string? thumbnailUrl = null;
+        if (videoRenderer.TryGetProperty("thumbnail", out JsonElement thumbContainer)
+            && thumbContainer.TryGetProperty("thumbnails", out JsonElement thumbs)
+            && thumbs.ValueKind == JsonValueKind.Array
+            && thumbs.GetArrayLength() > 0)
+        {
+            JsonElement lastThumb = thumbs[thumbs.GetArrayLength() - 1];
+            if (lastThumb.TryGetProperty("url", out JsonElement urlEl))
+                thumbnailUrl = urlEl.GetString();
+        }
+
+        // publishedTimeText (Past streams)
+        string? publishedTimeText = null;
+        if (videoRenderer.TryGetProperty("publishedTimeText", out JsonElement pubTimeEl))
+            TryReadTextFromRunsOrSimple(pubTimeEl, out publishedTimeText);
+
+        // lengthText (Past streams — duration like "1:23:45")
+        string? lengthText = null;
+        if (videoRenderer.TryGetProperty("lengthText", out JsonElement lenEl))
+            TryReadTextFromRunsOrSimple(lenEl, out lengthText);
+
         StreamPageCandidate candidate = new(
             liveIdNonNull,
             isLive,
             isUpcoming,
             upcomingStartTime,
-            viewCountText
+            viewCountText,
+            title,
+            thumbnailUrl,
+            publishedTimeText,
+            lengthText
         );
 
         if (!byId.ContainsKey(liveIdNonNull))
@@ -304,7 +343,11 @@ internal static partial class Parser
             existing.IsLive || candidate.IsLive,
             existing.IsUpcoming || candidate.IsUpcoming,
             MergeUpcomingStartTime(existing.UpcomingStartTime, candidate.UpcomingStartTime),
-            existing.ViewCountText ?? candidate.ViewCountText
+            existing.ViewCountText ?? candidate.ViewCountText,
+            existing.Title ?? candidate.Title,
+            existing.ThumbnailUrl ?? candidate.ThumbnailUrl,
+            existing.PublishedTimeText ?? candidate.PublishedTimeText,
+            existing.LengthText ?? candidate.LengthText
         );
     }
 
@@ -2099,6 +2142,71 @@ internal static partial class Parser
             GiftImageColor = resource?.ImageColor?.ToHex6Color(),
         };
     }
+
+    /// <summary>
+    /// Converts raw streams page HTML into a list of <see cref="Contracts.Models.StreamInfo"/> objects.
+    /// </summary>
+    public static IReadOnlyList<Contracts.Models.StreamInfo> ExtractStreamsFromPage(string html)
+    {
+        IReadOnlyList<StreamPageCandidate> candidates = ExtractStreamCandidatesFromStreamsPage(html);
+        List<Contracts.Models.StreamInfo> result = new(candidates.Count);
+        foreach (StreamPageCandidate c in candidates)
+            result.Add(ToStreamInfo(c));
+        return result;
+    }
+
+    private static Contracts.Models.StreamInfo ToStreamInfo(StreamPageCandidate c)
+    {
+        Contracts.Models.StreamStatus status =
+            c.IsLive ? Contracts.Models.StreamStatus.Live :
+            c.IsUpcoming ? Contracts.Models.StreamStatus.Upcoming :
+            Contracts.Models.StreamStatus.Past;
+
+        int? viewerCount = null;
+        long? viewCount = null;
+        if (!string.IsNullOrWhiteSpace(c.ViewCountText))
+        {
+            string numericPart = new string(c.ViewCountText.TakeWhile(ch => char.IsDigit(ch) || ch == ',' || ch == '.').ToArray()).Replace(",", "").Replace(".", "");
+            if (long.TryParse(numericPart, out long parsed))
+            {
+                bool isPast = status == Contracts.Models.StreamStatus.Past;
+                if (isPast) viewCount = parsed;
+                else viewerCount = (int)Math.Min(parsed, int.MaxValue);
+            }
+        }
+
+        DateTimeOffset? scheduledAt = c.UpcomingStartTime.HasValue
+            ? DateTimeOffset.FromUnixTimeSeconds(c.UpcomingStartTime.Value)
+            : null;
+
+        TimeSpan? duration = null;
+        if (!string.IsNullOrWhiteSpace(c.LengthText) && TryParseDuration(c.LengthText!, out TimeSpan d))
+            duration = d;
+
+        return new Contracts.Models.StreamInfo
+        {
+            LiveId = c.LiveId,
+            Title = c.Title ?? string.Empty,
+            ThumbnailUrl = c.ThumbnailUrl,
+            Status = status,
+            ViewerCount = viewerCount,
+            ViewCount = viewCount,
+            ScheduledAt = scheduledAt,
+            PublishedTimeText = c.PublishedTimeText,
+            Duration = duration,
+        };
+    }
+
+    private static bool TryParseDuration(string text, out TimeSpan result)
+    {
+        result = TimeSpan.Zero;
+        string[] parts = text.Split(':');
+        if (parts.Length == 2 && int.TryParse(parts[0], out int m) && int.TryParse(parts[1], out int s))
+        { result = new TimeSpan(0, m, s); return true; }
+        if (parts.Length == 3 && int.TryParse(parts[0], out int h) && int.TryParse(parts[1], out int mm) && int.TryParse(parts[2], out int ss))
+        { result = new TimeSpan(h, mm, ss); return true; }
+        return false;
+    }
 }
 
 internal readonly record struct StreamPageCandidate(
@@ -2106,5 +2214,9 @@ internal readonly record struct StreamPageCandidate(
     bool IsLive,
     bool IsUpcoming,
     long? UpcomingStartTime,
-    string? ViewCountText
+    string? ViewCountText,
+    string? Title,
+    string? ThumbnailUrl,
+    string? PublishedTimeText,
+    string? LengthText
 );

@@ -137,6 +137,87 @@ foreach (ExampleRunOptions options in runOptionsList)
     );
 }
 
+// Offer streams listing for all targets that have a handle or channelId
+List<ExampleRunOptions> streamsTargets = runOptionsList
+    .Where(o => !string.IsNullOrWhiteSpace(o.Handle) || !string.IsNullOrWhiteSpace(o.ChannelId))
+    .ToList();
+
+if (streamsTargets.Count > 0)
+{
+    Console.Write("Fetch streams list for handle/channel targets? (y/N): ");
+    string? streamsResponse = Console.ReadLine();
+    if (!string.IsNullOrWhiteSpace(streamsResponse)
+        && streamsResponse.Trim().Equals("y", StringComparison.OrdinalIgnoreCase))
+    {
+        using ILoggerFactory streamsLogFactory = LoggerFactory.Create(b =>
+            b.AddConsole().SetMinimumLevel(LogLevel.Warning));
+        using HttpClient streamsHttpClient = new() { BaseAddress = new Uri("https://www.youtube.com") };
+        YTHttpClient streamsYtHttpClient = new(streamsHttpClient, streamsLogFactory.CreateLogger<YTHttpClient>());
+        YTLiveChatOptions streamsYtOptions = new() { YoutubeBaseUrl = "https://www.youtube.com" };
+        YTLiveChat.Services.YTLiveChat streamsService = new(streamsYtOptions, streamsYtHttpClient,
+            streamsLogFactory.CreateLogger<YTLiveChat.Services.YTLiveChat>());
+
+        foreach (ExampleRunOptions target in streamsTargets)
+        {
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.Write($"[{target.SourceTag}] ");
+            Console.ResetColor();
+            Console.WriteLine("Fetching streams...");
+
+            try
+            {
+                IReadOnlyList<StreamInfo> streams = await streamsService.GetStreamsAsync(
+                    handle: target.Handle,
+                    channelId: target.ChannelId
+                );
+
+                if (streams.Count == 0)
+                {
+                    Console.ForegroundColor = ConsoleColor.DarkGray;
+                    Console.WriteLine("  (No streams found.)");
+                    Console.ResetColor();
+                }
+                else
+                {
+                    foreach (StreamInfo stream in streams)
+                    {
+                        ConsoleColor statusColor = stream.Status switch
+                        {
+                            StreamStatus.Live => ConsoleColor.Red,
+                            StreamStatus.Upcoming => ConsoleColor.Yellow,
+                            _ => ConsoleColor.DarkGray,
+                        };
+                        Console.ForegroundColor = statusColor;
+                        Console.Write($"  [{stream.Status}] ");
+                        Console.ForegroundColor = ConsoleColor.White;
+                        Console.Write(stream.Title);
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        Console.Write($"  ({stream.LiveId})");
+                        if (stream.ViewerCount.HasValue)
+                            Console.Write($"  {stream.ViewerCount:N0} watching");
+                        else if (stream.ViewCount.HasValue)
+                            Console.Write($"  {stream.ViewCount:N0} views");
+                        if (stream.ScheduledAt.HasValue)
+                            Console.Write($"  @ {stream.ScheduledAt.Value.ToLocalTime():g}");
+                        if (!string.IsNullOrWhiteSpace(stream.PublishedTimeText))
+                            Console.Write($"  {stream.PublishedTimeText}");
+                        if (stream.Duration.HasValue)
+                            Console.Write($"  [{stream.Duration.Value:h\\:mm\\:ss}]");
+                        Console.WriteLine();
+                        Console.ResetColor();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"  Error: {ex.Message}");
+                Console.ResetColor();
+            }
+        }
+    }
+}
+
 Console.WriteLine("Attempting to connect...");
 
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
