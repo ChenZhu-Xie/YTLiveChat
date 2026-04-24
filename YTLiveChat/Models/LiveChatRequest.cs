@@ -33,12 +33,4 @@ public sealed record ClientInfo
     public string? Gl { get; init; }
 }
 
-public sealed record GetOffersRequest
-{
-    [JsonPropertyName("context")]
-    public required RequestContext Context { get; init; }
-
-    [JsonPropertyName("itemParams")]
-    public required string ItemParams { get; init; }
-}
 #pragma warning restore CS1591

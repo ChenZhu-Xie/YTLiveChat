@@ -156,35 +156,6 @@ public interface IYTLiveChat : IDisposable
     event EventHandler<ErrorOccurredEventArgs>? ErrorOccurred;
 
     /// <summary>
-    /// Fetches the channel's membership tier definitions on demand.
-    /// Fetches the channel's <c>/join</c> page to extract the InnerTube offer token, then calls
-    /// <c>/youtubei/v1/ypc/get_offers</c> to retrieve tier data.
-    /// </summary>
-    /// <remarks>
-    /// <b>Authentication required.</b> YouTube's <c>get_offers</c> endpoint returns a "Sign in"
-    /// error for unauthenticated clients. To retrieve real tier data, configure the
-    /// <see cref="System.Net.Http.HttpClient"/> used by <c>YTHttpClient</c> with a valid
-    /// YouTube session cookie (e.g. <c>SAPISID</c> / <c>HSID</c>).
-    /// Without a cookie the method always returns an empty list.
-    /// </remarks>
-    /// <param name="handle">Channel @handle (e.g. <c>"@HakosBaelz"</c>).</param>
-    /// <param name="channelId">Channel ID (e.g. <c>"UCgmPnx-EEeOrZSg5Tiw7ZRQ"</c>).</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>
-    /// Ordered list of membership tiers from cheapest to most expensive.
-    /// Returns an empty list when the channel does not have memberships, the offer token could
-    /// not be extracted, or the client is not authenticated.
-    /// </returns>
-    /// <exception cref="ArgumentException">
-    /// Thrown when neither <paramref name="handle"/> nor <paramref name="channelId"/> is provided.
-    /// </exception>
-    Task<IReadOnlyList<MembershipTier>> GetMembershipTiersAsync(
-        string? handle = null,
-        string? channelId = null,
-        CancellationToken cancellationToken = default
-    );
-
-    /// <summary>
     /// Starts the Listeners for the LiveChat and fires InitialPageLoaded when successful. Either <paramref name="handle"/>, <paramref name="channelId"/> or <paramref name="liveId"/> must be given.
     /// </summary>
     /// <remarks>

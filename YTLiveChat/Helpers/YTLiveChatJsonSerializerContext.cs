@@ -6,7 +6,6 @@ using YTLiveChat.Models.Response;
 namespace YTLiveChat.Helpers;
 
 [JsonSerializable(typeof(LiveChatRequest))]
-[JsonSerializable(typeof(GetOffersRequest))]
 [JsonSerializable(typeof(RequestContext))]
 [JsonSerializable(typeof(ClientInfo))]
 [JsonSerializable(typeof(LiveChatResponse))]

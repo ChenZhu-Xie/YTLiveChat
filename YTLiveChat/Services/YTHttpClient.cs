@@ -187,87 +187,6 @@ public class YTHttpClient(HttpClient httpClient, ILogger<YTHttpClient>? logger =
     }
 
     /// <summary>
-    /// POSTs to <c>/youtubei/v1/ypc/get_offers</c> and returns the raw JSON response string.
-    /// </summary>
-    public virtual async Task<string> PostGetOffersAsync(
-        string apiKey,
-        string clientVersion,
-        string itemParams,
-        CancellationToken cancellationToken = default
-    )
-    {
-        string url = $"/youtubei/v1/ypc/get_offers?key={apiKey}&prettyPrint=false";
-
-        Models.GetOffersRequest payload = new()
-        {
-            Context = new Models.RequestContext
-            {
-                Client = new Models.ClientInfo
-                {
-                    ClientName = "WEB",
-                    ClientVersion = clientVersion,
-                    Hl = "en",
-                    Gl = "US",
-                },
-            },
-            ItemParams = itemParams,
-        };
-
-        string jsonPayload = System.Text.Json.JsonSerializer.Serialize(
-            payload,
-            YTLiveChatJsonSerializerContext.Default.GetOffersRequest
-        );
-
-        using StringContent content = new(
-            jsonPayload,
-            System.Text.Encoding.UTF8,
-            "application/json"
-        );
-
-        using HttpResponseMessage response = await _httpClient
-            .PostAsync(url, content, cancellationToken)
-            .ConfigureAwait(false);
-
-        response.EnsureSuccessStatusCode();
-
-#if NETSTANDARD2_1 || NETSTANDARD2_0
-        return await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-#else
-        return await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-#endif
-    }
-
-    /// <summary>
-    /// Fetches the membership tab HTML page for a given channel handle or ID.
-    /// Used as a fallback when <c>ypcGetOffersEndpoint.params</c> is absent from the home page
-    /// (YouTube only embeds it in the home page for authenticated sessions).
-    /// </summary>
-    public virtual async Task<string> GetMembershipPageAsync(
-        string? handle,
-        string? channelId,
-        CancellationToken cancellationToken = default
-    )
-    {
-        string urlPath = BuildMembershipPagePath(handle, channelId);
-        return await GetPageHtmlWithConsentFallbackAsync(urlPath, cancellationToken)
-            .ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Fetches the join/membership offer HTML page for a given channel handle or ID.
-    /// </summary>
-    public virtual async Task<string> GetJoinPageAsync(
-        string? handle,
-        string? channelId,
-        CancellationToken cancellationToken = default
-    )
-    {
-        string urlPath = BuildJoinPagePath(handle, channelId);
-        return await GetPageHtmlWithConsentFallbackAsync(urlPath, cancellationToken)
-            .ConfigureAwait(false);
-    }
-
-    /// <summary>
     /// Fetches the streams tab HTML page for a given channel handle or ID.
     /// </summary>
     public virtual async Task<string> GetStreamsPageAsync(
@@ -389,34 +308,6 @@ public class YTHttpClient(HttpClient httpClient, ILogger<YTHttpClient>? logger =
         }
 
         return !string.IsNullOrEmpty(channelId) ? $"/channel/{channelId}"
-            : throw new ArgumentException("A channel handle or channelId must be provided.");
-    }
-
-    private static string BuildMembershipPagePath(string? handle, string? channelId)
-    {
-        if (!string.IsNullOrEmpty(handle))
-        {
-            string normalizedHandle = handle!.StartsWith("@", StringComparison.Ordinal)
-                ? handle
-                : '@' + handle;
-            return $"/{normalizedHandle}/membership";
-        }
-
-        return !string.IsNullOrEmpty(channelId) ? $"/channel/{channelId}/membership"
-            : throw new ArgumentException("A channel handle or channelId must be provided.");
-    }
-
-    private static string BuildJoinPagePath(string? handle, string? channelId)
-    {
-        if (!string.IsNullOrEmpty(handle))
-        {
-            string normalizedHandle = handle!.StartsWith("@", StringComparison.Ordinal)
-                ? handle
-                : '@' + handle;
-            return $"/{normalizedHandle}/join";
-        }
-
-        return !string.IsNullOrEmpty(channelId) ? $"/channel/{channelId}/join"
             : throw new ArgumentException("A channel handle or channelId must be provided.");
     }
 
