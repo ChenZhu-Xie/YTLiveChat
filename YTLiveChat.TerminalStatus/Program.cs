@@ -67,18 +67,22 @@ Console.WriteLine($"{dim} ----------------------------------------{reset}");
 Console.WriteLine();
 
 app.UseDefaultFiles();
-app.UseStaticFiles();
-
-app.MapGet("/api/status", (StatusStore store) => Results.Json(new
+app.UseStaticFiles(new StaticFileOptions
 {
-    title = store.CurrentTitle,
-    status = store.CurrentStatus,
-    cursorPosition = Math.Clamp(store.CursorPosition, 0, store.CurrentStatus.Length),
-    selectionStart = Math.Clamp(store.SelectionStart, 0, store.CurrentStatus.Length),
-    selectionEnd = Math.Clamp(store.SelectionEnd, 0, store.CurrentStatus.Length),
-    selectionDirection = store.SelectionDirection,
-    persistencePath = store.PersistencePath
-}));
+    OnPrepareResponse = context =>
+    {
+        if (!string.Equals(Path.GetExtension(context.File.Name), ".html", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        context.Context.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate";
+        context.Context.Response.Headers.Pragma = "no-cache";
+        context.Context.Response.Headers.Expires = "0";
+    }
+});
+
+app.MapGet("/api/status", (StatusStore store) => Results.Json(store.ToClientState()));
 
 app.MapHub<StatusHub>("/statusHub");
 

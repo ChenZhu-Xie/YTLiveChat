@@ -11,14 +11,19 @@ public class StatusStore
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "YTLiveChat.TerminalStatus");
     private static readonly string PersistenceFilePath = Path.Combine(PersistenceDirectory, PersistenceFileName);
+    private static readonly TimeSpan EditorLockDuration = TimeSpan.FromSeconds(4);
 
     public string CurrentStatus { get; set; } = "Initializing...";
     public int CursorPosition { get; set; }
     public int SelectionStart { get; set; }
     public int SelectionEnd { get; set; }
     public string SelectionDirection { get; set; } = "none";
+    public long Revision { get; private set; }
     public string CurrentTitle { get; set; } = "KanBan 看板";
     public string PersistencePath => PersistenceFilePath;
+
+    private string? EditorTabId { get; set; }
+    private DateTimeOffset? EditorLockExpiresAt { get; set; }
 
     private sealed class PersistenceData
     {
@@ -27,6 +32,7 @@ public class StatusStore
         public int SelectionStart { get; set; }
         public int SelectionEnd { get; set; }
         public string SelectionDirection { get; set; } = "none";
+        public long Revision { get; set; }
         public string CurrentTitle { get; set; } = string.Empty;
     }
 
@@ -48,10 +54,11 @@ public class StatusStore
                 SelectionStart = Math.Clamp(SelectionStart, 0, CurrentStatus.Length),
                 SelectionEnd = Math.Clamp(SelectionEnd, 0, CurrentStatus.Length),
                 SelectionDirection = NormalizeSelectionDirection(SelectionDirection),
+                Revision = Revision,
                 CurrentTitle = CurrentTitle
             };
 
-            var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
+            string json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(PersistenceFilePath, json);
             Console.WriteLine($"\n\x1b[90m[StatusStore]\x1b[0m Saved state to: {PersistenceFilePath}");
         }
@@ -59,6 +66,23 @@ public class StatusStore
         {
             Console.WriteLine($"\n\x1b[31m[Error]\x1b[0m Failed to save status: {ex.Message}");
         }
+    }
+
+    public bool TryBeginUpdate(long revision)
+    {
+        if (revision <= 0)
+        {
+            Revision += 1;
+            return true;
+        }
+
+        if (revision < Revision)
+        {
+            return false;
+        }
+
+        Revision = revision;
+        return true;
     }
 
     public void SetSelection(int cursorPosition, int? selectionStart, int? selectionEnd, string? selectionDirection)
@@ -76,6 +100,62 @@ public class StatusStore
         CursorPosition = Math.Clamp(cursorPosition, 0, CurrentStatus.Length);
     }
 
+    public bool TryAcquireEditorLock(string? tabId)
+    {
+        if (string.IsNullOrWhiteSpace(tabId))
+        {
+            return false;
+        }
+
+        if (HasActiveEditorLock() && !string.Equals(EditorTabId, tabId, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        EditorTabId = tabId;
+        EditorLockExpiresAt = DateTimeOffset.UtcNow.Add(EditorLockDuration);
+        return true;
+    }
+
+    public bool RenewEditorLock(string? tabId)
+    {
+        if (string.IsNullOrWhiteSpace(tabId))
+        {
+            return false;
+        }
+
+        if (HasActiveEditorLock() && !string.Equals(EditorTabId, tabId, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        EditorTabId = tabId;
+        EditorLockExpiresAt = DateTimeOffset.UtcNow.Add(EditorLockDuration);
+        return true;
+    }
+
+    public bool ReleaseEditorLock(string? tabId)
+    {
+        if (string.IsNullOrWhiteSpace(tabId) || !string.Equals(EditorTabId, tabId, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        EditorTabId = null;
+        EditorLockExpiresAt = null;
+        return true;
+    }
+
+    public bool CanEdit(string? tabId)
+    {
+        if (string.IsNullOrWhiteSpace(tabId))
+        {
+            return true;
+        }
+
+        return !HasActiveEditorLock() || string.Equals(EditorTabId, tabId, StringComparison.Ordinal);
+    }
+
     public object ToClientState()
     {
         return new
@@ -85,8 +165,35 @@ public class StatusStore
             cursorPosition = Math.Clamp(CursorPosition, 0, CurrentStatus.Length),
             selectionStart = Math.Clamp(SelectionStart, 0, CurrentStatus.Length),
             selectionEnd = Math.Clamp(SelectionEnd, 0, CurrentStatus.Length),
-            selectionDirection = NormalizeSelectionDirection(SelectionDirection)
+            selectionDirection = NormalizeSelectionDirection(SelectionDirection),
+            revision = Revision,
+            editorTabId = HasActiveEditorLock() ? EditorTabId : null,
+            editorLockExpiresAt = HasActiveEditorLock() ? EditorLockExpiresAt : null
         };
+    }
+
+    public (string? EditorTabId, DateTimeOffset? ExpiresAt) GetEditorLockState()
+    {
+        return HasActiveEditorLock()
+            ? (EditorTabId, EditorLockExpiresAt)
+            : (null, null);
+    }
+
+    private bool HasActiveEditorLock()
+    {
+        if (string.IsNullOrWhiteSpace(EditorTabId) || EditorLockExpiresAt is null)
+        {
+            return false;
+        }
+
+        if (EditorLockExpiresAt <= DateTimeOffset.UtcNow)
+        {
+            EditorTabId = null;
+            EditorLockExpiresAt = null;
+            return false;
+        }
+
+        return true;
     }
 
     private void Load()
@@ -98,8 +205,8 @@ public class StatusStore
                 return;
             }
 
-            var json = File.ReadAllText(PersistenceFilePath);
-            var data = JsonSerializer.Deserialize<PersistenceData>(json);
+            string json = File.ReadAllText(PersistenceFilePath);
+            PersistenceData? data = JsonSerializer.Deserialize<PersistenceData>(json);
             if (data is null)
             {
                 return;
@@ -118,6 +225,7 @@ public class StatusStore
             SelectionStart = Math.Clamp(persistedSelectionStart, 0, CurrentStatus.Length);
             SelectionEnd = Math.Clamp(persistedSelectionEnd, SelectionStart, CurrentStatus.Length);
             SelectionDirection = NormalizeSelectionDirection(data.SelectionDirection);
+            Revision = Math.Max(0, data.Revision);
             CurrentTitle = !string.IsNullOrEmpty(data.CurrentTitle) ? data.CurrentTitle : CurrentTitle;
             Console.WriteLine($"\x1b[90m[StatusStore]\x1b[0m Loaded state from: {PersistenceFilePath}");
         }
@@ -139,7 +247,26 @@ public class StatusHub(StatusStore store) : Hub
     {
         await SendStatusAsync(Clients.Caller);
         await Clients.Caller.SendAsync("ReceiveTitle", store.CurrentTitle);
+        await SendLockStateAsync(Clients.Caller);
         await base.OnConnectedAsync();
+    }
+
+    public async Task ClaimLock(string tabId)
+    {
+        store.TryAcquireEditorLock(tabId);
+        await SendLockStateAsync(Clients.All);
+    }
+
+    public async Task RenewLock(string tabId)
+    {
+        store.RenewEditorLock(tabId);
+        await SendLockStateAsync(Clients.All);
+    }
+
+    public async Task ReleaseLock(string tabId)
+    {
+        store.ReleaseEditorLock(tabId);
+        await SendLockStateAsync(Clients.All);
     }
 
     public async Task UpdateStatus(
@@ -147,11 +274,32 @@ public class StatusHub(StatusStore store) : Hub
         int cursorPosition,
         int? selectionStart = null,
         int? selectionEnd = null,
-        string? selectionDirection = null)
+        string? selectionDirection = null,
+        long revision = 0,
+        string? tabId = null)
     {
+        if (!store.CanEdit(tabId))
+        {
+            await SendStatusAsync(Clients.Caller);
+            await SendLockStateAsync(Clients.Caller);
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(tabId))
+        {
+            store.RenewEditorLock(tabId);
+        }
+
+        if (!store.TryBeginUpdate(revision))
+        {
+            await SendStatusAsync(Clients.Caller);
+            return;
+        }
+
         store.CurrentStatus = message;
         store.SetSelection(cursorPosition, selectionStart, selectionEnd, selectionDirection);
         await SendStatusAsync(Clients.All);
+        await SendLockStateAsync(Clients.All);
         PrintTerminalStatus();
         store.Save();
     }
@@ -160,18 +308,52 @@ public class StatusHub(StatusStore store) : Hub
         int cursorPosition,
         int? selectionStart = null,
         int? selectionEnd = null,
-        string? selectionDirection = null)
+        string? selectionDirection = null,
+        long revision = 0,
+        string? tabId = null)
     {
+        if (!store.CanEdit(tabId))
+        {
+            await SendStatusAsync(Clients.Caller);
+            await SendLockStateAsync(Clients.Caller);
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(tabId))
+        {
+            store.RenewEditorLock(tabId);
+        }
+
+        if (!store.TryBeginUpdate(revision))
+        {
+            await SendStatusAsync(Clients.Caller);
+            return;
+        }
+
         store.SetSelection(cursorPosition, selectionStart, selectionEnd, selectionDirection);
         await SendStatusAsync(Clients.All);
+        await SendLockStateAsync(Clients.All);
         PrintTerminalStatus();
         store.Save();
     }
 
-    public async Task UpdateTitle(string title)
+    public async Task UpdateTitle(string title, string? tabId = null)
     {
+        if (!store.CanEdit(tabId))
+        {
+            await SendLockStateAsync(Clients.Caller);
+            await Clients.Caller.SendAsync("ReceiveTitle", store.CurrentTitle);
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(tabId))
+        {
+            store.RenewEditorLock(tabId);
+        }
+
         store.CurrentTitle = title;
         await Clients.All.SendAsync("ReceiveTitle", title);
+        await SendLockStateAsync(Clients.All);
         PrintTerminalStatus();
         Console.Title = $"KanBan 看板 | {title}";
         store.Save();
@@ -181,7 +363,7 @@ public class StatusHub(StatusStore store) : Hub
     {
         string gradientTitle = ApplyGeminiGradient(store.CurrentTitle);
         string coloredStatus = ApplyStatusLineColors(store.CurrentStatus);
-        Console.Write($"\r \x1b[2K > {gradientTitle}\x1b[0m | {coloredStatus}\x1b[0m (Pos: {store.CursorPosition}, Sel: {store.SelectionStart}-{store.SelectionEnd})");
+        Console.Write($"\r \x1b[2K > {gradientTitle}\x1b[0m | {coloredStatus}\x1b[0m (Pos: {store.CursorPosition}, Sel: {store.SelectionStart}-{store.SelectionEnd}, Rev: {store.Revision})");
     }
 
     private Task SendStatusAsync(IClientProxy client)
@@ -192,7 +374,17 @@ public class StatusHub(StatusStore store) : Hub
             store.CursorPosition,
             store.SelectionStart,
             store.SelectionEnd,
-            store.SelectionDirection);
+            store.SelectionDirection,
+            store.Revision);
+    }
+
+    private Task SendLockStateAsync(IClientProxy client)
+    {
+        (string? editorTabId, DateTimeOffset? expiresAt) = store.GetEditorLockState();
+        return client.SendAsync(
+            "ReceiveLock",
+            editorTabId,
+            expiresAt?.ToUnixTimeMilliseconds());
     }
 
     private static string ApplyGeminiGradient(string text)

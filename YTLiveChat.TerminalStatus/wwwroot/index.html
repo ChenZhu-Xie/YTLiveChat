@@ -301,7 +301,7 @@
                     .withAutomaticReconnect()
                     .build();
 
-                connection.on("ReceiveStatus", (message, cursorPosition, selectionStart, selectionEnd, selectionDirection) => {
+                connection.on("ReceiveStatus", (message, cursorPosition, selectionStart, selectionEnd, selectionDirection, revision) => {
                     applyStatus(message, cursorPosition, selectionStart, selectionEnd, selectionDirection);
                 });
 

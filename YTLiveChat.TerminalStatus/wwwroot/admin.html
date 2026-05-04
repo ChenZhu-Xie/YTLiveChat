@@ -47,6 +47,52 @@
             outline: none;
         }
 
+        .title-shell {
+            position: relative;
+            margin-left: 10px;
+            flex-grow: 1;
+            border: 1px solid #414868;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .title-backdrop,
+        .title-input {
+            width: 100%;
+            padding: 5px 10px;
+            box-sizing: border-box;
+            font-family: inherit;
+            font-weight: bold;
+            font-size: 18px;
+            line-height: 1.4;
+        }
+
+        .title-backdrop {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            white-space: pre;
+            overflow: hidden;
+            text-overflow: clip;
+            background: linear-gradient(90deg, #4a95e3 0%, #7aa2f7 35%, #bb9af7 68%, #c16781 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .title-input {
+            position: relative;
+            background: transparent;
+            color: transparent;
+            -webkit-text-fill-color: transparent;
+            caret-color: #4a95e3 !important;
+            border: none;
+            border-radius: 0;
+            margin-left: 0;
+            flex-grow: 0;
+            outline: none;
+        }
+
         .editor-container {
             flex-grow: 1;
             margin: 20px;
@@ -129,20 +175,25 @@
         const titleInput = document.getElementById("titleInput");
         const syncStatus = document.getElementById("syncStatus");
         const draftStorageKey = "ytlivechat-terminalstatus-draft";
-        const lockStorageKey = "ytlivechat-terminalstatus-editor-lock";
         const tabId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-        const lockDurationMs = 4000;
+        const lockRenewIntervalMs = 1500;
+        let titleBackdrop = null;
         let hasReceivedInitialStatus = false;
         let hasReceivedInitialTitle = false;
         let isApplyingRemoteState = false;
         let lockRenewTimer = null;
+        let lockReleaseTimer = null;
         let connection = null;
         let lastSentStatus = "";
         let lastSentCursorPosition = 0;
         let lastSentSelectionStart = 0;
         let lastSentSelectionEnd = 0;
         let lastSentSelectionDirection = "none";
+        let localRevision = 0;
+        let activeLockOwnerTabId = null;
         let cursorSyncTimer = null;
+        let isComposing = false;
+        const debugEnabled = new URLSearchParams(window.location.search).has("debug");
 
         const colors = [
             '#7aa2f7', // blue
@@ -190,12 +241,56 @@
             backdrop.innerHTML = renderColoredContent(statusInput.value) + (statusInput.value.endsWith('\n') ? '<br>&nbsp;' : '');
         }
 
+        function ensureTitleBackdrop() {
+            if (titleBackdrop !== null) {
+                return;
+            }
+
+            const wrapper = document.createElement("div");
+            wrapper.className = "title-shell";
+
+            titleBackdrop = document.createElement("div");
+            titleBackdrop.className = "title-backdrop";
+            titleBackdrop.setAttribute("aria-hidden", "true");
+
+            const parent = titleInput.parentElement;
+            parent.insertBefore(wrapper, titleInput);
+            wrapper.appendChild(titleBackdrop);
+            wrapper.appendChild(titleInput);
+        }
+
+        function updateTitleBackdrop() {
+            ensureTitleBackdrop();
+            titleBackdrop.innerHTML = escapeHtml(titleInput.value || titleInput.placeholder || "") || "&nbsp;";
+        }
+
         function clampPosition(value) {
             return Math.max(0, Math.min(Number.isInteger(value) ? value : 0, statusInput.value.length));
         }
 
         function normalizeSelectionDirection(direction) {
             return direction === "forward" || direction === "backward" ? direction : "none";
+        }
+
+        function nextRevision() {
+            localRevision += 1;
+            return localRevision;
+        }
+
+        function debugLog(eventName, details = {}) {
+            if (!debugEnabled) {
+                return;
+            }
+
+            console.log(`[admin-debug] ${eventName}`, {
+                valueLength: statusInput.value.length,
+                readOnly: statusInput.readOnly,
+                localRevision,
+                activeLockOwnerTabId,
+                tabId,
+                connectionState: connection?.state,
+                ...details
+            });
         }
 
         function getSelectionState() {
@@ -229,11 +324,26 @@
                 return;
             }
 
+            activeLockOwnerTabId = typeof state.editorTabId === "string" && state.editorTabId.length > 0
+                ? state.editorTabId
+                : null;
+
+            const hasStatus = typeof state.status === "string";
+            const incomingRevision = Number.isInteger(state.revision) ? state.revision : 0;
+            if (hasStatus && incomingRevision < localRevision) {
+                return;
+            }
+
+            if (incomingRevision > localRevision) {
+                localRevision = incomingRevision;
+            }
+
             isApplyingRemoteState = true;
 
             if (typeof state.title === "string") {
                 titleInput.value = state.title;
                 hasReceivedInitialTitle = true;
+                updateTitleBackdrop();
             }
 
             if (typeof state.status === "string") {
@@ -262,6 +372,8 @@
 
             saveDraftToLocal();
             isApplyingRemoteState = false;
+            applyLockUi();
+            debugLog("applyState", { incomingRevision, hasStatus });
         }
 
         function saveDraftToLocal() {
@@ -290,6 +402,7 @@
                 if (typeof draft.title === "string" && draft.title.length > 0) {
                     titleInput.value = draft.title;
                 }
+                updateTitleBackdrop();
 
                 const cursorPosition = Number.isInteger(draft.cursorPosition)
                     ? Math.max(0, Math.min(draft.cursorPosition, statusInput.value.length))
@@ -307,64 +420,85 @@
             }
         }
 
-        function getLock() {
-            try {
-                const raw = localStorage.getItem(lockStorageKey);
-                if (!raw) return null;
-
-                const lock = JSON.parse(raw);
-                if (!lock?.tabId || !lock?.expiresAt) return null;
-                if (lock.expiresAt <= Date.now()) return null;
-                return lock;
-            } catch {
-                return null;
-            }
-        }
-
         function applyLockUi() {
-            const lock = getLock();
-            const isOwnedByAnotherTab = lock && lock.tabId !== tabId;
+            const isOwnedByAnotherTab = activeLockOwnerTabId !== null && activeLockOwnerTabId !== tabId;
             const isConnected = connection?.state === "Connected";
 
             statusInput.readOnly = Boolean(isOwnedByAnotherTab);
             titleInput.readOnly = Boolean(isOwnedByAnotherTab);
             syncStatus.innerText = isOwnedByAnotherTab ? "LOCKED" : (isConnected ? "CONNECTED" : "OFFLINE");
             syncStatus.style.color = isOwnedByAnotherTab ? "#e0af68" : (isConnected ? "#9ece6a" : "#f7768e");
+            debugLog("applyLockUi", { isOwnedByAnotherTab, isConnected });
         }
 
-        function acquireLock() {
-            const existingLock = getLock();
-            if (existingLock && existingLock.tabId !== tabId) {
+        function hasEditorFocus() {
+            return document.activeElement === statusInput || document.activeElement === titleInput;
+        }
+
+        async function acquireLock() {
+            if (!connection || connection.state !== "Connected") {
                 applyLockUi();
                 return false;
             }
 
-            localStorage.setItem(lockStorageKey, JSON.stringify({
-                tabId,
-                expiresAt: Date.now() + lockDurationMs
-            }));
-            applyLockUi();
-            return true;
+            try {
+                debugLog("acquireLock:before");
+                await connection.invoke("ClaimLock", tabId);
+                debugLog("acquireLock:after");
+                return activeLockOwnerTabId === null || activeLockOwnerTabId === tabId;
+            } catch (err) {
+                console.error(err);
+                applyLockUi();
+                return false;
+            }
         }
 
         function renewLock() {
-            const existingLock = getLock();
-            if (!existingLock || existingLock.tabId === tabId) {
-                acquireLock();
+            if (!connection || connection.state !== "Connected") {
+                return;
             }
+
+            debugLog("renewLock");
+            connection.invoke("RenewLock", tabId).catch(err => console.error(err));
         }
 
         function releaseLock() {
-            const existingLock = getLock();
-            if (existingLock?.tabId === tabId) {
-                localStorage.removeItem(lockStorageKey);
+            if (activeLockOwnerTabId === tabId) {
+                activeLockOwnerTabId = null;
             }
-            applyLockUi();
+
+            if (!connection || connection.state !== "Connected") {
+                applyLockUi();
+                return;
+            }
+
+            debugLog("releaseLock");
+            connection.invoke("ReleaseLock", tabId).catch(err => console.error(err));
+        }
+
+        function clearPendingLockRelease() {
+            if (lockReleaseTimer !== null) {
+                clearTimeout(lockReleaseTimer);
+                lockReleaseTimer = null;
+            }
+        }
+
+        function scheduleLockRelease() {
+            clearPendingLockRelease();
+            lockReleaseTimer = setTimeout(() => {
+                lockReleaseTimer = null;
+                if (hasEditorFocus()) {
+                    return;
+                }
+
+                stopLockRenewal();
+                releaseLock();
+            }, 0);
         }
 
         function startLockRenewal() {
             if (lockRenewTimer !== null) return;
-            lockRenewTimer = setInterval(renewLock, Math.max(1000, Math.floor(lockDurationMs / 2)));
+            lockRenewTimer = setInterval(renewLock, lockRenewIntervalMs);
         }
 
         function stopLockRenewal() {
@@ -393,21 +527,26 @@
                     .build();
 
                 connection.onclose(() => {
+                    activeLockOwnerTabId = null;
                     applyLockUi();
+                    debugLog("connection:onclose");
                 });
 
-                connection.on("ReceiveStatus", (message, cursorPosition, selectionStart, selectionEnd, selectionDirection) => {
+                connection.on("ReceiveStatus", (message, cursorPosition, selectionStart, selectionEnd, selectionDirection, revision) => {
+                    debugLog("ReceiveStatus", { revision, cursorPosition, selectionStart, selectionEnd, selectionDirection });
                     applyState({
                         title: titleInput.value,
                         status: message,
                         cursorPosition,
                         selectionStart,
                         selectionEnd,
-                        selectionDirection
+                        selectionDirection,
+                        revision
                     });
                 });
 
                 connection.on("ReceiveTitle", (title) => {
+                    debugLog("ReceiveTitle", { title });
                     const selectionState = getSelectionState();
                     applyState({
                         title,
@@ -415,11 +554,26 @@
                         cursorPosition: selectionState.cursorPosition,
                         selectionStart: selectionState.selectionStart,
                         selectionEnd: selectionState.selectionEnd,
-                        selectionDirection: selectionState.selectionDirection
+                        selectionDirection: selectionState.selectionDirection,
+                        revision: localRevision
                     });
                 });
 
+                connection.on("ReceiveLock", (editorTabId, editorLockExpiresAt) => {
+                    activeLockOwnerTabId = typeof editorTabId === "string" && editorTabId.length > 0
+                        ? editorTabId
+                        : null;
+                    debugLog("ReceiveLock", { editorTabId, editorLockExpiresAt });
+                    applyLockUi();
+                });
+
                 await connection.start();
+                debugLog("connection:started");
+                if (hasEditorFocus()) {
+                    if (await acquireLock()) {
+                        startLockRenewal();
+                    }
+                }
                 applyLockUi();
             } catch (err) {
                 console.error(err);
@@ -428,6 +582,7 @@
         };
 
         function sync() {
+            debugLog("sync:enter", { isApplyingRemoteState, hasReceivedInitialStatus, isComposing });
             if (isApplyingRemoteState || !hasReceivedInitialStatus || statusInput.readOnly) {
                 saveDraftToLocal();
                 return;
@@ -435,28 +590,37 @@
 
             saveDraftToLocal();
             updateBackdrop();
+            if (isComposing) {
+                return;
+            }
             const selectionState = getSelectionState();
+            clearTimeout(cursorSyncTimer);
             lastSentStatus = statusInput.value;
             lastSentCursorPosition = selectionState.cursorPosition;
             lastSentSelectionStart = selectionState.selectionStart;
             lastSentSelectionEnd = selectionState.selectionEnd;
             lastSentSelectionDirection = selectionState.selectionDirection;
+            const revision = nextRevision();
             if (!connection || connection.state !== "Connected") {
                 return;
             }
 
+            debugLog("sync:invoke", { revision, value: statusInput.value });
             connection.invoke(
                 "UpdateStatus",
                 lastSentStatus,
                 lastSentCursorPosition,
                 lastSentSelectionStart,
                 lastSentSelectionEnd,
-                lastSentSelectionDirection)
+                lastSentSelectionDirection,
+                revision,
+                tabId)
                 .catch(err => console.error(err));
         }
 
         function saveSelectionOnly() {
-            if (isApplyingRemoteState || statusInput.readOnly) {
+            debugLog("saveSelectionOnly", { isApplyingRemoteState, isComposing });
+            if (isApplyingRemoteState || statusInput.readOnly || isComposing) {
                 return;
             }
 
@@ -485,26 +649,49 @@
             lastSentSelectionStart = selectionState.selectionStart;
             lastSentSelectionEnd = selectionState.selectionEnd;
             lastSentSelectionDirection = selectionState.selectionDirection;
+            const revision = nextRevision();
             clearTimeout(cursorSyncTimer);
             cursorSyncTimer = setTimeout(() => {
+                debugLog("syncCursorPosition:invoke", { revision, selectionState });
                 connection.invoke(
                     "UpdateCursor",
                     selectionState.cursorPosition,
                     selectionState.selectionStart,
                     selectionState.selectionEnd,
-                    selectionState.selectionDirection)
+                    selectionState.selectionDirection,
+                    revision,
+                    tabId)
                     .catch(err => console.error(err));
             }, 30);
         }
 
         statusInput.addEventListener("input", sync);
+        statusInput.addEventListener("beforeinput", (event) => {
+            debugLog("beforeinput", { inputType: event.inputType, data: event.data });
+        });
+        statusInput.addEventListener("change", sync);
+        statusInput.addEventListener("keydown", (event) => {
+            debugLog("keydown", { key: event.key });
+        });
         statusInput.addEventListener("keyup", saveSelectionOnly);
         statusInput.addEventListener("click", saveSelectionOnly);
         statusInput.addEventListener("select", saveSelectionOnly);
         statusInput.addEventListener("mouseup", saveSelectionOnly);
-        statusInput.addEventListener("selectionchange", saveSelectionOnly);
+        statusInput.addEventListener("compositionstart", () => {
+            isComposing = true;
+        });
+        statusInput.addEventListener("compositionend", () => {
+            isComposing = false;
+            sync();
+            saveSelectionOnly();
+        });
         statusInput.addEventListener("scroll", () => {
             backdrop.scrollTop = statusInput.scrollTop;
+        });
+        document.addEventListener("selectionchange", () => {
+            if (document.activeElement === statusInput) {
+                saveSelectionOnly();
+            }
         });
 
         titleInput.addEventListener("input", () => {
@@ -514,49 +701,49 @@
 
             saveDraftToLocal();
             if (connection && connection.state === "Connected") {
-                connection.invoke("UpdateTitle", titleInput.value).catch(err => console.error(err));
+                connection.invoke("UpdateTitle", titleInput.value, tabId).catch(err => console.error(err));
             }
+            updateTitleBackdrop();
         });
 
-        statusInput.addEventListener("focus", () => {
-            if (acquireLock()) {
+        statusInput.addEventListener("focus", async () => {
+            clearPendingLockRelease();
+            if (await acquireLock()) {
                 startLockRenewal();
             }
         });
 
-        titleInput.addEventListener("focus", () => {
-            if (acquireLock()) {
+        titleInput.addEventListener("focus", async () => {
+            clearPendingLockRelease();
+            if (await acquireLock()) {
                 startLockRenewal();
             }
         });
 
         statusInput.addEventListener("blur", () => {
-            stopLockRenewal();
-            releaseLock();
+            scheduleLockRelease();
         });
 
         titleInput.addEventListener("blur", () => {
-            stopLockRenewal();
-            releaseLock();
+            scheduleLockRelease();
         });
 
         window.addEventListener("storage", (event) => {
             if (event.key === draftStorageKey && event.newValue && document.activeElement !== statusInput && document.activeElement !== titleInput) {
                 loadDraftFromLocal();
             }
-
-            if (event.key === lockStorageKey) {
-                applyLockUi();
-            }
         });
 
         window.addEventListener("beforeunload", () => {
             saveDraftToLocal();
+            clearPendingLockRelease();
             stopLockRenewal();
             releaseLock();
         });
 
+        ensureTitleBackdrop();
         loadDraftFromLocal();
+        updateTitleBackdrop();
         applyLockUi();
         start();
     </script>
