@@ -42,6 +42,14 @@ git add <resolved-files>
 git rebase --continue
 ```
 
+Create a backup branch before a risky rebase:
+
+```powershell
+git switch <feature-branch>
+git branch backup/<feature-branch>-before-rebase
+git rebase master
+```
+
 ## Assumptions
 
 - `git-swap auto` updates the repo-local SSH configuration for the current machine
@@ -159,6 +167,36 @@ If you want to skip the editor prompt:
 ```powershell
 git -c core.editor=true rebase --continue
 ```
+
+## 4.1 Backup branch strategy
+
+For this repository, the recommended rule is:
+
+- keep local `master` as a clean upstream mirror
+- do daily work on `feat/*`
+- create a backup branch before a large `rebase` or risky conflict resolution session
+
+Example:
+
+```powershell
+git switch feat/add-overlay-project
+git branch backup/feat-add-overlay-project-before-rebase
+git rebase master
+```
+
+If the rebase goes bad, you can either abort it:
+
+```powershell
+git rebase --abort
+```
+
+Or switch back to the backup branch:
+
+```powershell
+git switch backup/feat-add-overlay-project-before-rebase
+```
+
+This is safer than doing regular development directly on local `master`.
 
 ## 5. Useful read-only checks
 
