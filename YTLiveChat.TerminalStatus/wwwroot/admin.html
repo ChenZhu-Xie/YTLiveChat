@@ -74,6 +74,11 @@
             white-space: pre;
             overflow: hidden;
             text-overflow: clip;
+            color: transparent;
+        }
+
+        .title-backdrop-text {
+            display: inline-block;
             background: linear-gradient(90deg, #4a95e3 0%, #7aa2f7 35%, #bb9af7 68%, #c16781 100%);
             -webkit-background-clip: text;
             background-clip: text;
@@ -183,12 +188,18 @@
         let isApplyingRemoteState = false;
         let lockRenewTimer = null;
         let lockReleaseTimer = null;
+        let editorWatchTimer = null;
         let connection = null;
         let lastSentStatus = "";
         let lastSentCursorPosition = 0;
         let lastSentSelectionStart = 0;
         let lastSentSelectionEnd = 0;
         let lastSentSelectionDirection = "none";
+        let lastObservedStatus = "";
+        let lastObservedCursorPosition = 0;
+        let lastObservedSelectionStart = 0;
+        let lastObservedSelectionEnd = 0;
+        let lastObservedSelectionDirection = "none";
         let localRevision = 0;
         let activeLockOwnerTabId = null;
         let cursorSyncTimer = null;
@@ -257,11 +268,26 @@
             parent.insertBefore(wrapper, titleInput);
             wrapper.appendChild(titleBackdrop);
             wrapper.appendChild(titleInput);
+
+            titleBackdrop.style.zIndex = "1";
+            titleInput.style.position = "relative";
+            titleInput.style.zIndex = "2";
+            titleInput.style.background = "transparent";
+            titleInput.style.backgroundImage = "none";
+            titleInput.style.webkitBackgroundClip = "border-box";
+            titleInput.style.backgroundClip = "border-box";
+            titleInput.style.color = "transparent";
+            titleInput.style.webkitTextFillColor = "transparent";
+            titleInput.style.border = "none";
+            titleInput.style.borderRadius = "0";
+            titleInput.style.marginLeft = "0";
+            titleInput.style.flexGrow = "0";
         }
 
         function updateTitleBackdrop() {
             ensureTitleBackdrop();
-            titleBackdrop.innerHTML = escapeHtml(titleInput.value || titleInput.placeholder || "") || "&nbsp;";
+            const text = escapeHtml(titleInput.value || titleInput.placeholder || "") || "&nbsp;";
+            titleBackdrop.innerHTML = `<span class="title-backdrop-text">${text}</span>`;
         }
 
         function clampPosition(value) {
@@ -373,6 +399,7 @@
             saveDraftToLocal();
             isApplyingRemoteState = false;
             applyLockUi();
+            rememberObservedEditorState();
             debugLog("applyState", { incomingRevision, hasStatus });
         }
 
@@ -433,6 +460,53 @@
 
         function hasEditorFocus() {
             return document.activeElement === statusInput || document.activeElement === titleInput;
+        }
+
+        function rememberObservedEditorState() {
+            const selectionState = getSelectionState();
+            lastObservedStatus = statusInput.value;
+            lastObservedCursorPosition = selectionState.cursorPosition;
+            lastObservedSelectionStart = selectionState.selectionStart;
+            lastObservedSelectionEnd = selectionState.selectionEnd;
+            lastObservedSelectionDirection = selectionState.selectionDirection;
+        }
+
+        function startEditorWatch() {
+            rememberObservedEditorState();
+            if (editorWatchTimer !== null) {
+                return;
+            }
+
+            editorWatchTimer = setInterval(() => {
+                if (!hasEditorFocus() || statusInput.readOnly || isApplyingRemoteState || isComposing) {
+                    return;
+                }
+
+                const selectionState = getSelectionState();
+                const hasTextChanged = statusInput.value !== lastObservedStatus;
+                const hasSelectionChanged =
+                    selectionState.cursorPosition !== lastObservedCursorPosition ||
+                    selectionState.selectionStart !== lastObservedSelectionStart ||
+                    selectionState.selectionEnd !== lastObservedSelectionEnd ||
+                    selectionState.selectionDirection !== lastObservedSelectionDirection;
+
+                if (hasTextChanged) {
+                    debugLog("watch:sync");
+                    sync();
+                } else if (hasSelectionChanged) {
+                    debugLog("watch:selection");
+                    saveSelectionOnly();
+                }
+
+                rememberObservedEditorState();
+            }, 120);
+        }
+
+        function stopEditorWatch() {
+            if (editorWatchTimer !== null) {
+                clearInterval(editorWatchTimer);
+                editorWatchTimer = null;
+            }
         }
 
         async function acquireLock() {
@@ -585,6 +659,7 @@
             debugLog("sync:enter", { isApplyingRemoteState, hasReceivedInitialStatus, isComposing });
             if (isApplyingRemoteState || !hasReceivedInitialStatus || statusInput.readOnly) {
                 saveDraftToLocal();
+                rememberObservedEditorState();
                 return;
             }
 
@@ -616,11 +691,13 @@
                 revision,
                 tabId)
                 .catch(err => console.error(err));
+            rememberObservedEditorState();
         }
 
         function saveSelectionOnly() {
             debugLog("saveSelectionOnly", { isApplyingRemoteState, isComposing });
             if (isApplyingRemoteState || statusInput.readOnly || isComposing) {
+                rememberObservedEditorState();
                 return;
             }
 
@@ -628,6 +705,7 @@
             updateBackdrop();
 
             syncCursorPosition();
+            rememberObservedEditorState();
         }
 
         function syncCursorPosition() {
@@ -708,6 +786,7 @@
 
         statusInput.addEventListener("focus", async () => {
             clearPendingLockRelease();
+            startEditorWatch();
             if (await acquireLock()) {
                 startLockRenewal();
             }
@@ -715,6 +794,7 @@
 
         titleInput.addEventListener("focus", async () => {
             clearPendingLockRelease();
+            startEditorWatch();
             if (await acquireLock()) {
                 startLockRenewal();
             }
@@ -722,10 +802,16 @@
 
         statusInput.addEventListener("blur", () => {
             scheduleLockRelease();
+            if (document.activeElement !== titleInput) {
+                stopEditorWatch();
+            }
         });
 
         titleInput.addEventListener("blur", () => {
             scheduleLockRelease();
+            if (document.activeElement !== statusInput) {
+                stopEditorWatch();
+            }
         });
 
         window.addEventListener("storage", (event) => {
@@ -738,6 +824,7 @@
             saveDraftToLocal();
             clearPendingLockRelease();
             stopLockRenewal();
+            stopEditorWatch();
             releaseLock();
         });
 
