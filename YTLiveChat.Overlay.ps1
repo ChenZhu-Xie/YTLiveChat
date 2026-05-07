@@ -1,20 +1,65 @@
-# 1. 强力清理残留进程 (针对本项目的 .exe 和 PowerShell 进程)
-$ScriptPath = $MyInvocation.MyCommand.Definition
-$AppName = "YTLiveChat.Overlay"
+param(
+    [switch]$Console,
+    [switch]$Build,
+    [switch]$Release,
+    [switch]$Debug,
+    [switch]$StopOnly
+)
 
-# A. 清理应用程序进程 (解开文件锁)
-Get-Process $AppName -ErrorAction SilentlyContinue | Stop-Process -Force
+$ErrorActionPreference = "Stop"
 
-# B. 通过命令行清理 (清理运行本脚本的 PowerShell，但排除当前窗口)
-if (Get-Command Get-CimInstance -ErrorAction SilentlyContinue) {
-    Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | Where-Object { 
-        ($_.Name -eq "powershell.exe" -or $_.Name -eq "pwsh.exe") -and 
-        $_.CommandLine -like "*$ScriptPath*" -and 
-        $_.ProcessId -ne $PID 
-    } | ForEach-Object { 
-        Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue 
-    }
+if ($Release -and $Debug) {
+    throw "Use either -Release or -Debug, not both."
 }
-Start-Sleep -Seconds 1
 
-dotnet run --project YTLiveChat.Overlay --urls "http://localhost:5000"
+$ProjectRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
+$ProjectName = "YTLiveChat.Overlay"
+$ProjectDir = Join-Path $ProjectRoot $ProjectName
+$ProjectFile = Join-Path $ProjectDir "$ProjectName.csproj"
+$ProfileDir = if ($Release) { "Release" } else { "Debug" }
+$ExePath = Join-Path $ProjectDir "bin\$ProfileDir\net10.0\$ProjectName.exe"
+$AppArgs = @("--urls", "http://localhost:5000")
+
+Set-Location $ProjectRoot
+
+function Stop-LauncherHosts {
+    if (-not (Get-Command Get-CimInstance -ErrorAction SilentlyContinue)) {
+        return
+    }
+
+    $scriptPath = $MyInvocation.MyCommand.Definition
+    Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
+        Where-Object {
+            ($_.Name -eq "powershell.exe" -or $_.Name -eq "pwsh.exe") -and
+            $_.CommandLine -like "*$scriptPath*" -and
+            $_.ProcessId -ne $PID
+        } |
+        ForEach-Object {
+            Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue
+        }
+}
+
+function Get-DotnetArgs {
+    param(
+        [string]$Command
+    )
+
+    $args = @($Command, $ProjectFile, "-c", $ProfileDir)
+    return ,$args
+}
+
+Get-Process $ProjectName -ErrorAction SilentlyContinue | Stop-Process -Force
+Stop-LauncherHosts
+
+if ($StopOnly) {
+    exit 0
+}
+
+# Default to rebuilding before every launch so hidden restarts pick up local edits.
+& dotnet @(Get-DotnetArgs -Command "build")
+
+if ($Console) {
+    & $ExePath @AppArgs
+} else {
+    Start-Process -FilePath $ExePath -ArgumentList $AppArgs -WorkingDirectory $ProjectDir -WindowStyle Hidden
+}
