@@ -17,6 +17,7 @@ $ProjectName = "YTLiveChat.TerminalStatus"
 $ProjectFile = Join-Path $ProjectDir "$ProjectName.csproj"
 $ProfileDir = if ($Release) { "Release" } else { "Debug" }
 $ExePath = Join-Path $ProjectDir "bin\$ProfileDir\net10.0\$ProjectName.exe"
+$AppArgs = @("--urls", "http://localhost:5150")
 
 Set-Location $ProjectDir
 
@@ -43,7 +44,7 @@ function Get-DotnetArgs {
     )
 
     $args = @($Command, $ProjectFile, "-c", $ProfileDir)
-    return ,$args
+    return $args
 }
 
 Get-Process $ProjectName -ErrorAction SilentlyContinue | Stop-Process -Force
@@ -57,7 +58,13 @@ if ($StopOnly) {
 & dotnet @(Get-DotnetArgs -Command "build")
 
 if ($Console) {
-    & $ExePath
+    Push-Location $ProjectDir
+    try {
+        & $ExePath @AppArgs
+    }
+    finally {
+        Pop-Location
+    }
 } else {
-    Start-Process -FilePath $ExePath -WorkingDirectory $ProjectDir -WindowStyle Hidden
+    Start-Process -FilePath $ExePath -ArgumentList $AppArgs -WorkingDirectory $ProjectDir -WindowStyle Hidden
 }

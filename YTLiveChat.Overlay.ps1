@@ -45,7 +45,7 @@ function Get-DotnetArgs {
     )
 
     $args = @($Command, $ProjectFile, "-c", $ProfileDir)
-    return ,$args
+    return $args
 }
 
 Get-Process $ProjectName -ErrorAction SilentlyContinue | Stop-Process -Force
@@ -59,7 +59,13 @@ if ($StopOnly) {
 & dotnet @(Get-DotnetArgs -Command "build")
 
 if ($Console) {
-    & $ExePath @AppArgs
+    Push-Location $ProjectDir
+    try {
+        & $ExePath @AppArgs
+    }
+    finally {
+        Pop-Location
+    }
 } else {
     Start-Process -FilePath $ExePath -ArgumentList $AppArgs -WorkingDirectory $ProjectDir -WindowStyle Hidden
 }
