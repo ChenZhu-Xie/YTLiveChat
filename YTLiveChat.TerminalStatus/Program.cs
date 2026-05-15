@@ -23,7 +23,7 @@ if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             StartInfo = new ProcessStartInfo
             {
                 FileName = "powershell",
-                Arguments = killCommand,
+                Arguments = $"-NoProfile -NonInteractive {killCommand}",
                 RedirectStandardOutput = true,
                 UseShellExecute = false,
                 CreateNoWindow = true
@@ -31,14 +31,22 @@ if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         };
 
         process.Start();
-        process.WaitForExit();
+        if (!process.WaitForExit(3000))
+        {
+            try { process.Kill(true); } catch { }
+        }
     }
     catch
     {
     }
 }
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    ContentRootPath = AppContext.BaseDirectory,
+    WebRootPath = Path.Combine(AppContext.BaseDirectory, "wwwroot")
+});
 
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole(options => options.FormatterName = GrayCategoryConsoleFormatter.FormatterName);
@@ -47,6 +55,7 @@ builder.Services.AddSignalR();
 builder.Services.AddSingleton<StatusStore>();
 
 var app = builder.Build();
+app.Urls.Add("http://localhost:5150");
 
 Console.OutputEncoding = Encoding.UTF8;
 Console.Title = "KanBan 看板";

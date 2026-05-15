@@ -25,14 +25,17 @@ if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             StartInfo = new ProcessStartInfo
             {
                 FileName = "powershell",
-                Arguments = killCommand,
+                Arguments = $"-NoProfile -NonInteractive {killCommand}",
                 RedirectStandardOutput = true,
                 UseShellExecute = false,
                 CreateNoWindow = true
             }
         };
         process.Start();
-        process.WaitForExit();
+        if (!process.WaitForExit(3000))
+        {
+            try { process.Kill(true); } catch { }
+        }
     }
     catch { /* 忽略任何清理过程中的错误 */ }
 }
