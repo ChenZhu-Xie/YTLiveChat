@@ -203,6 +203,7 @@
         let localRevision = 0;
         let activeLockOwnerTabId = null;
         let cursorSyncTimer = null;
+        let draftSaveTimer = null;
         let isComposing = false;
         const debugEnabled = new URLSearchParams(window.location.search).has("debug");
 
@@ -396,7 +397,7 @@
                 updateBackdrop();
             }
 
-            saveDraftToLocal();
+            scheduleDraftSave();
             isApplyingRemoteState = false;
             applyLockUi();
             rememberObservedEditorState();
@@ -417,6 +418,16 @@
             localStorage.setItem(draftStorageKey, JSON.stringify(draft));
         }
 
+        function scheduleDraftSave() {
+            if (draftSaveTimer !== null) {
+                clearTimeout(draftSaveTimer);
+            }
+
+            draftSaveTimer = setTimeout(() => {
+                draftSaveTimer = null;
+                saveDraftToLocal();
+            }, 120);
+        }
         function loadDraftFromLocal() {
             try {
                 const raw = localStorage.getItem(draftStorageKey);
@@ -499,7 +510,7 @@
                 }
 
                 rememberObservedEditorState();
-            }, 120);
+            }, 250);
         }
 
         function stopEditorWatch() {
@@ -658,13 +669,12 @@
         function sync() {
             debugLog("sync:enter", { isApplyingRemoteState, hasReceivedInitialStatus, isComposing });
             if (isApplyingRemoteState || !hasReceivedInitialStatus || statusInput.readOnly) {
-                saveDraftToLocal();
+                scheduleDraftSave();
                 rememberObservedEditorState();
                 return;
             }
 
-            saveDraftToLocal();
-            updateBackdrop();
+            scheduleDraftSave();
             if (isComposing) {
                 return;
             }
@@ -701,8 +711,7 @@
                 return;
             }
 
-            saveDraftToLocal();
-            updateBackdrop();
+            scheduleDraftSave();
 
             syncCursorPosition();
             rememberObservedEditorState();
@@ -744,13 +753,7 @@
         }
 
         statusInput.addEventListener("input", sync);
-        statusInput.addEventListener("beforeinput", (event) => {
-            debugLog("beforeinput", { inputType: event.inputType, data: event.data });
-        });
         statusInput.addEventListener("change", sync);
-        statusInput.addEventListener("keydown", (event) => {
-            debugLog("keydown", { key: event.key });
-        });
         statusInput.addEventListener("keyup", saveSelectionOnly);
         statusInput.addEventListener("click", saveSelectionOnly);
         statusInput.addEventListener("select", saveSelectionOnly);
@@ -777,7 +780,7 @@
                 return;
             }
 
-            saveDraftToLocal();
+            scheduleDraftSave();
             if (connection && connection.state === "Connected") {
                 connection.invoke("UpdateTitle", titleInput.value, tabId).catch(err => console.error(err));
             }
@@ -821,6 +824,10 @@
         });
 
         window.addEventListener("beforeunload", () => {
+            if (draftSaveTimer !== null) {
+                clearTimeout(draftSaveTimer);
+                draftSaveTimer = null;
+            }
             saveDraftToLocal();
             clearPendingLockRelease();
             stopLockRenewal();
@@ -836,3 +843,6 @@
     </script>
 </body>
 </html>
+
+
+

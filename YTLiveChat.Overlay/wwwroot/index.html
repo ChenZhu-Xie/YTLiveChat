@@ -333,6 +333,7 @@
         const container = document.getElementById('chat-container');
         const seenIds = new Set();
         let socket;
+        const debugEnabled = new URLSearchParams(window.location.search).has("debug");
 
         // 根据字符串生成固定颜色
         function stringToColor(str) {
@@ -348,7 +349,9 @@
         }
 
         function connect() {
-            console.log("正在连接 WebSocket...");
+            if (debugEnabled) {
+                console.log("正在连接 WebSocket...");
+            }
             socket = new WebSocket(`ws://${window.location.host}/ws`);
 
             socket.onmessage = (event) => {
@@ -357,11 +360,15 @@
             };
 
             socket.onopen = () => {
-                console.log("WebSocket 已连接");
+                if (debugEnabled) {
+                    console.log("WebSocket 已连接");
+                }
             };
 
             socket.onclose = () => {
-                console.log("WebSocket 已断开，5秒后尝试重连...");
+                if (debugEnabled) {
+                    console.log("WebSocket 已断开，5秒后尝试重连...");
+                }
                 setTimeout(connect, 5000); // 5秒后自动重连
             };
 
@@ -386,7 +393,9 @@
                 }
             }
 
-            console.log("收到消息:", msg); // 在浏览器控制台打印收到的数据
+            if (debugEnabled) {
+                console.log("收到消息:", msg);
+            }
             let avatarUrl = msg.avatar;
             if (avatarUrl && avatarUrl.startsWith('//')) {
                 avatarUrl = 'https:' + avatarUrl;

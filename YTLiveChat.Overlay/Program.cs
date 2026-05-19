@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging.Console;
 using YTLiveChat.Contracts.Services;
 using YTLiveChat.DependencyInjection;
 
-// 1. 自动化环境清理 (仅限 Windows)
+// Windows 启动前清理同名残留进程，避免开发阶段的文件锁定
 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 {
     try
@@ -17,7 +17,6 @@ if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         var currentPid = Environment.ProcessId;
         var processName = "YTLiveChat.Overlay";
         
-        // 清理同名的其他残留进程 (防止构建时的文件锁定)
         var killCommand = $"-Command \"Get-Process -Name '{processName}' -ErrorAction SilentlyContinue | ForEach-Object {{ if ($_.Id -ne {currentPid}) {{ Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue }} }}\"";
         
         var process = new Process
@@ -37,7 +36,7 @@ if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             try { process.Kill(true); } catch { }
         }
     }
-    catch { /* 忽略任何清理过程中的错误 */ }
+    catch { }
 }
 
 var builder = WebApplication.CreateBuilder(args);
@@ -49,12 +48,12 @@ builder.Logging.AddFilter("Microsoft.AspNetCore.Hosting.Diagnostics", LogLevel.W
 builder.Logging.AddFilter("Microsoft.AspNetCore.Routing.EndpointMiddleware", LogLevel.Warning);
 builder.Services.AddYTLiveChat(builder.Configuration);
 
-// 配置选项
+// 运行配置
 builder.Services.Configure<YTLiveChat.Contracts.YTLiveChatOptions>(options => {
     options.RequestFrequency = 1000;
-#pragma warning disable CS0618 // 开启持续监控模式 (BETA)
+#pragma warning disable CS0618 // 当前版本仍使用该选项做持续监控
     options.EnableContinuousLivestreamMonitor = true;
-    options.LiveCheckFrequency = 30000; // 每30秒检查一次是否开播
+    options.LiveCheckFrequency = 30000;
 #pragma warning restore CS0618
 });
 
@@ -82,16 +81,17 @@ var jsonOptions = new JsonSerializerOptions
 };
 
 app.UseWebSockets();
-app.UseDefaultFiles(); // 修复 404：允许访问根目录加载 index.html
+app.UseDefaultFiles();
 app.UseStaticFiles();
 
 var sockets = new ConcurrentDictionary<Guid, WebSocket>();
-var messageHistory = new ConcurrentQueue<string>(); // 存储最近 30 条消息的 JSON
+var messageHistory = new ConcurrentQueue<string>();
+int messageHistoryCount = 0;
 var seenMessageIds = new ConcurrentDictionary<string, byte>();
 var seenMessageIdsQueue = new ConcurrentQueue<string>();
 const int MaxSeenMessagesCache = 1000;
+int seenMessageIdsCount = 0;
 
-// 监听 YouTube 聊天
 var chatService = app.Services.GetRequiredService<IYTLiveChat>();
 
 chatService.InitialPageLoaded += (s, e) =>
@@ -99,19 +99,17 @@ chatService.InitialPageLoaded += (s, e) =>
 
 chatService.ChatReceived += async (sender, e) =>
 {
-    // 消息去重
     if (!seenMessageIds.TryAdd(e.ChatItem.Id, 0))
     {
         return;
     }
 
     seenMessageIdsQueue.Enqueue(e.ChatItem.Id);
-    while (seenMessageIdsQueue.Count > MaxSeenMessagesCache)
+    if (Interlocked.Increment(ref seenMessageIdsCount) > MaxSeenMessagesCache &&
+        seenMessageIdsQueue.TryDequeue(out var oldId))
     {
-        if (seenMessageIdsQueue.TryDequeue(out var oldId))
-        {
-            seenMessageIds.TryRemove(oldId, out _);
-        }
+        seenMessageIds.TryRemove(oldId, out _);
+        Interlocked.Decrement(ref seenMessageIdsCount);
     }
 
     var authorName = e.ChatItem.Author.Name;
@@ -141,9 +139,11 @@ chatService.ChatReceived += async (sender, e) =>
 
     var json = JsonSerializer.Serialize(message, jsonOptions);
     
-    // 更新历史记录
     messageHistory.Enqueue(json);
-    while (messageHistory.Count > 30) messageHistory.TryDequeue(out _);
+    if (Interlocked.Increment(ref messageHistoryCount) > 30 && messageHistory.TryDequeue(out _))
+    {
+        Interlocked.Decrement(ref messageHistoryCount);
+    }
 
     var bytes = Encoding.UTF8.GetBytes(json);
 
@@ -160,12 +160,10 @@ chatService.ErrorOccurred += (s, e) => {
     Console.WriteLine($"{errorColor}[ERROR]{reset} {timeColor}{DateTime.Now:HH:mm:ss}{reset} {e.GetException().Message}");
 };
 
-// --- 自动重连逻辑 ---
 chatService.ChatStopped += async (s, e) =>
 {
     Console.WriteLine($"{systemColor}[SYSTEM]{reset} {timeColor}{DateTime.Now:HH:mm:ss}{reset} Monitor stopped. Reason: {e.Reason}");
     
-    // 延迟 30 秒后尝试重连，避免频繁请求
     const int reconnectDelayMs = 30000;
     Console.WriteLine($"{systemColor}[SYSTEM]{reset} Reconnecting in {reconnectDelayMs / 1000}s...");
     
@@ -175,34 +173,41 @@ chatService.ChatStopped += async (s, e) =>
     chatService.Start(handle: "@xczphysics");
 };
 
-// WebSocket 终结点
 app.Map("/ws", async context =>
 {
-    if (context.WebSockets.IsWebSocketRequest)
+    if (!context.WebSockets.IsWebSocketRequest)
     {
-        using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-        var id = Guid.NewGuid();
-        
-        // 1. 发送历史记录
-        foreach (var historyJson in messageHistory)
-        {
-            var historyBytes = Encoding.UTF8.GetBytes(historyJson);
-            await webSocket.SendAsync(new ArraySegment<byte>(historyBytes), WebSocketMessageType.Text, true, CancellationToken.None);
-        }
+        context.Response.StatusCode = StatusCodes.Status400BadRequest;
+        return;
+    }
 
-        // 2. 注册到活跃连接池
-        sockets.TryAdd(id, webSocket);
-        try
+    using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+    var id = Guid.NewGuid();
+
+    foreach (string historyJson in messageHistory)
+    {
+        byte[] historyBytes = Encoding.UTF8.GetBytes(historyJson);
+        await webSocket.SendAsync(new ArraySegment<byte>(historyBytes), WebSocketMessageType.Text, true, CancellationToken.None);
+    }
+
+    sockets.TryAdd(id, webSocket);
+    try
+    {
+        var buffer = new byte[1024 * 4];
+        while (webSocket.State == WebSocketState.Open)
         {
-            var buffer = new byte[1024 * 4];
-            while (webSocket.State == WebSocketState.Open)
-            {
-                await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-            }
+            await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
         }
-        finally
+    }
+    catch (WebSocketException)
+    {
+    }
+    finally
+    {
+        sockets.TryRemove(id, out _);
+        if (webSocket.State is WebSocketState.Open or WebSocketState.CloseReceived)
         {
-            sockets.TryRemove(id, out _);
+            await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closed", CancellationToken.None);
         }
     }
 });

@@ -12,6 +12,7 @@ public class StatusStore
         "YTLiveChat.TerminalStatus");
     private static readonly string PersistenceFilePath = Path.Combine(PersistenceDirectory, PersistenceFileName);
     private static readonly TimeSpan EditorLockDuration = TimeSpan.FromSeconds(4);
+    private static readonly TimeSpan SaveDebounceDelay = TimeSpan.FromMilliseconds(250);
 
     public string CurrentStatus { get; set; } = "Initializing...";
     public int CursorPosition { get; set; }
@@ -24,6 +25,7 @@ public class StatusStore
 
     private string? EditorTabId { get; set; }
     private DateTimeOffset? EditorLockExpiresAt { get; set; }
+    private CancellationTokenSource? _saveDebounceCts;
 
     private sealed class PersistenceData
     {
@@ -43,29 +45,11 @@ public class StatusStore
 
     public void Save()
     {
-        try
-        {
-            Directory.CreateDirectory(PersistenceDirectory);
-
-            var data = new PersistenceData
-            {
-                CurrentStatus = CurrentStatus,
-                CursorPosition = Math.Clamp(CursorPosition, 0, CurrentStatus.Length),
-                SelectionStart = Math.Clamp(SelectionStart, 0, CurrentStatus.Length),
-                SelectionEnd = Math.Clamp(SelectionEnd, 0, CurrentStatus.Length),
-                SelectionDirection = NormalizeSelectionDirection(SelectionDirection),
-                Revision = Revision,
-                CurrentTitle = CurrentTitle
-            };
-
-            string json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(PersistenceFilePath, json);
-            Console.WriteLine($"\n\x1b[90m[StatusStore]\x1b[0m Saved state to: {PersistenceFilePath}");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"\n\x1b[31m[Error]\x1b[0m Failed to save status: {ex.Message}");
-        }
+        CancellationTokenSource nextCts = new();
+        CancellationTokenSource? previousCts = Interlocked.Exchange(ref _saveDebounceCts, nextCts);
+        previousCts?.Cancel();
+        previousCts?.Dispose();
+        _ = FlushSaveAsync(nextCts);
     }
 
     public bool TryBeginUpdate(long revision)
@@ -232,6 +216,44 @@ public class StatusStore
         catch (Exception ex)
         {
             Console.WriteLine($"\n\x1b[31m[Error]\x1b[0m Failed to load status: {ex.Message}");
+        }
+    }
+
+    private async Task FlushSaveAsync(CancellationTokenSource cts)
+    {
+        try
+        {
+            await Task.Delay(SaveDebounceDelay, cts.Token);
+            Directory.CreateDirectory(PersistenceDirectory);
+
+            var data = new PersistenceData
+            {
+                CurrentStatus = CurrentStatus,
+                CursorPosition = Math.Clamp(CursorPosition, 0, CurrentStatus.Length),
+                SelectionStart = Math.Clamp(SelectionStart, 0, CurrentStatus.Length),
+                SelectionEnd = Math.Clamp(SelectionEnd, 0, CurrentStatus.Length),
+                SelectionDirection = NormalizeSelectionDirection(SelectionDirection),
+                Revision = Revision,
+                CurrentTitle = CurrentTitle
+            };
+
+            string json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(PersistenceFilePath, json);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"\n\x1b[31m[Error]\x1b[0m Failed to save status: {ex.Message}");
+        }
+        finally
+        {
+            if (ReferenceEquals(_saveDebounceCts, cts))
+            {
+                _saveDebounceCts = null;
+            }
+            cts.Dispose();
         }
     }
 
