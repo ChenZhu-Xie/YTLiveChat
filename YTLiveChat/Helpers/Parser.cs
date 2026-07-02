@@ -1399,14 +1399,32 @@ internal static partial class Parser
     public static Contracts.Models.ImagePart? ToImage(
         this List<Thumbnail>? thumbnails,
         string? alt = null
-    ) // Return contract type
+    )
     {
         Thumbnail? thumbnail = thumbnails?.LastOrDefault();
         return thumbnail == null || thumbnail.Url == null
             ? null
-            : new Contracts.Models.ImagePart // Use contract type
+            : new Contracts.Models.ImagePart
             {
                 Url = thumbnail.Url,
+                Alt = alt,
+            };
+    }
+
+    /// <summary>
+    /// Converts a list of URL sources (e.g. IconSource.Sources) to an ImagePart (contract model).
+    /// </summary>
+    public static Contracts.Models.ImagePart? ToImage(
+        this List<Source>? sources,
+        string? alt = null
+    )
+    {
+        Source? source = sources?.LastOrDefault();
+        return source == null || source.Url == null
+            ? null
+            : new Contracts.Models.ImagePart
+            {
+                Url = source.Url,
                 Alt = alt,
             };
     }
@@ -1605,6 +1623,24 @@ internal static partial class Parser
             };
         }
 
+        // ── Call-for-questions (Q&A) banner ──────────────────────────────────
+        LiveChatCallForQuestionsRenderer? qnaRenderer =
+            banner.Contents?.LiveChatCallForQuestionsRenderer;
+        if (qnaRenderer is not null)
+        {
+            return new Contracts.Models.CallForQuestionsBannerItem
+            {
+                ActionId = actionId!,
+                BannerType = Contracts.Models.BannerType.CallForQuestions,
+                QuestionMessage = qnaRenderer.QuestionMessage?.Runs?.ToMessageParts() ?? [],
+                CreatorHandle = qnaRenderer.CreatorAuthorName?.Text,
+                CreatorAvatar = qnaRenderer.CreatorAvatar?.Thumbnails?.ToImage(
+                    qnaRenderer.CreatorAuthorName?.Text
+                ),
+                FeatureLabel = qnaRenderer.FeatureLabel?.Text,
+            };
+        }
+
         // ── Redirect banner (LIVE_CHAT_BANNER_TYPE_CROSS_CHANNEL_REDIRECT) ──
         LiveChatBannerRedirectRenderer? redirectRenderer =
             banner.Contents?.LiveChatBannerRedirectRenderer;
@@ -1624,22 +1660,9 @@ internal static partial class Parser
                 }
             }
 
-            // Extract redirect video ID from inlineActionButton.buttonRenderer.command.watchEndpoint.videoId.
             // Null when the button is a "Learn more" link (urlEndpoint) rather than a "Go now" watchEndpoint.
-            string? redirectVideoId = null;
-            if (redirectRenderer.InlineActionButton.HasValue)
-            {
-                JsonElement btn = redirectRenderer.InlineActionButton.Value;
-                if (
-                    btn.TryGetProperty("buttonRenderer", out JsonElement btnRenderer)
-                    && btnRenderer.TryGetProperty("command", out JsonElement cmd)
-                    && cmd.TryGetProperty("watchEndpoint", out JsonElement watchEp)
-                    && watchEp.TryGetProperty("videoId", out JsonElement videoIdEl)
-                )
-                {
-                    redirectVideoId = videoIdEl.GetString();
-                }
-            }
+            string? redirectVideoId = redirectRenderer.InlineActionButton
+                ?.ButtonRenderer?.Command?.WatchEndpoint?.VideoId;
 
             Contracts.Models.MessagePart[] redirectMessage =
                 redirectRenderer.BannerMessage?.Runs?.ToMessageParts() ?? [];
@@ -2230,11 +2253,71 @@ internal static partial class Parser
         {
             Id = id!,
             AuthorHandle = authorHandle,
+            AuthorAvatar = vm.AuthorAvatar?.AvatarViewModel?.Image?.Sources?.ToImage(),
             Text = text,
             GiftItemName = giftItemName,
             JewelAmount = jewelAmount,
             GiftImageName = resource?.ImageName,
             GiftImageColor = resource?.ImageColor?.ToHex6Color(),
+            GiftImage = vm.GiftImage?.Sources?.ToImage(),
+        };
+    }
+
+    /// <summary>
+    /// Extracts a <see cref="Contracts.Models.CreatorGoalItem"/> from a
+    /// <c>showCreatorGoalTickerChipCommand</c> action.
+    /// Returns null for other action types or when required fields are absent.
+    /// </summary>
+    public static Contracts.Models.CreatorGoalItem? ToCreatorGoalItem(this Action action)
+    {
+        Models.Response.LiveChatTickerCreatorGoalViewModel? vm =
+            action.ShowCreatorGoalTickerChipCommand
+                ?.CreatorGoalTickerChip
+                ?.LiveChatTickerCreatorGoalViewModel;
+        if (vm is null)
+            return null;
+
+        string? id = vm.Id;
+        if (string.IsNullOrWhiteSpace(id))
+            return null;
+
+        string? entityKey = vm.CreatorGoalEntityKey;
+        if (string.IsNullOrWhiteSpace(entityKey))
+            return null;
+
+        string? a11yLabel = vm.A11yLabel;
+
+        // Derive GoalType from a11yLabel: "See Super Chat goal" → "Super Chat Goal"
+        string? goalType = null;
+        if (!string.IsNullOrWhiteSpace(a11yLabel))
+        {
+            ReadOnlySpan<char> raw = a11yLabel.AsSpan().Trim();
+            const string prefix = "See ";
+            if (raw.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                raw = raw.Slice(prefix.Length);
+            goalType = System.Globalization.CultureInfo.InvariantCulture.TextInfo
+                .ToTitleCase(raw.ToString().ToLowerInvariant());
+        }
+
+        string? progressLabel = vm.OnClickCommand
+            ?.InnertubeCommand
+            ?.ShowEngagementPanelEndpoint
+            ?.EngagementPanel
+            ?.EngagementPanelSectionListRenderer
+            ?.Content
+            ?.SectionListRenderer
+            ?.Contents
+            ?.FirstOrDefault()
+            ?.CreatorGoalProgressFlowViewModel
+            ?.ProgressCountA11yLabel;
+
+        return new Contracts.Models.CreatorGoalItem
+        {
+            Id = id!,
+            EntityKey = entityKey!,
+            GoalType = goalType,
+            ProgressLabel = progressLabel,
+            AccessibilityLabel = a11yLabel,
         };
     }
 
