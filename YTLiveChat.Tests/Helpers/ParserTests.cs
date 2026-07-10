@@ -1255,6 +1255,64 @@ public class ParserTests
     }
 
     [TestMethod]
+    public void ExtractStreamCandidatesFromStreamsPage_ParsesLockupViewModelLive()
+    {
+        string html =
+            """
+            <html><body><script>
+            var ytInitialData = {
+              "contents": {
+                "lockupViewModel": {
+                  "contentId": "KoUVHsP-jos",
+                  "contentImage": {
+                    "thumbnailViewModel": {
+                      "image": {
+                        "sources": [
+                          {"url": "https://img.example/low.jpg", "width": 168},
+                          {"url": "https://img.example/high.jpg", "width": 336}
+                        ]
+                      },
+                      "overlays": [{
+                        "thumbnailBottomOverlayViewModel": {
+                          "badges": [{
+                            "thumbnailBadgeViewModel": {
+                              "icon": {
+                                "sources": [{
+                                  "clientResource": {"imageName": "LIVE"}
+                                }]
+                              },
+                              "text": "LIVE",
+                              "badgeStyle": "THUMBNAIL_OVERLAY_BADGE_STYLE_LIVE"
+                            }
+                          }]
+                        }
+                      }]
+                    }
+                  },
+                  "metadata": {
+                    "lockupMetadataViewModel": {
+                      "title": {"content": "Current live title"}
+                    }
+                  }
+                }
+              }
+            };
+            </script></body></html>
+            """;
+
+        IReadOnlyList<StreamPageCandidate> candidates = Parser.ExtractStreamCandidatesFromStreamsPage(
+            html
+        );
+
+        Assert.AreEqual(1, candidates.Count);
+        Assert.AreEqual("KoUVHsP-jos", candidates[0].LiveId);
+        Assert.IsTrue(candidates[0].IsLive);
+        Assert.IsFalse(candidates[0].IsUpcoming);
+        Assert.AreEqual("Current live title", candidates[0].Title);
+        Assert.AreEqual("https://img.example/high.jpg", candidates[0].ThumbnailUrl);
+    }
+
+    [TestMethod]
     public void ExtractStreamCandidatesFromStreamsPage_RealSnapshots_ParsesLiveAndUpcoming()
     {
         IReadOnlyList<StreamPageCandidate> candidates = Parser.ExtractStreamCandidatesFromStreamsPage(

@@ -1,8 +1,10 @@
-using System.Text.RegularExpressions;
 using System.Text.Json;
+using System.Text.RegularExpressions;
+
 using YTLiveChat.Contracts.Models; // Use the contract namespace
 using YTLiveChat.Models; // Internal models namespace
 using YTLiveChat.Models.Response; // Internal response models namespace
+
 using Action = YTLiveChat.Models.Response.Action; // Explicitly use internal Action
 
 namespace YTLiveChat.Helpers;
@@ -276,6 +278,11 @@ internal static partial class Parser
                         AddStreamCandidateFromVideoRenderer(property.Value, byId, order);
                     }
 
+                    if (property.NameEquals("lockupViewModel"))
+                    {
+                        AddStreamCandidateFromLockupViewModel(property.Value, byId, order);
+                    }
+
                     CollectVideoRenderers(property.Value, byId, order);
                 }
                 break;
@@ -360,15 +367,120 @@ internal static partial class Parser
             lengthText
         );
 
-        if (!byId.ContainsKey(liveIdNonNull))
+        AddOrMergeStreamCandidate(candidate, byId, order);
+    }
+
+    private static void AddStreamCandidateFromLockupViewModel(
+        JsonElement lockupViewModel,
+        Dictionary<string, StreamPageCandidate> byId,
+        List<string> order
+    )
+    {
+        if (
+            !lockupViewModel.TryGetProperty("contentId", out JsonElement contentIdElement)
+            || contentIdElement.ValueKind != JsonValueKind.String
+        )
         {
-            byId[liveIdNonNull] = candidate;
-            order.Add(liveIdNonNull);
             return;
         }
 
-        StreamPageCandidate existing = byId[liveIdNonNull];
-        byId[liveIdNonNull] = new(
+        string? liveId = contentIdElement.GetString();
+        if (string.IsNullOrWhiteSpace(liveId))
+        {
+            return;
+        }
+        string liveIdNonNull = liveId!;
+
+        bool isLive = ContainsStringValue(
+            lockupViewModel,
+            static value =>
+                string.Equals(value, "LIVE", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(
+                    value,
+                    "THUMBNAIL_OVERLAY_BADGE_STYLE_LIVE",
+                    StringComparison.OrdinalIgnoreCase
+                )
+        );
+        bool isUpcoming = ContainsStringValue(
+            lockupViewModel,
+            static value =>
+                string.Equals(value, "UPCOMING", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(
+                    value,
+                    "THUMBNAIL_OVERLAY_BADGE_STYLE_UPCOMING",
+                    StringComparison.OrdinalIgnoreCase
+                )
+        );
+
+        string? title = null;
+        if (
+            TryGetNestedProperty(
+                lockupViewModel,
+                out JsonElement titleElement,
+                "metadata",
+                "lockupMetadataViewModel",
+                "title",
+                "content"
+            )
+            && titleElement.ValueKind == JsonValueKind.String
+        )
+        {
+            title = titleElement.GetString();
+        }
+
+        string? thumbnailUrl = null;
+        if (
+            TryGetNestedProperty(
+                lockupViewModel,
+                out JsonElement imageElement,
+                "contentImage",
+                "thumbnailViewModel",
+                "image"
+            )
+        )
+        {
+            thumbnailUrl = ExtractBestThumbnailFromImageSources(imageElement);
+        }
+
+        long? upcomingStartTime = null;
+        if (
+            TryFindFirstStringProperty(lockupViewModel, "startTime", out string? startTime)
+            && long.TryParse(startTime, out long parsedStart)
+        )
+        {
+            upcomingStartTime = parsedStart;
+        }
+
+        StreamPageCandidate candidate = new(
+            liveIdNonNull,
+            isLive,
+            isUpcoming,
+            upcomingStartTime,
+            null,
+            title,
+            thumbnailUrl,
+            null,
+            null
+        );
+
+        AddOrMergeStreamCandidate(candidate, byId, order);
+    }
+
+    private static void AddOrMergeStreamCandidate(
+        StreamPageCandidate candidate,
+        Dictionary<string, StreamPageCandidate> byId,
+        List<string> order
+    )
+    {
+        if (!byId.ContainsKey(candidate.LiveId))
+        {
+            byId[candidate.LiveId] = candidate;
+            order.Add(candidate.LiveId);
+            return;
+        }
+
+        StreamPageCandidate existing = byId[candidate.LiveId];
+        byId[candidate.LiveId] = new(
             existing.LiveId,
             existing.IsLive || candidate.IsLive,
             existing.IsUpcoming || candidate.IsUpcoming,
@@ -407,6 +519,122 @@ internal static partial class Parser
         }
 
         return null;
+    }
+
+    private static bool TryGetNestedProperty(
+        JsonElement element,
+        out JsonElement value,
+        params string[] path
+    )
+    {
+        value = element;
+        foreach (string segment in path)
+        {
+            if (
+                value.ValueKind != JsonValueKind.Object
+                || !value.TryGetProperty(segment, out JsonElement next)
+            )
+            {
+                value = default;
+                return false;
+            }
+
+            value = next;
+        }
+
+        return true;
+    }
+
+    private static string? ExtractBestThumbnailFromImageSources(JsonElement imageElement)
+    {
+        if (
+            !imageElement.TryGetProperty("sources", out JsonElement sources)
+            || sources.ValueKind != JsonValueKind.Array
+            || sources.GetArrayLength() == 0
+        )
+        {
+            return null;
+        }
+
+        JsonElement lastSource = sources[sources.GetArrayLength() - 1];
+        return lastSource.TryGetProperty("url", out JsonElement urlElement)
+            && urlElement.ValueKind == JsonValueKind.String
+            ? urlElement.GetString()
+            : null;
+    }
+
+    private static bool TryFindFirstStringProperty(
+        JsonElement element,
+        string propertyName,
+        out string? value
+    )
+    {
+        value = null;
+        switch (element.ValueKind)
+        {
+            case JsonValueKind.Object:
+                foreach (JsonProperty property in element.EnumerateObject())
+                {
+                    if (
+                        property.NameEquals(propertyName)
+                        && property.Value.ValueKind == JsonValueKind.String
+                    )
+                    {
+                        value = property.Value.GetString();
+                        return !string.IsNullOrWhiteSpace(value);
+                    }
+
+                    if (TryFindFirstStringProperty(property.Value, propertyName, out value))
+                    {
+                        return true;
+                    }
+                }
+                break;
+            case JsonValueKind.Array:
+                foreach (JsonElement item in element.EnumerateArray())
+                {
+                    if (TryFindFirstStringProperty(item, propertyName, out value))
+                    {
+                        return true;
+                    }
+                }
+                break;
+        }
+
+        return false;
+    }
+
+    private static bool ContainsStringValue(
+        JsonElement element,
+        Func<string, bool> predicate
+    )
+    {
+        switch (element.ValueKind)
+        {
+            case JsonValueKind.String:
+                string? value = element.GetString();
+                return value is not null && predicate(value);
+            case JsonValueKind.Object:
+                foreach (JsonProperty property in element.EnumerateObject())
+                {
+                    if (ContainsStringValue(property.Value, predicate))
+                    {
+                        return true;
+                    }
+                }
+                break;
+            case JsonValueKind.Array:
+                foreach (JsonElement item in element.EnumerateArray())
+                {
+                    if (ContainsStringValue(item, predicate))
+                    {
+                        return true;
+                    }
+                }
+                break;
+        }
+
+        return false;
     }
 
     /// <summary>
