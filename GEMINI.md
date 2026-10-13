@@ -21,7 +21,7 @@ Unofficial .NET library for reading YouTube live chat via InnerTube (YouTube's i
 ## Tech Stack
 
 *   **Language:** C# (Latest / C# 13+)
-*   **Runtime/SDK:** .NET 10.0 (Global SDK `10.0.103`)
+*   **Runtime/SDK:** .NET 10.0 (Global SDK `10.0.401`)
 *   **Target Frameworks:** `net10.0`, `netstandard2.1`, `netstandard2.0`
 *   **Key Libraries:**
     *   `System.Text.Json` (High-performance JSON)
