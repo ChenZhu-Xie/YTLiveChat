@@ -1118,13 +1118,13 @@ public class ParserTests
     }
 
     [TestMethod]
-    public void GetOptionsFromLivePage_MissingLiveIdCanonical_ThrowsException()
+    public void GetOptionsFromLivePage_MissingLiveId_ThrowsException()
     {
         string html = UtilityTestData
             .GetSampleLivePageHtml(" ", "API_K", "CLIENT_V", "CONT")
             .Replace("<link rel=\"canonical\" href=\"https://www.youtube.com/watch?v= \">", "");
         Exception ex = Assert.Throws<Exception>(() => Parser.GetOptionsFromLivePage(html));
-        Assert.IsTrue(ex.Message.Contains("Live Stream ID not found"));
+        StringAssert.Contains(ex.Message, "Video ID not found in page source");
     }
 
     [TestMethod]

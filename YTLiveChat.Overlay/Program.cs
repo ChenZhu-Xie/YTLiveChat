@@ -80,6 +80,22 @@ var jsonOptions = new JsonSerializerOptions
     WriteIndented = false
 };
 
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.ContentSecurityPolicy =
+        "default-src 'self'; " +
+        "base-uri 'none'; " +
+        "connect-src 'self' ws://localhost:* ws://127.0.0.1:*; " +
+        "frame-ancestors 'none'; " +
+        "img-src https:; " +
+        "object-src 'none'; " +
+        "script-src 'self' 'unsafe-inline'; " +
+        "style-src 'self' 'unsafe-inline'";
+    context.Response.Headers.XContentTypeOptions = "nosniff";
+    context.Response.Headers["Referrer-Policy"] = "no-referrer";
+    await next();
+});
+
 app.UseWebSockets();
 app.UseDefaultFiles();
 app.UseStaticFiles();

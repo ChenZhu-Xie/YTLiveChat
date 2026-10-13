@@ -380,6 +380,45 @@
 
         connect(); // 初始化连接
 
+        const fallbackAvatarUrl = 'https://www.gstatic.com/images/branding/product/1x/avatar_circle_blue_512dp.png';
+
+        function asText(value) {
+            return typeof value === 'string' ? value : '';
+        }
+
+        function safeImageUrl(value) {
+            const rawUrl = asText(value);
+            if (!rawUrl) {
+                return null;
+            }
+
+            try {
+                const normalizedUrl = rawUrl.startsWith('//') ? `https:${rawUrl}` : rawUrl;
+                const url = new URL(normalizedUrl);
+                return url.protocol === 'https:' ? url.href : null;
+            } catch {
+                return null;
+            }
+        }
+
+        function createImage(className, url, alt, fallbackUrl = null) {
+            const image = document.createElement('img');
+            image.className = className;
+            image.alt = asText(alt);
+            image.title = image.alt;
+            image.referrerPolicy = 'no-referrer';
+            image.decoding = 'async';
+            image.src = url;
+            image.addEventListener('error', () => {
+                if (fallbackUrl && image.src !== fallbackUrl) {
+                    image.src = fallbackUrl;
+                    return;
+                }
+                image.replaceWith(document.createTextNode(image.alt));
+            });
+            return image;
+        }
+
         function addMessage(msg) {
             if (msg.id && seenIds.has(msg.id)) {
                 return;
@@ -396,21 +435,17 @@
             if (debugEnabled) {
                 console.log("收到消息:", msg);
             }
-            let avatarUrl = msg.avatar;
-            if (avatarUrl && avatarUrl.startsWith('//')) {
-                avatarUrl = 'https:' + avatarUrl;
-            }
-            if (!avatarUrl) {
-                avatarUrl = 'https://www.gstatic.com/images/branding/product/1x/avatar_circle_blue_512dp.png';
-            }
+
+            const authorName = asText(msg.author);
+            const avatarUrl = safeImageUrl(msg.avatar) || fallbackAvatarUrl;
 
             const div = document.createElement('div');
             div.className = 'message-box';
 
             // 选一个固定的动画 (基于作者名哈希)
             let nameHash = 0;
-            for (let i = 0; i < msg.author.length; i++) {
-                nameHash = msg.author.charCodeAt(i) + ((nameHash << 5) - nameHash);
+            for (let i = 0; i < authorName.length; i++) {
+                nameHash = authorName.charCodeAt(i) + ((nameHash << 5) - nameHash);
             }
             const animIndex = Math.abs(nameHash) % 10; // 我们定义了 10 种动画
             div.classList.add(`anim-${animIndex}`);
@@ -419,39 +454,53 @@
             if (msg.isMembership) div.classList.add('membership');
 
             const isSpecial = msg.isSuperChat || msg.isMembership;
-            const authorColor = isSpecial ? '' : `style="color: ${stringToColor(msg.author)}"`;
 
-            let messageContent = '';
-            if (msg.parts && msg.parts.length > 0) {
+            div.appendChild(createImage('avatar', avatarUrl, '', fallbackAvatarUrl));
+
+            const content = document.createElement('div');
+            content.className = 'content';
+
+            const author = document.createElement('div');
+            author.className = 'author';
+            if (!isSpecial) {
+                author.style.color = stringToColor(authorName);
+            }
+            author.textContent = msg.isSuperChat
+                ? `${authorName} 💰 ${asText(msg.amount)}`
+                : authorName;
+            content.appendChild(author);
+
+            const message = document.createElement('div');
+            message.className = 'text';
+            if (Array.isArray(msg.parts) && msg.parts.length > 0) {
                 msg.parts.forEach(part => {
-                    if (part.text) {
-                        messageContent += `<span>${part.text}</span>`;
-                    } else if (part.url) {
-                        messageContent += `<img class="emoji" src="${part.url}" alt="${part.emojiText || part.alt || ''}" title="${part.emojiText || part.alt || ''}" onerror="this.replaceWith(this.alt)" />`;
+                    if (typeof part?.text === 'string') {
+                        const span = document.createElement('span');
+                        span.textContent = part.text;
+                        message.appendChild(span);
+                        return;
+                    }
+
+                    const imageUrl = safeImageUrl(part?.url);
+                    if (imageUrl) {
+                        const alt = asText(part.emojiText || part.alt);
+                        message.appendChild(createImage('emoji', imageUrl, alt));
                     }
                 });
             } else {
-                messageContent = msg.text;
+                message.textContent = asText(msg.text);
+            }
+            content.appendChild(message);
+
+            const stickerUrl = safeImageUrl(msg.sticker);
+            if (stickerUrl) {
+                const stickerBox = document.createElement('div');
+                stickerBox.className = 'sticker-box';
+                stickerBox.appendChild(createImage('sticker', stickerUrl, 'Super Chat sticker'));
+                content.appendChild(stickerBox);
             }
 
-            let stickerContent = '';
-            if (msg.sticker) {
-                stickerContent = `
-                    <div class="sticker-box">
-                        <img class="sticker" src="${msg.sticker}" referrerpolicy="no-referrer" />
-                    </div>
-                `;
-            }
-
-            const content = `
-                <img class="avatar" src="${avatarUrl}" referrerpolicy="no-referrer" onerror="this.src='https://www.gstatic.com/images/branding/product/1x/avatar_circle_blue_512dp.png'" />
-                <div class="content">
-                    <div class="author" ${authorColor}>${msg.author} ${msg.isSuperChat ? '💰 ' + msg.amount : ''}</div>
-                    <div class="text">${messageContent}</div>
-                    ${stickerContent}
-                </div>
-            `;
-            div.innerHTML = content;
+            div.appendChild(content);
             container.appendChild(div);
 
             // 自动移除旧消息 (保持一定数量，防止内存占用)
