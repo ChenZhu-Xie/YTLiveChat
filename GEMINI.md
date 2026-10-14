@@ -37,6 +37,10 @@ Unofficial .NET library for reading YouTube live chat via InnerTube (YouTube's i
 *   **Run Tests:** `dotnet test` (Uses `Microsoft.Testing.Platform`)
 *   **Run Diagnostic Tool:** `dotnet run --project YTLiveChat.Tools -- <logPath>`
 *   **Check Code Style:** `dotnet build` (Enforced via `EnforceCodeStyleInBuild`)
+*   **Run Overlay:** `.\YTLiveChat.Overlay.ps1` is the default command for routine Overlay development and use.
+*   **Run TerminalStatus:** `.\YTLiveChat.TerminalStatus\YTLiveChat.TerminalStatus.ps1` is the default command for routine TerminalStatus development and use.
+
+The Overlay and TerminalStatus launcher scripts stop the existing app instance, rebuild the Debug configuration, and restart it in a hidden window. Use `-Console` for a foreground session, `-Release` for a Release build, or `-StopOnly` to stop the app without restarting it. Prefer these scripts over direct `dotnet run` commands when rebuilding or restarting either UI host.
 
 ## Development Conventions
 

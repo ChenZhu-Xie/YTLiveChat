@@ -10,7 +10,10 @@ Use the .NET CLI from the repository root:
 - `dotnet build YTLiveChat.sln -c Debug` builds the full solution.
 - `dotnet test YTLiveChat.Tests/YTLiveChat.Tests.csproj -c Debug` runs the MSTest suite.
 - `dotnet run --project YTLiveChat.Example` launches the sample console app.
-- `dotnet run --project YTLiveChat.Overlay` or `YTLiveChat.TerminalStatus` runs the UI hosts for manual checks.
+- `.\YTLiveChat.Overlay.ps1` is the default command for routine Overlay development and use.
+- `.\YTLiveChat.TerminalStatus\YTLiveChat.TerminalStatus.ps1` is the default command for routine TerminalStatus development and use.
+
+Both launcher scripts stop the existing app instance, rebuild the Debug configuration, and restart it in a hidden window. Use `-Console` for a foreground session, `-Release` for a Release build, or `-StopOnly` to stop the app without restarting it. Prefer these scripts over direct `dotnet run` commands when rebuilding or restarting either UI host.
 
 ## Coding Style & Naming Conventions
 This repo uses C# with nullable reference types and implicit usings enabled. Follow `.editorconfig`: 4-space indentation, CRLF line endings, file-scoped namespaces, and `System` usings first. Prefer explicit types over `var` unless the type is obvious, and use PascalCase for types/methods/properties; interfaces must start with `I`. Keep new parser logic close to the existing structure in `Helpers/Parser.cs` and response models in `Models/Response/LiveChatResponse.cs`.
