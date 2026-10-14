@@ -38,7 +38,7 @@
         #chat-container {
             display: flex;
             flex-direction: column;
-            justify-content: flex-end;
+            justify-content: flex-start;
             height: 100%;
             width: 100%;
             padding: calc(10px * var(--ui-scale));
@@ -436,7 +436,7 @@
                 console.log("收到消息:", msg);
             }
 
-            const authorName = asText(msg.author);
+            const authorName = asText(msg.author).replace(/^@/, '');
             const avatarUrl = safeImageUrl(msg.avatar) || fallbackAvatarUrl;
 
             const div = document.createElement('div');
