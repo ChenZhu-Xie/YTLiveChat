@@ -44,9 +44,17 @@
             padding: calc(10px * var(--ui-scale));
             padding-bottom: calc(15px * var(--ui-scale));
             gap: calc(6px * var(--ui-scale));
+            overflow-y: auto;
+            scrollbar-width: none;
+            overscroll-behavior: none;
+        }
+
+        #chat-container::-webkit-scrollbar {
+            display: none;
         }
 
         .message-box {
+            flex-shrink: 0;
             background: rgba(0, 0, 0, 0.52);
             border: calc(1px * var(--ui-scale)) solid rgba(255, 255, 255, 0.18);
             border-radius: calc(8px * var(--ui-scale));
@@ -333,7 +341,24 @@
         const container = document.getElementById('chat-container');
         const seenIds = new Set();
         let socket;
+        let scrollAnimationFrame = null;
         const debugEnabled = new URLSearchParams(window.location.search).has("debug");
+
+        function scrollToLatest() {
+            if (scrollAnimationFrame !== null) {
+                cancelAnimationFrame(scrollAnimationFrame);
+            }
+
+            scrollAnimationFrame = requestAnimationFrame(() => {
+                container.scrollTo({
+                    top: container.scrollHeight,
+                    behavior: 'smooth'
+                });
+                scrollAnimationFrame = null;
+            });
+        }
+
+        window.addEventListener('resize', scrollToLatest);
 
         // 根据字符串生成固定颜色
         function stringToColor(str) {
@@ -507,6 +532,8 @@
             if (container.children.length > 50) {
                 container.removeChild(container.firstChild);
             }
+
+            scrollToLatest();
         }
     </script>
 </body>
