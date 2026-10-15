@@ -13,30 +13,32 @@
         body {
             margin: 0;
             padding: 0;
-            background-color: #1a1b26; /* Tokyo Night dark */
+            background-color: #2c1b15;
             font-family: 'Inconsolata', monospace;
-            color: #c0caf5;
+            color: #f3d58d;
             display: flex;
             flex-direction: column;
             height: 100vh;
         }
 
         .header {
-            background: #24283b;
+            background:
+                repeating-linear-gradient(0deg, rgba(55, 25, 14, 0.16) 0 1px, transparent 1px 8px),
+                linear-gradient(90deg, #66351f, #92502e, #66351f);
             padding: 10px 20px;
             display: flex;
             align-items: center;
-            border-bottom: 1px solid #414868;
+            border-bottom: 2px solid #4d2819;
         }
 
         .title-input {
-            background: linear-gradient(90deg, #89ddff 0%, #82aaff 46%, #c099ff 100%);
+            background: linear-gradient(90deg, #ffe5a1 0%, #e3b75e 58%, #9fca73 100%);
             -webkit-background-clip: text;
             background-clip: text;
             /* 关键：直接使用 color 而不是 text-fill-color，或者确保 caret-color 优先级最高 */
             color: transparent; 
-            caret-color: #89ddff !important;
-            border: 1px solid #414868;
+            caret-color: #ffe5a1 !important;
+            border: 1px solid #6f3d25;
             padding: 5px 10px;
             border-radius: 4px;
             font-family: inherit;
@@ -51,7 +53,7 @@
             position: relative;
             margin-left: 10px;
             flex-grow: 1;
-            border: 1px solid #414868;
+            border: 1px solid #5b301f;
             border-radius: 4px;
             overflow: hidden;
         }
@@ -79,7 +81,7 @@
 
         .title-backdrop-text {
             display: inline-block;
-            background: linear-gradient(90deg, #89ddff 0%, #82aaff 46%, #c099ff 100%);
+            background: linear-gradient(90deg, #ffe5a1 0%, #e3b75e 58%, #9fca73 100%);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
@@ -90,7 +92,7 @@
             background: transparent;
             color: transparent;
             -webkit-text-fill-color: transparent;
-            caret-color: #89ddff !important;
+            caret-color: #ffe5a1 !important;
             border: none;
             border-radius: 0;
             margin-left: 0;
@@ -102,9 +104,12 @@
             flex-grow: 1;
             margin: 20px;
             position: relative;
-            background: #1a1b26;
-            border: 1px solid #414868;
-            border-radius: 8px;
+            background:
+                repeating-linear-gradient(0deg, rgba(105, 61, 31, 0.035) 0 1px, transparent 1px 5px),
+                linear-gradient(145deg, #ffe6a2, #f1cf82);
+            border: 3px solid #5b301f;
+            border-radius: 3px;
+            box-shadow: inset 0 0 0 2px rgba(255, 237, 169, 0.65), 0 4px 0 rgba(52, 27, 18, 0.7);
             overflow: hidden;
         }
 
@@ -134,14 +139,14 @@
         #statusInput {
             color: transparent !important; /* 强制透明，让背景层显现 */
             -webkit-text-fill-color: transparent !important;
-            caret-color: #9ece6a;
+            caret-color: #4f7138;
             outline: none;
             resize: none;
             z-index: 2;
         }
 
         #backdrop {
-            color: #9ece6a;
+            color: #4a2c21;
             z-index: 1;
             pointer-events: none;
             overflow-y: hidden; /* Scrolled via textarea */
@@ -152,14 +157,14 @@
             bottom: 30px;
             right: 40px;
             font-size: 12px;
-            color: #565f89;
+            color: #e9c67a;
             z-index: 10;
-            background: rgba(26, 27, 38, 0.8);
+            background: rgba(74, 39, 25, 0.9);
             padding: 2px 8px;
             border-radius: 4px;
         }
 
-        label { font-size: 14px; color: #565f89; }
+        label { font-size: 14px; color: #f0cf88; }
     </style>
 </head>
 <body>
@@ -208,14 +213,14 @@
         const debugEnabled = new URLSearchParams(window.location.search).has("debug");
 
         const colors = [
-            '#82aaff', // blue
-            '#c099ff', // violet
-            '#89ddff', // cyan
-            '#7fdbca', // teal
-            '#f2a6d8', // pink
-            '#a8d8a0', // green
-            '#b8e8e3', // aqua
-            '#e8c98d'  // amber
+            '#355e3b', // leaf green
+            '#8b3f4d', // berry
+            '#2f6570', // lake blue
+            '#70432f', // soil
+            '#a44f2a', // pumpkin
+            '#5d6f32', // olive
+            '#675071', // wild plum
+            '#8b5c20'  // harvest gold
         ];
 
         function escapeHtml(text) {
@@ -465,7 +470,7 @@
             statusInput.readOnly = Boolean(isOwnedByAnotherTab);
             titleInput.readOnly = Boolean(isOwnedByAnotherTab);
             syncStatus.innerText = isOwnedByAnotherTab ? "LOCKED" : (isConnected ? "CONNECTED" : "OFFLINE");
-            syncStatus.style.color = isOwnedByAnotherTab ? "#e0af68" : (isConnected ? "#9ece6a" : "#f7768e");
+            syncStatus.style.color = isOwnedByAnotherTab ? "#e3b75e" : (isConnected ? "#9fca73" : "#e17861");
             debugLog("applyLockUi", { isOwnedByAnotherTab, isConnected });
         }
 
