@@ -25,6 +25,11 @@
             --border-animation-duration: 8s;
             --title-animation-duration: 10s;
             --title-highlight-duration: 7s;
+            --panel-ink: #101521;
+            --accent-blue: #82aaff;
+            --accent-cyan: #89ddff;
+            --accent-violet: #c099ff;
+            --accent-teal: #7fdbca;
         }
 
         body {
@@ -46,24 +51,25 @@
             position: relative;
             isolation: isolate;
             background:
-                linear-gradient(rgba(26, 27, 38, 0.9), rgba(26, 27, 38, 0.9)) padding-box,
+                radial-gradient(circle at 12% 0%, rgba(137, 221, 255, 0.08), transparent 42%) padding-box,
+                radial-gradient(circle at 100% 100%, rgba(192, 153, 255, 0.07), transparent 46%) padding-box,
+                linear-gradient(rgba(16, 21, 33, 0.92), rgba(16, 21, 33, 0.92)) padding-box,
                 conic-gradient(
                     from var(--border-angle),
-                    #7aa2f7 0deg,
-                    #7dcfff 72deg,
-                    #9ece6a 132deg,
-                    #e0af68 190deg,
-                    #f7768e 252deg,
-                    #bb9af7 315deg,
-                    #7aa2f7 360deg) border-box;
+                    #82aaff 0deg,
+                    #89ddff 72deg,
+                    #7fdbca 144deg,
+                    #9d8cff 216deg,
+                    #c099ff 288deg,
+                    #82aaff 360deg) border-box;
             border: calc(2px * var(--ui-scale)) solid transparent;
             width: 100%;
             height: 100%;
             display: flex;
             flex-direction: column;
             box-shadow:
-                inset 0 0 calc(12px * var(--ui-scale)) rgba(122, 162, 247, 0.08),
-                0 0 calc(10px * var(--ui-scale)) rgba(187, 154, 247, 0.18);
+                inset 0 0 calc(14px * var(--ui-scale)) rgba(137, 221, 255, 0.07),
+                0 0 calc(10px * var(--ui-scale)) rgba(130, 170, 255, 0.16);
             animation: rotate-border-gradient var(--border-animation-duration) linear infinite;
         }
 
@@ -74,13 +80,13 @@
             background:
                 linear-gradient(
                     110deg,
-                    rgba(36, 40, 59, 0.96) 0%,
-                    rgba(36, 40, 59, 0.96) 22%,
-                    rgba(122, 162, 247, 0.24) 38%,
-                    rgba(187, 154, 247, 0.28) 50%,
-                    rgba(247, 118, 142, 0.2) 62%,
-                    rgba(36, 40, 59, 0.96) 78%,
-                    rgba(36, 40, 59, 0.96) 100%);
+                    rgba(24, 31, 48, 0.96) 0%,
+                    rgba(24, 31, 48, 0.96) 22%,
+                    rgba(130, 170, 255, 0.2) 38%,
+                    rgba(192, 153, 255, 0.22) 50%,
+                    rgba(127, 219, 202, 0.16) 62%,
+                    rgba(24, 31, 48, 0.96) 78%,
+                    rgba(24, 31, 48, 0.96) 100%);
             background-size: 260% 100%;
             /* 进一步压缩高度：上下 padding 从 12px 减为 6px */
             padding: calc(6px * var(--ui-scale)) calc(15px * var(--ui-scale));
@@ -101,15 +107,14 @@
             background: linear-gradient(
                 90deg,
                 transparent 0%,
-                #7aa2f7 18%,
-                #7dcfff 34%,
-                #9ece6a 48%,
-                #e0af68 62%,
-                #f7768e 78%,
-                #bb9af7 92%,
+                #82aaff 18%,
+                #89ddff 36%,
+                #7fdbca 52%,
+                #9d8cff 70%,
+                #c099ff 88%,
                 transparent 100%);
             background-size: 200% 100%;
-            box-shadow: 0 0 calc(6px * var(--ui-scale)) rgba(125, 207, 255, 0.5);
+            box-shadow: 0 0 calc(6px * var(--ui-scale)) rgba(137, 221, 255, 0.42);
             animation: slide-title-highlight var(--title-highlight-duration) linear infinite;
         }
 
@@ -126,15 +131,16 @@
         }
 
         #title {
-            background: linear-gradient(to right, #4a95e3, #c16781);
+            background: linear-gradient(90deg, #89ddff 0%, #82aaff 46%, #c099ff 100%);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
         .content {
             /* 极大压缩边距：padding 从 30px 减为 10px (上) 和 12px (左) */
             padding: calc(10px * var(--ui-scale)) calc(12px * var(--ui-scale));
-            color: #9ece6a; 
+            color: #a9bff8;
             font-size: calc(22px * var(--ui-scale));
             line-height: 1.4; /* 稍微压缩行高，允许更多行 */
             white-space: pre-wrap;
@@ -148,16 +154,16 @@
         }
 
         .cursor {
-            background: #9ece6a; 
-            color: #1a1b26;
+            background: var(--accent-cyan);
+            color: var(--panel-ink);
             animation: blink 1s infinite;
             display: inline; /* 关键：改为 inline 避免破坏换行 */
             padding: calc(1px * var(--ui-scale)) 0;
         }
 
         .selection {
-            background: rgba(158, 206, 106, 0.28);
-            color: #d7ffb5;
+            background: rgba(137, 221, 255, 0.24);
+            color: #e5f7ff;
         }
 
         .selection-cursor {
@@ -222,14 +228,14 @@
         window.addEventListener("resize", updateUiScale);
 
         const colors = [
-            '#7aa2f7', // blue
-            '#bb9af7', // purple
-            '#7dcfff', // cyan
-            '#e0af68', // yellow
-            '#f7768e', // red
-            '#9ece6a', // green
-            '#b4f9f8', // aqua
-            '#ff9e64'  // orange
+            '#82aaff', // blue
+            '#c099ff', // violet
+            '#89ddff', // cyan
+            '#7fdbca', // teal
+            '#f2a6d8', // pink
+            '#a8d8a0', // green
+            '#b8e8e3', // aqua
+            '#e8c98d'  // amber
         ];
 
         function escapeHtml(text) {
@@ -288,9 +294,9 @@
                     const color = colors[currentLineIndex % colors.length];
                     const charAtCursor = msg[i] || " ";
                     if (charAtCursor === '\n') {
-                        resultHtml += `<span class="cursor" style="background: ${color}; color: #1a1b26;">&nbsp;</span>`;
+                        resultHtml += `<span class="cursor" style="background: ${color}; color: #101521;">&nbsp;</span>`;
                     } else {
-                        resultHtml += `<span class="cursor" style="background: ${color}; color: #1a1b26;">${escapeHtml(charAtCursor)}</span>`;
+                        resultHtml += `<span class="cursor" style="background: ${color}; color: #101521;">${escapeHtml(charAtCursor)}</span>`;
                         continue; // Skip the character we just rendered as cursor
                     }
                 }

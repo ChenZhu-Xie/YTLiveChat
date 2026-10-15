@@ -30,12 +30,12 @@
         }
 
         .title-input {
-            background: linear-gradient(to right, #4a95e3, #c16781);
+            background: linear-gradient(90deg, #89ddff 0%, #82aaff 46%, #c099ff 100%);
             -webkit-background-clip: text;
             background-clip: text;
             /* 关键：直接使用 color 而不是 text-fill-color，或者确保 caret-color 优先级最高 */
             color: transparent; 
-            caret-color: #4a95e3 !important; 
+            caret-color: #89ddff !important;
             border: 1px solid #414868;
             padding: 5px 10px;
             border-radius: 4px;
@@ -79,7 +79,7 @@
 
         .title-backdrop-text {
             display: inline-block;
-            background: linear-gradient(90deg, #4a95e3 0%, #7aa2f7 35%, #bb9af7 68%, #c16781 100%);
+            background: linear-gradient(90deg, #89ddff 0%, #82aaff 46%, #c099ff 100%);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
@@ -90,7 +90,7 @@
             background: transparent;
             color: transparent;
             -webkit-text-fill-color: transparent;
-            caret-color: #4a95e3 !important;
+            caret-color: #89ddff !important;
             border: none;
             border-radius: 0;
             margin-left: 0;
@@ -208,14 +208,14 @@
         const debugEnabled = new URLSearchParams(window.location.search).has("debug");
 
         const colors = [
-            '#7aa2f7', // blue
-            '#bb9af7', // purple
-            '#7dcfff', // cyan
-            '#e0af68', // yellow
-            '#f7768e', // red
-            '#9ece6a', // green
-            '#b4f9f8', // aqua
-            '#ff9e64'  // orange
+            '#82aaff', // blue
+            '#c099ff', // violet
+            '#89ddff', // cyan
+            '#7fdbca', // teal
+            '#f2a6d8', // pink
+            '#a8d8a0', // green
+            '#b8e8e3', // aqua
+            '#e8c98d'  // amber
         ];
 
         function escapeHtml(text) {
