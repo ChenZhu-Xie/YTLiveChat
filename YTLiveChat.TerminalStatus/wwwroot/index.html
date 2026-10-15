@@ -16,6 +16,8 @@
 
         :root {
             --ui-scale: 1;
+            --background-min-opacity: 0.5;
+            --blink-duration: 1s;
             --wood-dark: #4d2819;
             --wood-mid: #91502d;
             --wood-light: #c4773e;
@@ -42,6 +44,20 @@
         .terminal {
             position: relative;
             isolation: isolate;
+            border: calc(3px * var(--ui-scale)) solid transparent;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .terminal::before {
+            content: "";
+            position: absolute;
+            z-index: -1;
+            inset: calc(-3px * var(--ui-scale));
+            pointer-events: none;
+            opacity: var(--background-min-opacity);
             background:
                 repeating-linear-gradient(
                     2deg,
@@ -51,10 +67,6 @@
                     transparent calc(8px * var(--ui-scale))),
                 linear-gradient(90deg, #7b3e24 0%, #b76535 18%, #9b4f2b 50%, #bd6e39 78%, #7b3e24 100%);
             border: calc(3px * var(--ui-scale)) solid var(--wood-dark);
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
             box-shadow:
                 inset 0 0 0 calc(2px * var(--ui-scale)) rgba(228, 153, 76, 0.65),
                 inset 0 0 calc(8px * var(--ui-scale)) rgba(56, 27, 17, 0.45),
@@ -68,6 +80,7 @@
             z-index: 5;
             inset: 0;
             pointer-events: none;
+            opacity: var(--background-min-opacity);
             background:
                 radial-gradient(circle at calc(6px * var(--ui-scale)) calc(6px * var(--ui-scale)), #f2c879 0 calc(1px * var(--ui-scale)), #6d3a23 calc(1.2px * var(--ui-scale)) calc(2.6px * var(--ui-scale)), transparent calc(2.8px * var(--ui-scale))),
                 radial-gradient(circle at calc(100% - 6px * var(--ui-scale)) calc(6px * var(--ui-scale)), #f2c879 0 calc(1px * var(--ui-scale)), #6d3a23 calc(1.2px * var(--ui-scale)) calc(2.6px * var(--ui-scale)), transparent calc(2.8px * var(--ui-scale))),
@@ -77,6 +90,8 @@
 
         .title-bar {
             position: relative;
+            z-index: 6;
+            opacity: 1;
             flex: 0 0 auto;
             overflow: hidden;
             background:
@@ -142,21 +157,14 @@
 
         .content {
             position: relative;
+            z-index: 1;
+            isolation: isolate;
             margin: calc(4px * var(--ui-scale)) calc(6px * var(--ui-scale));
             padding:
                 calc(6px * var(--ui-scale))
                 calc(9px * var(--ui-scale))
                 calc(2px * var(--ui-scale));
-            background:
-                repeating-linear-gradient(
-                    0deg,
-                    rgba(105, 61, 31, 0.035) 0,
-                    rgba(105, 61, 31, 0.035) calc(1px * var(--ui-scale)),
-                    transparent calc(1px * var(--ui-scale)),
-                    transparent calc(5px * var(--ui-scale))),
-                radial-gradient(circle at 14% 18%, rgba(255, 242, 177, 0.72), transparent 42%),
-                linear-gradient(145deg, var(--paper-light), var(--paper));
-            border: calc(2px * var(--ui-scale)) solid #683820;
+            border: calc(2px * var(--ui-scale)) solid transparent;
             color: var(--ink);
             font-size: calc(22px * var(--ui-scale));
             font-weight: 600;
@@ -168,6 +176,25 @@
             text-shadow: 0 calc(1px * var(--ui-scale)) 0 rgba(255, 245, 196, 0.5);
             overflow-wrap: break-word;
             word-break: break-all;
+        }
+
+        .content::before {
+            content: "";
+            position: absolute;
+            z-index: -1;
+            inset: calc(-2px * var(--ui-scale));
+            pointer-events: none;
+            opacity: var(--background-min-opacity);
+            background:
+                repeating-linear-gradient(
+                    0deg,
+                    rgba(105, 61, 31, 0.035) 0,
+                    rgba(105, 61, 31, 0.035) calc(1px * var(--ui-scale)),
+                    transparent calc(1px * var(--ui-scale)),
+                    transparent calc(5px * var(--ui-scale))),
+                radial-gradient(circle at 14% 18%, rgba(255, 242, 177, 0.72), transparent 42%),
+                linear-gradient(145deg, var(--paper-light), var(--paper));
+            border: calc(2px * var(--ui-scale)) solid #683820;
             box-shadow:
                 inset 0 0 0 calc(2px * var(--ui-scale)) rgba(255, 236, 166, 0.62),
                 0 calc(2px * var(--ui-scale)) 0 rgba(70, 34, 20, 0.68);
@@ -176,7 +203,6 @@
         .cursor {
             background: var(--leaf);
             color: #fff0b0;
-            animation: blink 1s infinite;
             display: inline; /* 关键：改为 inline 避免破坏换行 */
             padding: calc(1px * var(--ui-scale)) 0;
         }
@@ -186,30 +212,54 @@
             color: #3d241b;
         }
 
+        .content-copy {
+            opacity: var(--background-min-opacity);
+        }
+
         .selection-cursor {
             display: inline-block;
             width: calc(2px * var(--ui-scale));
             height: 1em;
             margin: 0 calc(-1px * var(--ui-scale));
             vertical-align: -0.14em;
-            animation: blink 1s infinite;
+        }
+
+        .terminal.is-blinking::before,
+        .terminal.is-blinking::after,
+        .terminal.is-blinking .content::before,
+        .terminal.is-blinking .content-copy {
+            animation: background-breathe var(--blink-duration) ease-in-out infinite;
+        }
+
+        .terminal.is-blinking .cursor,
+        .terminal.is-blinking .selection-cursor {
+            animation: blink var(--blink-duration) ease-in-out infinite;
         }
 
         @keyframes blink {
             0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
+            50% { opacity: 0; }
+        }
+
+        @keyframes background-breathe {
+            0%, 100% { opacity: var(--background-min-opacity); }
+            50% { opacity: 1; }
         }
 
         @media (prefers-reduced-motion: reduce) {
-            .cursor,
-            .selection-cursor {
+            .terminal.is-blinking::before,
+            .terminal.is-blinking::after,
+            .terminal.is-blinking .content::before,
+            .terminal.is-blinking .content-copy,
+            .terminal.is-blinking .cursor,
+            .terminal.is-blinking .selection-cursor {
                 animation: none;
             }
         }
     </style>
 </head>
 <body>
-    <div class="terminal">
+    <div class="terminal is-blinking">
         <div class="title-bar">
             <div class="title-text"><span id="title">KanBan 看板</span></div>
         </div>
@@ -281,7 +331,7 @@
             let resultHtml = "";
             let currentLineIndex = 0;
             
-            const startSpan = (idx) => `<span style="color: ${colors[idx % colors.length]}">`;
+            const startSpan = (idx) => `<span class="content-copy" style="color: ${colors[idx % colors.length]}">`;
             const selectionCursor = (idx) => {
                 const color = colors[idx % colors.length];
                 return `<span class="selection-cursor" style="background: ${color};"></span>`;
@@ -291,16 +341,16 @@
             
             for (let i = 0; i <= msg.length; i++) {
                 if (selection.hasSelection && (i === selection.selectionStart || i === selection.selectionEnd)) {
-                    resultHtml += selectionCursor(currentLineIndex);
+                    resultHtml += `</span>${selectionCursor(currentLineIndex)}${startSpan(currentLineIndex)}`;
                 }
 
                 if (!selection.hasSelection && i === selection.cursorPosition) {
                     const color = colors[currentLineIndex % colors.length];
                     const charAtCursor = msg[i] || " ";
                     if (charAtCursor === '\n') {
-                        resultHtml += `<span class="cursor" style="background: ${color}; color: #fff0b0;">&nbsp;</span>`;
+                        resultHtml += `</span><span class="cursor" style="background: ${color}; color: #fff0b0;">&nbsp;</span>${startSpan(currentLineIndex)}`;
                     } else {
-                        resultHtml += `<span class="cursor" style="background: ${color}; color: #fff0b0;">${escapeHtml(charAtCursor)}</span>`;
+                        resultHtml += `</span><span class="cursor" style="background: ${color}; color: #fff0b0;">${escapeHtml(charAtCursor)}</span>${startSpan(currentLineIndex)}`;
                         continue; // Skip the character we just rendered as cursor
                     }
                 }
@@ -327,6 +377,13 @@
         function applyStatus(message, cursorPosition, selectionStart, selectionEnd, selectionDirection) {
             const contentDiv = document.getElementById("content");
             contentDiv.innerHTML = renderColoredContent(message, cursorPosition, selectionStart, selectionEnd, selectionDirection);
+
+            // Cursor nodes are recreated on every status update. Restart the shared
+            // animation so the cursor and the background always stay in opposite phases.
+            const terminal = document.querySelector(".terminal");
+            terminal.classList.remove("is-blinking");
+            void terminal.offsetWidth;
+            terminal.classList.add("is-blinking");
         }
 
         function applyTitle(title) {
