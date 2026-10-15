@@ -113,26 +113,6 @@
             animation: slide-title-highlight var(--title-highlight-duration) linear infinite;
         }
 
-        .dots {
-            position: relative;
-            z-index: 1;
-            display: flex;
-            gap: calc(6px * var(--ui-scale));
-            margin-right: calc(15px * var(--ui-scale));
-        }
-
-        .dot {
-            width: calc(10px * var(--ui-scale));
-            height: calc(10px * var(--ui-scale));
-            border-radius: 50%;
-            box-shadow: 0 0 calc(5px * var(--ui-scale)) currentColor;
-            animation: breathe-dot 2.8s ease-in-out infinite;
-        }
-
-        .red { color: #ff5f56; background: currentColor; }
-        .yellow { color: #ffbd2e; background: currentColor; animation-delay: -1.86s; }
-        .green { color: #27c93f; background: currentColor; animation-delay: -0.93s; }
-
         .title-text {
             position: relative;
             z-index: 1;
@@ -140,7 +120,6 @@
             font-weight: bold;
             flex-grow: 1;
             text-align: center;
-            margin-right: calc(31px * var(--ui-scale));
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -208,22 +187,10 @@
             to { background-position: -200% 0; }
         }
 
-        @keyframes breathe-dot {
-            0%, 100% {
-                opacity: 0.78;
-                transform: scale(0.92);
-            }
-            50% {
-                opacity: 1;
-                transform: scale(1.08);
-            }
-        }
-
         @media (prefers-reduced-motion: reduce) {
             .terminal,
             .title-bar,
             .title-bar::after,
-            .dot,
             .cursor,
             .selection-cursor {
                 animation: none;
@@ -234,11 +201,6 @@
 <body>
     <div class="terminal">
         <div class="title-bar">
-            <div class="dots">
-                <div class="dot red"></div>
-                <div class="dot yellow"></div>
-                <div class="dot green"></div>
-            </div>
             <div class="title-text"><span id="title">KanBan 看板</span></div>
         </div>
         <div id="content" class="content">Initializing...<span class="cursor"></span></div>
