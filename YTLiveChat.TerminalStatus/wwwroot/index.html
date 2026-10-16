@@ -16,7 +16,7 @@
 
         :root {
             --ui-scale: 1;
-            --background-min-opacity: 0.5;
+            --background-breathe-min-opacity: 0.5;
             --blink-duration: 1s;
             --wood-dark: #4d2819;
             --wood-mid: #91502d;
@@ -57,7 +57,7 @@
             z-index: -1;
             inset: calc(-3px * var(--ui-scale));
             pointer-events: none;
-            opacity: var(--background-min-opacity);
+            opacity: 1;
             background:
                 repeating-linear-gradient(
                     2deg,
@@ -80,7 +80,7 @@
             z-index: 5;
             inset: 0;
             pointer-events: none;
-            opacity: var(--background-min-opacity);
+            opacity: 1;
             background:
                 radial-gradient(circle at calc(6px * var(--ui-scale)) calc(6px * var(--ui-scale)), #f2c879 0 calc(1px * var(--ui-scale)), #6d3a23 calc(1.2px * var(--ui-scale)) calc(2.6px * var(--ui-scale)), transparent calc(2.8px * var(--ui-scale))),
                 radial-gradient(circle at calc(100% - 6px * var(--ui-scale)) calc(6px * var(--ui-scale)), #f2c879 0 calc(1px * var(--ui-scale)), #6d3a23 calc(1.2px * var(--ui-scale)) calc(2.6px * var(--ui-scale)), transparent calc(2.8px * var(--ui-scale))),
@@ -184,7 +184,7 @@
             z-index: -1;
             inset: calc(-2px * var(--ui-scale));
             pointer-events: none;
-            opacity: var(--background-min-opacity);
+            opacity: 1;
             background:
                 repeating-linear-gradient(
                     0deg,
@@ -213,7 +213,7 @@
         }
 
         .content-copy {
-            opacity: var(--background-min-opacity);
+            opacity: 1;
         }
 
         .selection-cursor {
@@ -224,15 +224,15 @@
             vertical-align: -0.14em;
         }
 
-        .terminal.is-blinking::before,
-        .terminal.is-blinking::after,
-        .terminal.is-blinking .content::before,
-        .terminal.is-blinking .content-copy {
+        .terminal.effect-inverse-background-breathe::before,
+        .terminal.effect-inverse-background-breathe::after,
+        .terminal.effect-inverse-background-breathe .content::before,
+        .terminal.effect-inverse-background-breathe .content-copy {
             animation: background-breathe var(--blink-duration) ease-in-out infinite;
         }
 
-        .terminal.is-blinking .cursor,
-        .terminal.is-blinking .selection-cursor {
+        .terminal.effect-cursor-blink .cursor,
+        .terminal.effect-cursor-blink .selection-cursor {
             animation: blink var(--blink-duration) ease-in-out infinite;
         }
 
@@ -242,24 +242,24 @@
         }
 
         @keyframes background-breathe {
-            0%, 100% { opacity: var(--background-min-opacity); }
+            0%, 100% { opacity: var(--background-breathe-min-opacity); }
             50% { opacity: 1; }
         }
 
         @media (prefers-reduced-motion: reduce) {
-            .terminal.is-blinking::before,
-            .terminal.is-blinking::after,
-            .terminal.is-blinking .content::before,
-            .terminal.is-blinking .content-copy,
-            .terminal.is-blinking .cursor,
-            .terminal.is-blinking .selection-cursor {
+            .terminal.effect-inverse-background-breathe::before,
+            .terminal.effect-inverse-background-breathe::after,
+            .terminal.effect-inverse-background-breathe .content::before,
+            .terminal.effect-inverse-background-breathe .content-copy,
+            .terminal.effect-cursor-blink .cursor,
+            .terminal.effect-cursor-blink .selection-cursor {
                 animation: none;
             }
         }
     </style>
 </head>
 <body>
-    <div class="terminal is-blinking">
+    <div class="terminal">
         <div class="title-bar">
             <div class="title-text"><span id="title">KanBan 看板</span></div>
         </div>
@@ -270,6 +270,29 @@
         const designWidth = 291;
         const designHeight = 159;
         const signalRScriptUrl = "https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js";
+        const animationEffects = Object.freeze({
+            cursorBlink: true,
+            inverseBackgroundBreathe: false
+        });
+
+        function applyAnimationEffects(restart = false) {
+            const terminal = document.querySelector(".terminal");
+            const effects = [
+                ["effect-cursor-blink", animationEffects.cursorBlink],
+                ["effect-inverse-background-breathe", animationEffects.inverseBackgroundBreathe]
+            ];
+
+            if (restart) {
+                for (const [className] of effects) {
+                    terminal.classList.remove(className);
+                }
+                void terminal.offsetWidth;
+            }
+
+            for (const [className, enabled] of effects) {
+                terminal.classList.toggle(className, enabled);
+            }
+        }
 
         function updateUiScale() {
             const widthScale = window.innerWidth / designWidth;
@@ -378,12 +401,9 @@
             const contentDiv = document.getElementById("content");
             contentDiv.innerHTML = renderColoredContent(message, cursorPosition, selectionStart, selectionEnd, selectionDirection);
 
-            // Cursor nodes are recreated on every status update. Restart the shared
-            // animation so the cursor and the background always stay in opposite phases.
-            const terminal = document.querySelector(".terminal");
-            terminal.classList.remove("is-blinking");
-            void terminal.offsetWidth;
-            terminal.classList.add("is-blinking");
+            // Cursor nodes are recreated on every status update. Restart all enabled
+            // effects together so optional inverse effects keep the intended phase.
+            applyAnimationEffects(true);
         }
 
         function applyTitle(title) {
@@ -447,6 +467,7 @@
             }
         }
 
+        applyAnimationEffects();
         loadInitialStatus();
         startRealtimeConnection();
     </script>
