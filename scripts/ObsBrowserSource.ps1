@@ -142,7 +142,11 @@ function Invoke-ObsWebSocketRequest {
         throw "OBS request '$RequestType' failed ($($response.d.requestStatus.code)): $comment"
     }
 
-    return $response.d.responseData
+    $responseDataProperty = $response.d.PSObject.Properties["responseData"]
+    if ($null -eq $responseDataProperty) {
+        return $null
+    }
+    return $responseDataProperty.Value
 }
 
 function Get-ObsWebSocketSettings {
@@ -254,15 +258,16 @@ function Invoke-ObsBrowserSourceRefresh {
             rpcVersion = 1
             eventSubscriptions = 0
         }
-        if ($null -ne $hello.d.authentication) {
+        $authenticationProperty = $hello.d.PSObject.Properties["authentication"]
+        if ($null -ne $authenticationProperty) {
             if ([string]::IsNullOrEmpty($settings.Password)) {
                 throw "OBS WebSocket requires a password. Set OBS_WEBSOCKET_PASSWORD or pass -ObsWebSocketPassword."
             }
 
             $identifyData.authentication = Get-ObsAuthenticationResponse `
                 -Password $settings.Password `
-                -Salt $hello.d.authentication.salt `
-                -Challenge $hello.d.authentication.challenge
+                -Salt $authenticationProperty.Value.salt `
+                -Challenge $authenticationProperty.Value.challenge
         }
 
         Send-ObsWebSocketMessage -Socket $socket -Message @{
@@ -282,7 +287,15 @@ function Invoke-ObsBrowserSourceRefresh {
             $inputSettings = Invoke-ObsWebSocketRequest -Socket $socket -RequestType "GetInputSettings" -RequestData @{
                 inputName = $input.inputName
             }
-            if (-not (Test-ObsBrowserSourceUrl -CandidateUrl $inputSettings.inputSettings.url -ExpectedUri $BrowserSourceUri)) {
+            $candidateUrl = $null
+            $settingsProperty = $inputSettings.PSObject.Properties["inputSettings"]
+            if ($null -ne $settingsProperty -and $null -ne $settingsProperty.Value) {
+                $urlProperty = $settingsProperty.Value.PSObject.Properties["url"]
+                if ($null -ne $urlProperty) {
+                    $candidateUrl = [string]$urlProperty.Value
+                }
+            }
+            if (-not (Test-ObsBrowserSourceUrl -CandidateUrl $candidateUrl -ExpectedUri $BrowserSourceUri)) {
                 continue
             }
 

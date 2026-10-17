@@ -23,9 +23,9 @@ $ProjectFile = Join-Path $ProjectDir "$ProjectName.csproj"
 $ProfileDir = if ($Release) { "Release" } else { "Debug" }
 $ExePath = Join-Path $ProjectDir "bin\$ProfileDir\net10.0\$ProjectName.exe"
 $AppArgs = @("--urls", "http://localhost:5000")
-$ObsHelperPath = Join-Path $ProjectRoot "scripts\ObsBrowserSource.ps1"
+$ObsModulePath = Join-Path $ProjectRoot "scripts\modules\ObsBrowserSource\ObsBrowserSource.psd1"
 
-. $ObsHelperPath
+Import-Module $ObsModulePath -Force
 
 Set-Location $ProjectRoot
 

@@ -14,6 +14,8 @@ Unofficial .NET library for reading YouTube live chat via InnerTube (the same we
 - `netstandard2.1`
 - `netstandard2.0`
 
+The local Overlay and TerminalStatus launchers import the repository-owned `scripts/modules/ObsBrowserSource` PowerShell module. Its public surface is limited to `Complete-BackendLaunch`; OBS WebSocket transport and authentication helpers remain private to the module.
+
 ## Install
 
 Core package:
