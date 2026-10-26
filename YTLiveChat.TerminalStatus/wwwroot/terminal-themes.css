@@ -445,9 +445,22 @@
     opacity: 0.18;
 }
 
-.terminal[data-theme="mist-cottage"] .content::after,
+.terminal[data-theme="mist-cottage"] .content::after {
+    content: "☁  ❀";
+    right: calc(5px * var(--ui-scale));
+    bottom: calc(-1px * var(--ui-scale));
+    font-size: calc(22px * var(--ui-scale));
+    letter-spacing: calc(2px * var(--ui-scale));
+    opacity: 0.1;
+}
+
 .terminal[data-theme="rain-greenhouse"] .content::after {
-    display: none;
+    content: "☘  ✦";
+    right: calc(5px * var(--ui-scale));
+    bottom: calc(-1px * var(--ui-scale));
+    font-size: calc(21px * var(--ui-scale));
+    letter-spacing: calc(2px * var(--ui-scale));
+    opacity: 0.09;
 }
 
 .terminal[data-theme="harvest-barn"] .content::after {
