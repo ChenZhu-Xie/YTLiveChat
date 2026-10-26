@@ -9,8 +9,8 @@ public sealed class ThemeStore
     private static readonly string[] OrderedThemeIds =
     [
         "mist-cottage",
-        "harvest-barn",
         "rain-greenhouse",
+        "harvest-barn",
         "winter-kitchen"
     ];
 

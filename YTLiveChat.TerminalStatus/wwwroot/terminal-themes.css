@@ -446,7 +446,7 @@
 }
 
 .terminal[data-theme="mist-cottage"] .content::after {
-    content: "☁  ❀";
+    content: "❧";
     right: calc(5px * var(--ui-scale));
     bottom: calc(-1px * var(--ui-scale));
     font-size: calc(22px * var(--ui-scale));

@@ -3,8 +3,8 @@
 
     const defaultThemeIds = Object.freeze([
         "mist-cottage",
-        "harvest-barn",
         "rain-greenhouse",
+        "harvest-barn",
         "winter-kitchen"
     ]);
     const defaultIntervalMs = 60_000;
