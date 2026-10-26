@@ -257,15 +257,17 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="./terminal-themes.css">
 </head>
 <body>
-    <div class="terminal">
+    <div class="terminal" data-theme="harvest-barn">
         <div class="title-bar">
             <div class="title-text"><span id="title">KanBan 看板</span></div>
         </div>
         <div id="content" class="content">Initializing...<span class="cursor"></span></div>
     </div>
 
+    <script src="./terminal-theme.js"></script>
     <script>
         const designWidth = 291;
         const designHeight = 159;
@@ -303,17 +305,6 @@
 
         updateUiScale();
         window.addEventListener("resize", updateUiScale);
-
-        const colors = [
-            '#355e3b', // leaf green
-            '#8b3f4d', // berry
-            '#2f6570', // lake blue
-            '#70432f', // soil
-            '#a44f2a', // pumpkin
-            '#5d6f32', // olive
-            '#675071', // wild plum
-            '#8b5c20'  // harvest gold
-        ];
 
         function escapeHtml(text) {
             if (!text) return "";
@@ -354,10 +345,9 @@
             let resultHtml = "";
             let currentLineIndex = 0;
             
-            const startSpan = (idx) => `<span class="content-copy" style="color: ${colors[idx % colors.length]}">`;
+            const startSpan = (idx) => `<span class="content-copy line-color-${idx % 8}">`;
             const selectionCursor = (idx) => {
-                const color = colors[idx % colors.length];
-                return `<span class="selection-cursor" style="background: ${color};"></span>`;
+                return `<span class="selection-cursor line-bg-${idx % 8}"></span>`;
             };
             
             resultHtml += startSpan(currentLineIndex);
@@ -368,12 +358,11 @@
                 }
 
                 if (!selection.hasSelection && i === selection.cursorPosition) {
-                    const color = colors[currentLineIndex % colors.length];
                     const charAtCursor = msg[i] || " ";
                     if (charAtCursor === '\n') {
-                        resultHtml += `</span><span class="cursor" style="background: ${color}; color: #fff0b0;">&nbsp;</span>${startSpan(currentLineIndex)}`;
+                        resultHtml += `</span><span class="cursor line-bg-${currentLineIndex % 8}">&nbsp;</span>${startSpan(currentLineIndex)}`;
                     } else {
-                        resultHtml += `</span><span class="cursor" style="background: ${color}; color: #fff0b0;">${escapeHtml(charAtCursor)}</span>${startSpan(currentLineIndex)}`;
+                        resultHtml += `</span><span class="cursor line-bg-${currentLineIndex % 8}">${escapeHtml(charAtCursor)}</span>${startSpan(currentLineIndex)}`;
                         continue; // Skip the character we just rendered as cursor
                     }
                 }
@@ -459,6 +448,7 @@
                 });
 
                 connection.on("ReceiveTitle", applyTitle);
+                connection.on("ReceiveTheme", state => TerminalTheme.applyState(state));
 
                 await connection.start();
             } catch (err) {
@@ -468,6 +458,7 @@
         }
 
         applyAnimationEffects();
+        TerminalTheme.load();
         loadInitialStatus();
         startRealtimeConnection();
     </script>

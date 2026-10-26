@@ -1,0 +1,290 @@
+.terminal {
+    --theme-transition-ms: 1200ms;
+    --frame-border: #4d2819;
+    --frame-grain: rgba(74, 35, 20, 0.12);
+    --frame-a: #7b3e24;
+    --frame-b: #b76535;
+    --frame-c: #9b4f2b;
+    --frame-highlight: rgba(228, 153, 76, 0.65);
+    --frame-shadow: rgba(45, 24, 16, 0.72);
+    --rivet-face: #f2c879;
+    --rivet-edge: #6d3a23;
+    --title-a: #7c3e24;
+    --title-b: #a95a30;
+    --title-c: #b96836;
+    --title-ink: #ffe9a7;
+    --title-shadow: #542a1b;
+    --paper: #f1cf82;
+    --paper-light: #ffe6a2;
+    --paper-border: #683820;
+    --paper-highlight: rgba(255, 236, 166, 0.62);
+    --paper-shadow: rgba(70, 34, 20, 0.68);
+    --paper-grain: rgba(105, 61, 31, 0.035);
+    --ink: #4a2c21;
+    --ink-shadow: rgba(255, 245, 196, 0.5);
+    --selection: rgba(165, 80, 39, 0.24);
+    --selection-ink: #3d241b;
+    --season-mark: "◆";
+    --season-mark-color: #8b6339;
+    --line-1: #355e3b;
+    --line-2: #8b3f4d;
+    --line-3: #2f6570;
+    --line-4: #70432f;
+    --line-5: #a44f2a;
+    --line-6: #5d6f32;
+    --line-7: #675071;
+    --line-8: #8b5c20;
+}
+
+.terminal[data-theme="mist-cottage"] {
+    --frame-border: #263b3f;
+    --frame-grain: rgba(20, 49, 54, 0.16);
+    --frame-a: #344f55;
+    --frame-b: #66838a;
+    --frame-c: #4c6e75;
+    --frame-highlight: rgba(196, 226, 218, 0.46);
+    --frame-shadow: rgba(24, 43, 47, 0.76);
+    --rivet-face: #d8eee6;
+    --rivet-edge: #49666b;
+    --title-a: #35545a;
+    --title-b: #5e7d82;
+    --title-c: #789294;
+    --title-ink: #f4ebc9;
+    --title-shadow: #263b3f;
+    --paper: #d8cba4;
+    --paper-light: #eee4c4;
+    --paper-border: #536b67;
+    --paper-highlight: rgba(249, 242, 211, 0.56);
+    --paper-shadow: rgba(31, 56, 58, 0.66);
+    --paper-grain: rgba(47, 83, 83, 0.05);
+    --ink: #304344;
+    --ink-shadow: rgba(246, 239, 208, 0.64);
+    --selection: rgba(120, 132, 96, 0.28);
+    --selection-ink: #263b3f;
+    --season-mark: "✦";
+    --season-mark-color: #788460;
+    --line-1: #496a55;
+    --line-2: #805962;
+    --line-3: #3f6e75;
+    --line-4: #6d5945;
+    --line-5: #8e6744;
+    --line-6: #68754e;
+    --line-7: #675d78;
+    --line-8: #7d6b36;
+}
+
+.terminal[data-theme="harvest-barn"] {
+    --season-mark: "◆";
+}
+
+.terminal[data-theme="rain-greenhouse"] {
+    --frame-border: #102d2f;
+    --frame-grain: rgba(121, 197, 197, 0.11);
+    --frame-a: #17383a;
+    --frame-b: #3c6f70;
+    --frame-c: #285356;
+    --frame-highlight: rgba(143, 201, 206, 0.48);
+    --frame-shadow: rgba(10, 33, 35, 0.8);
+    --rivet-face: #e0ad56;
+    --rivet-edge: #5d653f;
+    --title-a: #17383a;
+    --title-b: #326466;
+    --title-c: #487b78;
+    --title-ink: #d6efdf;
+    --title-shadow: #102d2f;
+    --paper: #afc8b6;
+    --paper-light: #d4dfc9;
+    --paper-border: #325e58;
+    --paper-highlight: rgba(228, 239, 211, 0.5);
+    --paper-shadow: rgba(13, 49, 49, 0.76);
+    --paper-grain: rgba(24, 78, 73, 0.065);
+    --ink: #173332;
+    --ink-shadow: rgba(222, 240, 216, 0.52);
+    --selection: rgba(224, 173, 86, 0.28);
+    --selection-ink: #102d2f;
+    --season-mark: "⋮";
+    --season-mark-color: #487f80;
+    --line-1: #2f6655;
+    --line-2: #7d4f5c;
+    --line-3: #246d75;
+    --line-4: #526244;
+    --line-5: #92643d;
+    --line-6: #4e713e;
+    --line-7: #5f5f79;
+    --line-8: #85712e;
+}
+
+.terminal[data-theme="winter-kitchen"] {
+    --frame-border: #394853;
+    --frame-grain: rgba(238, 247, 244, 0.12);
+    --frame-a: #50636e;
+    --frame-b: #91a3aa;
+    --frame-c: #738995;
+    --frame-highlight: rgba(238, 247, 244, 0.68);
+    --frame-shadow: rgba(43, 57, 67, 0.7);
+    --rivet-face: #eef7f4;
+    --rivet-edge: #60717a;
+    --title-a: #51646f;
+    --title-b: #7f939c;
+    --title-c: #a0afb3;
+    --title-ink: #fff3d8;
+    --title-shadow: #394853;
+    --paper: #ddd5bd;
+    --paper-light: #f4ecd8;
+    --paper-border: #6e7b7d;
+    --paper-highlight: rgba(255, 250, 232, 0.7);
+    --paper-shadow: rgba(49, 62, 70, 0.62);
+    --paper-grain: rgba(89, 105, 110, 0.045);
+    --ink: #37414a;
+    --ink-shadow: rgba(255, 250, 232, 0.68);
+    --selection: rgba(167, 79, 93, 0.24);
+    --selection-ink: #303b43;
+    --season-mark: "❄";
+    --season-mark-color: #879ca4;
+    --line-1: #47705e;
+    --line-2: #a74f5d;
+    --line-3: #4c7180;
+    --line-4: #74624f;
+    --line-5: #9a624a;
+    --line-6: #647452;
+    --line-7: #74647f;
+    --line-8: #8b753e;
+}
+
+.terminal::before {
+    background:
+        repeating-linear-gradient(
+            2deg,
+            var(--frame-grain) 0,
+            var(--frame-grain) calc(1px * var(--ui-scale)),
+            transparent calc(1px * var(--ui-scale)),
+            transparent calc(8px * var(--ui-scale))),
+        linear-gradient(90deg, var(--frame-a) 0%, var(--frame-b) 18%, var(--frame-c) 50%, var(--frame-b) 78%, var(--frame-a) 100%);
+    border-color: var(--frame-border);
+    box-shadow:
+        inset 0 0 0 calc(2px * var(--ui-scale)) var(--frame-highlight),
+        inset 0 0 calc(8px * var(--ui-scale)) color-mix(in srgb, var(--frame-border) 72%, transparent),
+        0 calc(3px * var(--ui-scale)) 0 var(--frame-shadow),
+        0 0 calc(8px * var(--ui-scale)) color-mix(in srgb, var(--frame-border) 42%, transparent);
+}
+
+.terminal::after {
+    background:
+        radial-gradient(circle at calc(6px * var(--ui-scale)) calc(6px * var(--ui-scale)), var(--rivet-face) 0 calc(1px * var(--ui-scale)), var(--rivet-edge) calc(1.2px * var(--ui-scale)) calc(2.6px * var(--ui-scale)), transparent calc(2.8px * var(--ui-scale))),
+        radial-gradient(circle at calc(100% - 6px * var(--ui-scale)) calc(6px * var(--ui-scale)), var(--rivet-face) 0 calc(1px * var(--ui-scale)), var(--rivet-edge) calc(1.2px * var(--ui-scale)) calc(2.6px * var(--ui-scale)), transparent calc(2.8px * var(--ui-scale))),
+        radial-gradient(circle at calc(6px * var(--ui-scale)) calc(100% - 6px * var(--ui-scale)), var(--rivet-face) 0 calc(1px * var(--ui-scale)), var(--rivet-edge) calc(1.2px * var(--ui-scale)) calc(2.6px * var(--ui-scale)), transparent calc(2.8px * var(--ui-scale))),
+        radial-gradient(circle at calc(100% - 6px * var(--ui-scale)) calc(100% - 6px * var(--ui-scale)), var(--rivet-face) 0 calc(1px * var(--ui-scale)), var(--rivet-edge) calc(1.2px * var(--ui-scale)) calc(2.6px * var(--ui-scale)), transparent calc(2.8px * var(--ui-scale)));
+}
+
+.terminal .title-bar {
+    background:
+        repeating-linear-gradient(
+            0deg,
+            var(--frame-grain) 0,
+            var(--frame-grain) calc(1px * var(--ui-scale)),
+            transparent calc(1px * var(--ui-scale)),
+            transparent calc(7px * var(--ui-scale))),
+        linear-gradient(90deg, var(--title-a) 0%, var(--title-b) 32%, var(--title-c) 50%, var(--title-b) 68%, var(--title-a) 100%);
+    border-color: var(--frame-border);
+    box-shadow:
+        inset 0 0 0 calc(1px * var(--ui-scale)) var(--frame-highlight),
+        0 calc(2px * var(--ui-scale)) 0 var(--frame-shadow);
+}
+
+.terminal .title-bar::before,
+.terminal .title-bar::after {
+    border-color: var(--rivet-edge);
+    background: var(--rivet-face);
+    box-shadow: inset calc(-1px * var(--ui-scale)) calc(-1px * var(--ui-scale)) 0 var(--rivet-edge);
+}
+
+.terminal #title,
+.terminal .theme-title {
+    color: var(--title-ink);
+    text-shadow:
+        calc(2px * var(--ui-scale)) calc(2px * var(--ui-scale)) 0 var(--title-shadow),
+        0 calc(-1px * var(--ui-scale)) 0 color-mix(in srgb, var(--title-ink) 32%, transparent);
+}
+
+.terminal .content {
+    color: var(--ink);
+    text-shadow: 0 calc(1px * var(--ui-scale)) 0 var(--ink-shadow);
+}
+
+.terminal .content::before {
+    background:
+        repeating-linear-gradient(
+            0deg,
+            var(--paper-grain) 0,
+            var(--paper-grain) calc(1px * var(--ui-scale)),
+            transparent calc(1px * var(--ui-scale)),
+            transparent calc(5px * var(--ui-scale))),
+        radial-gradient(circle at 14% 18%, var(--paper-highlight), transparent 42%),
+        linear-gradient(145deg, var(--paper-light), var(--paper));
+    border-color: var(--paper-border);
+    box-shadow:
+        inset 0 0 0 calc(2px * var(--ui-scale)) var(--paper-highlight),
+        0 calc(2px * var(--ui-scale)) 0 var(--paper-shadow);
+}
+
+.terminal .content::after {
+    content: var(--season-mark);
+    position: absolute;
+    z-index: -1;
+    right: calc(7px * var(--ui-scale));
+    bottom: calc(1px * var(--ui-scale));
+    color: var(--season-mark-color);
+    font-size: calc(23px * var(--ui-scale));
+    opacity: 0.18;
+}
+
+.terminal .selection {
+    background: var(--selection);
+    color: var(--selection-ink);
+}
+
+.line-color-0 { color: var(--line-1); }
+.line-color-1 { color: var(--line-2); }
+.line-color-2 { color: var(--line-3); }
+.line-color-3 { color: var(--line-4); }
+.line-color-4 { color: var(--line-5); }
+.line-color-5 { color: var(--line-6); }
+.line-color-6 { color: var(--line-7); }
+.line-color-7 { color: var(--line-8); }
+.line-bg-0 { background: var(--line-1) !important; }
+.line-bg-1 { background: var(--line-2) !important; }
+.line-bg-2 { background: var(--line-3) !important; }
+.line-bg-3 { background: var(--line-4) !important; }
+.line-bg-4 { background: var(--line-5) !important; }
+.line-bg-5 { background: var(--line-6) !important; }
+.line-bg-6 { background: var(--line-7) !important; }
+.line-bg-7 { background: var(--line-8) !important; }
+
+.terminal.theme-outgoing {
+    position: absolute;
+    z-index: 20;
+    inset: 0;
+    pointer-events: none;
+    animation: terminal-theme-out var(--theme-transition-ms) cubic-bezier(.2, .82, .25, 1) both;
+}
+
+.terminal.theme-incoming {
+    animation: terminal-theme-in var(--theme-transition-ms) cubic-bezier(.2, .82, .25, 1) both;
+}
+
+@keyframes terminal-theme-out {
+    from { opacity: 1; filter: saturate(1); transform: scale(1); }
+    to { opacity: 0; filter: saturate(.82); transform: scale(1.012); }
+}
+
+@keyframes terminal-theme-in {
+    from { opacity: 0.15; filter: saturate(.82); transform: scale(.994); }
+    to { opacity: 1; filter: saturate(1); transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .terminal.theme-outgoing,
+    .terminal.theme-incoming {
+        animation-duration: 1ms;
+    }
+}

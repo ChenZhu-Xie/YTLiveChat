@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging.Console;
 using YTLiveChat.TerminalStatus.Hubs;
@@ -53,6 +54,7 @@ builder.Logging.AddConsole(options => options.FormatterName = GrayCategoryConsol
 builder.Logging.AddConsoleFormatter<GrayCategoryConsoleFormatter, ConsoleFormatterOptions>();
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<StatusStore>();
+builder.Services.AddSingleton<ThemeStore>();
 
 var app = builder.Build();
 app.Urls.Add("http://localhost:5150");
@@ -92,6 +94,25 @@ app.UseStaticFiles(new StaticFileOptions
 });
 
 app.MapGet("/api/status", (StatusStore store) => Results.Json(store.ToClientState()));
+app.MapGet("/api/theme", (ThemeStore store) => Results.Json(store.ToClientState()));
+app.MapPost("/api/theme/{direction}", async (
+    string direction,
+    ThemeStore store,
+    IHubContext<StatusHub> hub) =>
+{
+    if (!store.Supports(direction))
+    {
+        return Results.BadRequest(new
+        {
+            error = "Theme must be next, previous, or a known theme id.",
+            themeIds = ThemeStore.ThemeIds
+        });
+    }
+
+    object state = store.Change(direction);
+    await hub.Clients.All.SendAsync("ReceiveTheme", state);
+    return Results.Json(state);
+});
 
 app.MapHub<StatusHub>("/statusHub");
 

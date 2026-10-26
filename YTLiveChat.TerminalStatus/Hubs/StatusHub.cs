@@ -263,12 +263,13 @@ public class StatusStore
     }
 }
 
-public class StatusHub(StatusStore store) : Hub
+public class StatusHub(StatusStore store, ThemeStore themeStore) : Hub
 {
     public override async Task OnConnectedAsync()
     {
         await SendStatusAsync(Clients.Caller);
         await Clients.Caller.SendAsync("ReceiveTitle", store.CurrentTitle);
+        await Clients.Caller.SendAsync("ReceiveTheme", themeStore.ToClientState());
         await SendLockStateAsync(Clients.Caller);
         await base.OnConnectedAsync();
     }
