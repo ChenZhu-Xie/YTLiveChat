@@ -40,88 +40,89 @@
 }
 
 .terminal[data-theme="mist-cottage"] {
-    --frame-border: #263b3f;
-    --frame-grain: rgba(20, 49, 54, 0.16);
-    --frame-a: #344f55;
-    --frame-b: #66838a;
-    --frame-c: #4c6e75;
-    --frame-highlight: rgba(196, 226, 218, 0.46);
-    --frame-shadow: rgba(24, 43, 47, 0.76);
-    --rivet-face: #d8eee6;
-    --rivet-edge: #49666b;
-    --corner-primary: #c7d6b0;
-    --corner-secondary: #466b62;
-    --title-ornament: "❧";
-    --title-a: #35545a;
-    --title-b: #5e7d82;
-    --title-c: #789294;
-    --title-ink: #f4ebc9;
-    --title-shadow: #263b3f;
-    --paper: #d8cba4;
-    --paper-light: #eee4c4;
-    --paper-border: #536b67;
-    --paper-highlight: rgba(249, 242, 211, 0.56);
-    --paper-shadow: rgba(31, 56, 58, 0.66);
-    --paper-grain: rgba(47, 83, 83, 0.05);
-    --ink: #304344;
-    --ink-shadow: rgba(246, 239, 208, 0.64);
-    --selection: rgba(120, 132, 96, 0.28);
-    --selection-ink: #263b3f;
-    --season-mark: "✦";
-    --season-mark-color: #788460;
-    --line-1: #496a55;
-    --line-2: #805962;
-    --line-3: #3f6e75;
-    --line-4: #6d5945;
-    --line-5: #8e6744;
-    --line-6: #68754e;
-    --line-7: #675d78;
-    --line-8: #7d6b36;
+    --frame-border: #4f3d68;
+    --frame-grain: rgba(80, 52, 103, 0.14);
+    --frame-a: #65507e;
+    --frame-b: #ad85b7;
+    --frame-c: #81679c;
+    --frame-highlight: rgba(255, 205, 225, 0.7);
+    --frame-shadow: rgba(52, 37, 70, 0.76);
+    --rivet-face: #ffe5ef;
+    --rivet-edge: #765682;
+    --corner-primary: #f6b6cf;
+    --corner-secondary: #739365;
+    --title-ornament: "❀";
+    --title-a: #59466f;
+    --title-b: #8d6fa3;
+    --title-c: #b987ae;
+    --title-ink: #fff4d8;
+    --title-shadow: #48365f;
+    --paper: #efd7df;
+    --paper-light: #fff1e7;
+    --paper-border: #8d6688;
+    --paper-highlight: rgba(255, 250, 232, 0.72);
+    --paper-shadow: rgba(70, 46, 82, 0.6);
+    --paper-grain: rgba(128, 77, 115, 0.05);
+    --ink: #4c3b52;
+    --ink-shadow: rgba(255, 247, 227, 0.72);
+    --selection: rgba(190, 116, 155, 0.24);
+    --selection-ink: #44334d;
+    --season-mark: "☁  ❀";
+    --season-mark-color: #ba739d;
+    --line-1: #547752;
+    --line-2: #9a526d;
+    --line-3: #526f91;
+    --line-4: #79546f;
+    --line-5: #ad6d62;
+    --line-6: #70814b;
+    --line-7: #6f5a91;
+    --line-8: #9a743e;
 }
 
 .terminal[data-theme="harvest-barn"] {
-    --season-mark: "◆";
+    --season-mark: "❋";
+    --season-mark-color: #b36d20;
     --title-ornament: "◆";
 }
 
 .terminal[data-theme="rain-greenhouse"] {
-    --frame-border: #102d2f;
-    --frame-grain: rgba(121, 197, 197, 0.11);
-    --frame-a: #17383a;
-    --frame-b: #3c6f70;
-    --frame-c: #285356;
-    --frame-highlight: rgba(143, 201, 206, 0.48);
-    --frame-shadow: rgba(10, 33, 35, 0.8);
-    --rivet-face: #e0ad56;
-    --rivet-edge: #5d653f;
-    --corner-primary: #d7a951;
-    --corner-secondary: #295f61;
-    --title-ornament: "◇";
-    --title-a: #17383a;
-    --title-b: #326466;
-    --title-c: #487b78;
-    --title-ink: #d6efdf;
-    --title-shadow: #102d2f;
-    --paper: #afc8b6;
-    --paper-light: #d4dfc9;
-    --paper-border: #325e58;
-    --paper-highlight: rgba(228, 239, 211, 0.5);
-    --paper-shadow: rgba(13, 49, 49, 0.76);
-    --paper-grain: rgba(24, 78, 73, 0.065);
-    --ink: #173332;
-    --ink-shadow: rgba(222, 240, 216, 0.52);
-    --selection: rgba(224, 173, 86, 0.28);
-    --selection-ink: #102d2f;
-    --season-mark: "⋮";
-    --season-mark-color: #487f80;
-    --line-1: #2f6655;
-    --line-2: #7d4f5c;
-    --line-3: #246d75;
-    --line-4: #526244;
-    --line-5: #92643d;
-    --line-6: #4e713e;
-    --line-7: #5f5f79;
-    --line-8: #85712e;
+    --frame-border: #07364f;
+    --frame-grain: rgba(112, 224, 224, 0.13);
+    --frame-a: #0a4e70;
+    --frame-b: #118d92;
+    --frame-c: #08728a;
+    --frame-highlight: rgba(116, 239, 224, 0.58);
+    --frame-shadow: rgba(4, 35, 55, 0.82);
+    --rivet-face: #ffe07a;
+    --rivet-edge: #8d681b;
+    --corner-primary: #ffd36b;
+    --corner-secondary: #086b76;
+    --title-ornament: "🦋";
+    --title-a: #073c5b;
+    --title-b: #087886;
+    --title-c: #159e98;
+    --title-ink: #eaffd8;
+    --title-shadow: #052f49;
+    --paper: #9ddbd3;
+    --paper-light: #dcf5db;
+    --paper-border: #087a7b;
+    --paper-highlight: rgba(235, 255, 220, 0.66);
+    --paper-shadow: rgba(4, 49, 71, 0.76);
+    --paper-grain: rgba(12, 102, 111, 0.07);
+    --ink: #103c4c;
+    --ink-shadow: rgba(231, 255, 224, 0.64);
+    --selection: rgba(255, 211, 107, 0.32);
+    --selection-ink: #07364f;
+    --season-mark: "☘  ✦";
+    --season-mark-color: #14887a;
+    --line-1: #176b45;
+    --line-2: #9b4867;
+    --line-3: #096d96;
+    --line-4: #4d6540;
+    --line-5: #a15d2e;
+    --line-6: #33743e;
+    --line-7: #585a91;
+    --line-8: #91711e;
 }
 
 .terminal[data-theme="winter-kitchen"] {
@@ -181,6 +182,8 @@
 
 .terminal[data-theme="mist-cottage"]::before {
     background:
+        radial-gradient(circle at 14% 22%, rgba(255, 214, 232, 0.52), transparent 22%),
+        radial-gradient(circle at 82% 72%, rgba(207, 191, 255, 0.42), transparent 25%),
         repeating-linear-gradient(0deg, transparent 0 calc(9px * var(--ui-scale)), color-mix(in srgb, var(--frame-border) 38%, transparent) calc(9px * var(--ui-scale)) calc(10px * var(--ui-scale))),
         repeating-linear-gradient(90deg, transparent 0 calc(17px * var(--ui-scale)), color-mix(in srgb, var(--frame-highlight) 34%, transparent) calc(17px * var(--ui-scale)) calc(18px * var(--ui-scale))),
         linear-gradient(135deg, var(--frame-b), var(--frame-a) 54%, var(--frame-c));
@@ -194,6 +197,7 @@
 
 .terminal[data-theme="rain-greenhouse"]::before {
     background:
+        radial-gradient(circle at 78% 18%, rgba(103, 255, 222, 0.34), transparent 23%),
         linear-gradient(112deg, transparent 0 28%, color-mix(in srgb, var(--frame-highlight) 44%, transparent) 29% 31%, transparent 32% 66%, color-mix(in srgb, var(--frame-highlight) 24%, transparent) 67% 69%, transparent 70%),
         repeating-linear-gradient(90deg, var(--frame-a) 0 calc(12px * var(--ui-scale)), var(--frame-c) calc(12px * var(--ui-scale)) calc(13px * var(--ui-scale))),
         linear-gradient(180deg, var(--frame-b), var(--frame-a));
@@ -231,14 +235,12 @@
 
 .terminal[data-theme="mist-cottage"]::after {
     background:
-        radial-gradient(ellipse at 68% 30%, var(--corner-primary) 0 30%, transparent 32%) left top / calc(22px * var(--ui-scale)) calc(17px * var(--ui-scale)) no-repeat,
-        radial-gradient(ellipse at 32% 30%, var(--corner-primary) 0 30%, transparent 32%) right top / calc(22px * var(--ui-scale)) calc(17px * var(--ui-scale)) no-repeat,
-        radial-gradient(ellipse at 68% 70%, var(--corner-primary) 0 30%, transparent 32%) left bottom / calc(22px * var(--ui-scale)) calc(17px * var(--ui-scale)) no-repeat,
-        radial-gradient(ellipse at 32% 70%, var(--corner-primary) 0 30%, transparent 32%) right bottom / calc(22px * var(--ui-scale)) calc(17px * var(--ui-scale)) no-repeat,
+        radial-gradient(circle at 28% 30%, var(--corner-primary) 0 16%, transparent 18%) left top / calc(25px * var(--ui-scale)) calc(19px * var(--ui-scale)) no-repeat,
+        radial-gradient(circle at 48% 58%, #fff0bf 0 11%, transparent 13%) left top / calc(25px * var(--ui-scale)) calc(19px * var(--ui-scale)) no-repeat,
+        radial-gradient(circle at 72% 30%, var(--corner-primary) 0 16%, transparent 18%) right top / calc(25px * var(--ui-scale)) calc(19px * var(--ui-scale)) no-repeat,
+        radial-gradient(circle at 52% 58%, #fff0bf 0 11%, transparent 13%) right top / calc(25px * var(--ui-scale)) calc(19px * var(--ui-scale)) no-repeat,
         linear-gradient(42deg, transparent 44%, var(--corner-secondary) 45% 55%, transparent 56%) left top / calc(26px * var(--ui-scale)) calc(26px * var(--ui-scale)) no-repeat,
-        linear-gradient(-42deg, transparent 44%, var(--corner-secondary) 45% 55%, transparent 56%) right top / calc(26px * var(--ui-scale)) calc(26px * var(--ui-scale)) no-repeat,
-        linear-gradient(-42deg, transparent 44%, var(--corner-secondary) 45% 55%, transparent 56%) left bottom / calc(26px * var(--ui-scale)) calc(26px * var(--ui-scale)) no-repeat,
-        linear-gradient(42deg, transparent 44%, var(--corner-secondary) 45% 55%, transparent 56%) right bottom / calc(26px * var(--ui-scale)) calc(26px * var(--ui-scale)) no-repeat;
+        linear-gradient(-42deg, transparent 44%, var(--corner-secondary) 45% 55%, transparent 56%) right top / calc(26px * var(--ui-scale)) calc(26px * var(--ui-scale)) no-repeat;
 }
 
 .terminal[data-theme="rain-greenhouse"]::after {
@@ -278,6 +280,8 @@
 
 .terminal[data-theme="mist-cottage"] .title-bar {
     background:
+        radial-gradient(ellipse at 18% 115%, rgba(255, 218, 235, 0.36), transparent 32%),
+        radial-gradient(ellipse at 82% -15%, rgba(215, 199, 255, 0.34), transparent 32%),
         repeating-linear-gradient(90deg, transparent 0 calc(14px * var(--ui-scale)), color-mix(in srgb, var(--frame-highlight) 22%, transparent) calc(14px * var(--ui-scale)) calc(15px * var(--ui-scale))),
         linear-gradient(180deg, var(--title-c), var(--title-a));
     border-color: var(--corner-secondary);
@@ -329,25 +333,37 @@
 
 .terminal[data-theme="mist-cottage"] .title-bar::before,
 .terminal[data-theme="mist-cottage"] .title-bar::after {
-    content: var(--title-ornament);
-    font: 700 calc(15px * var(--ui-scale))/1 Georgia, serif;
+    font: 700 calc(16px * var(--ui-scale))/1 Georgia, serif;
     text-shadow: calc(1px * var(--ui-scale)) calc(1px * var(--ui-scale)) 0 var(--corner-secondary);
 }
 
 .terminal[data-theme="mist-cottage"] .title-bar::before {
-    transform: translateY(-50%) rotate(-24deg);
+    content: "❀";
+    transform: translateY(-50%) rotate(-12deg);
 }
 
 .terminal[data-theme="mist-cottage"] .title-bar::after {
-    transform: translateY(-50%) scaleX(-1) rotate(-24deg);
+    content: "☁";
+    color: #f7eafa;
+    transform: translateY(-50%);
 }
 
 .terminal[data-theme="rain-greenhouse"] .title-bar::before,
 .terminal[data-theme="rain-greenhouse"] .title-bar::after {
-    width: calc(10px * var(--ui-scale));
-    height: calc(10px * var(--ui-scale));
-    border: calc(2px * var(--ui-scale)) solid var(--corner-primary);
-    transform: translateY(-50%) rotate(45deg);
+    width: calc(18px * var(--ui-scale));
+    height: calc(18px * var(--ui-scale));
+    font: 700 calc(15px * var(--ui-scale))/1 "Segoe UI Emoji", sans-serif;
+    text-shadow: 0 calc(1px * var(--ui-scale)) 0 var(--title-shadow);
+    transform: translateY(-50%);
+}
+
+.terminal[data-theme="rain-greenhouse"] .title-bar::before {
+    content: "☘";
+    color: #b8f08e;
+}
+
+.terminal[data-theme="rain-greenhouse"] .title-bar::after {
+    content: "🦋";
 }
 
 .terminal[data-theme="winter-kitchen"] .title-bar::before,
@@ -388,6 +404,8 @@
 
 .terminal[data-theme="mist-cottage"] .content::before {
     background:
+        radial-gradient(circle at 12% 22%, rgba(255, 190, 215, 0.22), transparent 22%),
+        radial-gradient(circle at 86% 78%, rgba(196, 177, 238, 0.2), transparent 25%),
         repeating-linear-gradient(0deg, transparent 0 calc(4px * var(--ui-scale)), var(--paper-grain) calc(4px * var(--ui-scale)) calc(5px * var(--ui-scale))),
         repeating-linear-gradient(90deg, transparent 0 calc(7px * var(--ui-scale)), color-mix(in srgb, var(--paper-border) 7%, transparent) calc(7px * var(--ui-scale)) calc(8px * var(--ui-scale))),
         linear-gradient(150deg, var(--paper-light), var(--paper));
@@ -398,6 +416,7 @@
 
 .terminal[data-theme="rain-greenhouse"] .content::before {
     background:
+        radial-gradient(circle at 84% 18%, rgba(125, 255, 207, 0.26), transparent 22%),
         linear-gradient(118deg, transparent 0 18%, color-mix(in srgb, var(--paper-highlight) 58%, transparent) 19% 20%, transparent 21% 64%, color-mix(in srgb, var(--paper-highlight) 34%, transparent) 65% 66%, transparent 67%),
         repeating-linear-gradient(90deg, transparent 0 calc(24px * var(--ui-scale)), color-mix(in srgb, var(--paper-border) 12%, transparent) calc(24px * var(--ui-scale)) calc(25px * var(--ui-scale))),
         linear-gradient(155deg, var(--paper-light), var(--paper));
@@ -424,6 +443,16 @@
     color: var(--season-mark-color);
     font-size: calc(23px * var(--ui-scale));
     opacity: 0.18;
+}
+
+.terminal[data-theme="mist-cottage"] .content::after,
+.terminal[data-theme="rain-greenhouse"] .content::after {
+    display: none;
+}
+
+.terminal[data-theme="harvest-barn"] .content::after {
+    font-size: calc(27px * var(--ui-scale));
+    opacity: 0.22;
 }
 
 .terminal .selection {
