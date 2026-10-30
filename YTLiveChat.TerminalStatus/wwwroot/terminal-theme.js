@@ -7,8 +7,17 @@
         "harvest-barn",
         "winter-kitchen"
     ]);
-    const defaultIntervalMs = 60_000;
+    const defaultStagePlaybackMs = 100_000;
+    const defaultIntervalMs = defaultStagePlaybackMs;
     const defaultTransitionMs = 1_200;
+
+    const playbackThemes = Object.freeze([
+        "mist-cottage", "mist-cottage", "mist-cottage",
+        "rain-greenhouse", "rain-greenhouse", "rain-greenhouse", "rain-greenhouse",
+        "harvest-barn", "harvest-barn", "harvest-barn",
+        "winter-kitchen", "winter-kitchen", "winter-kitchen"
+    ]);
+
     let terminal = null;
     let cycleTimer = null;
     let cleanupTimer = null;
@@ -29,7 +38,7 @@
             : Date.now();
         const autoCycleMs = Number.isFinite(Number(candidate?.autoCycleMs)) && Number(candidate.autoCycleMs) > 0
             ? Number(candidate.autoCycleMs)
-            : defaultIntervalMs;
+            : defaultStagePlaybackMs;
         const transitionMs = Number.isFinite(Number(candidate?.transitionMs)) && Number(candidate.transitionMs) >= 0
             ? Number(candidate.transitionMs)
             : defaultTransitionMs;
@@ -39,13 +48,33 @@
 
     function resolveThemeState(candidate, wallClockMs = Date.now()) {
         const state = normalizeState(candidate);
+        const safeStageMs = state.autoCycleMs > 0 ? state.autoCycleMs : defaultStagePlaybackMs;
+        const startIndex = Math.max(0, playbackThemes.indexOf(state.theme));
+        const playlistDuration = playbackThemes.length * safeStageMs;
         const elapsed = Math.max(0, wallClockMs - state.changedAt);
-        const elapsedSlots = Math.floor(elapsed / state.autoCycleMs);
-        const baseIndex = state.themeIds.indexOf(state.theme);
+        const cycleElapsed = elapsed % playlistDuration;
+
+        const currentSlot = Math.floor(cycleElapsed / safeStageMs);
+        const currentIndex = (startIndex + currentSlot) % playbackThemes.length;
+        const currentTheme = playbackThemes[currentIndex];
+
+        let slotsRemainingInTheme = playbackThemes.length;
+        for (let offset = 1; offset < playbackThemes.length; offset += 1) {
+            const checkIndex = (currentIndex + offset) % playbackThemes.length;
+            if (playbackThemes[checkIndex] !== currentTheme) {
+                slotsRemainingInTheme = offset;
+                break;
+            }
+        }
+
+        const timeIntoCurrentSlot = cycleElapsed % safeStageMs;
+        const remainingInTheme = (slotsRemainingInTheme - 1) * safeStageMs + (safeStageMs - timeIntoCurrentSlot);
+        const clockSkewLead = state.changedAt > wallClockMs ? (state.changedAt - wallClockMs) : 0;
+
         return {
             ...state,
-            currentTheme: state.themeIds[(baseIndex + elapsedSlots) % state.themeIds.length],
-            nextChangeAt: state.changedAt + ((elapsedSlots + 1) * state.autoCycleMs)
+            currentTheme,
+            nextChangeAt: wallClockMs + clockSkewLead + remainingInTheme
         };
     }
 

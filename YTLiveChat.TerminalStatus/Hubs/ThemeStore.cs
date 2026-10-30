@@ -4,7 +4,8 @@ namespace YTLiveChat.TerminalStatus.Hubs;
 
 public sealed class ThemeStore
 {
-    public const int DefaultAutoCycleMs = 60_000;
+    public const int DefaultAutoCycleMs = 100_000;
+    public const int StagePlaybackMs = 100_000;
 
     private static readonly string[] OrderedThemeIds =
     [
@@ -12,6 +13,14 @@ public sealed class ThemeStore
         "rain-greenhouse",
         "harvest-barn",
         "winter-kitchen"
+    ];
+
+    private static readonly string[] PlaybackThemes =
+    [
+        "mist-cottage", "mist-cottage", "mist-cottage",
+        "rain-greenhouse", "rain-greenhouse", "rain-greenhouse", "rain-greenhouse",
+        "harvest-barn", "harvest-barn", "harvest-barn",
+        "winter-kitchen", "winter-kitchen", "winter-kitchen"
     ];
 
     public static IReadOnlyList<string> ThemeIds => OrderedThemeIds;
@@ -71,7 +80,7 @@ public sealed class ThemeStore
         {
             theme = _baseTheme,
             changedAt = _changedAt,
-            autoCycleMs = DefaultAutoCycleMs,
+            autoCycleMs = StagePlaybackMs,
             transitionMs = 1_200,
             themeIds = ThemeIds
         };
@@ -79,10 +88,13 @@ public sealed class ThemeStore
 
     private string ResolveThemeAt(long timestamp)
     {
+        int baseIndex = Array.IndexOf(PlaybackThemes, _baseTheme);
+        if (baseIndex < 0) baseIndex = 0;
         long elapsed = Math.Max(0, timestamp - _changedAt);
-        int elapsedSlots = (int)(elapsed / DefaultAutoCycleMs);
-        int baseIndex = Array.IndexOf(OrderedThemeIds, _baseTheme);
-        return ThemeIds[(baseIndex + elapsedSlots) % ThemeIds.Count];
+        long playlistDuration = PlaybackThemes.Length * (long)StagePlaybackMs;
+        long cycleElapsed = elapsed % playlistDuration;
+        int slot = (int)(cycleElapsed / StagePlaybackMs);
+        return PlaybackThemes[(baseIndex + slot) % PlaybackThemes.Length];
     }
 
     private void Load()
