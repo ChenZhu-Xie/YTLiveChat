@@ -365,18 +365,18 @@ function Complete-BackendLaunch {
     }
 
     try {
-        $sourceName = if ([string]::IsNullOrWhiteSpace($ObsBrowserSourceName)) {
-            $ApplicationName
-        } else {
-            $ObsBrowserSourceName
-        }
         $refreshedNames = @(Invoke-ObsBrowserSourceRefresh `
             -BrowserSourceUri $BrowserSourceUri `
-            -PreferredSourceName $sourceName `
+            -PreferredSourceName $ObsBrowserSourceName `
             -WebSocketUrl $ObsWebSocketUrl `
             -Password $ObsWebSocketPassword)
         if ($refreshedNames.Count -eq 0) {
-            Write-Warning "[$ApplicationName] No OBS browser source named '$sourceName' matched $($BrowserSourceUri.Host):$($BrowserSourceUri.Port)."
+            $sourceDescription = if ([string]::IsNullOrWhiteSpace($ObsBrowserSourceName)) {
+                "No OBS browser source"
+            } else {
+                "No OBS browser source named '$ObsBrowserSourceName'"
+            }
+            Write-Warning "[$ApplicationName] $sourceDescription matched $($BrowserSourceUri.Host):$($BrowserSourceUri.Port)."
         } else {
             Write-Host "[$ApplicationName] Refreshed OBS browser source(s): $($refreshedNames -join ', ')"
         }
