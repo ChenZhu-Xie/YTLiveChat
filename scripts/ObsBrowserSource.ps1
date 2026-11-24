@@ -231,7 +231,21 @@ function Test-ObsBrowserSourceUrl {
     $hostsMatch = $candidateUri.Host -eq $ExpectedUri.Host -or
         ($candidateUri.Host -in $localHosts -and $ExpectedUri.Host -in $localHosts)
 
-    return $hostsMatch -and $candidateUri.Port -eq $ExpectedUri.Port
+    if (-not $hostsMatch -or $candidateUri.Port -ne $ExpectedUri.Port) {
+        return $false
+    }
+
+    # The legacy Overlay and Compositor share a port, but serve different pages.
+    $candidatePath = $candidateUri.AbsolutePath
+    $expectedPath = $ExpectedUri.AbsolutePath
+    if ($candidatePath -eq "/index.html") {
+        $candidatePath = "/"
+    }
+    if ($expectedPath -eq "/index.html") {
+        $expectedPath = "/"
+    }
+
+    return $candidatePath -ceq $expectedPath
 }
 
 function Invoke-ObsBrowserSourceRefresh {

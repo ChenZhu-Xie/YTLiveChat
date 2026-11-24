@@ -16,7 +16,9 @@ Unofficial .NET library for reading YouTube live chat via InnerTube (the same we
 
 The local Overlay and TerminalStatus launchers import the repository-owned `scripts/modules/ObsBrowserSource` PowerShell module. Its public surface is limited to `Complete-BackendLaunch`; OBS WebSocket transport and authentication helpers remain private to the module.
 
-After the backend is ready, the launchers refresh all OBS browser sources pointing to its host and port, including renamed sources and independent copies used in other scenes. Use `-ObsBrowserSourceName "TerminalStatus 15fps - Nanchang left2"` to refresh only a specific matching source, or `-SkipObsRefresh` to skip refreshing OBS. OBS must be running with its WebSocket server enabled.
+After the backend is ready, the launchers refresh all OBS browser sources pointing to its host, port, and page path, including renamed sources and independent copies used in other scenes. Root URLs and `/index.html` are treated as the same page; query strings do not restrict matching. Use `-ObsBrowserSourceName "TerminalStatus 15fps - Nanchang left2"` to refresh only a specific matching source, or `-SkipObsRefresh` to skip refreshing OBS. OBS must be running with its WebSocket server enabled.
+
+Overlay intentionally retains port 5000 so it can be used as a fallback for OBS.ShowCompositor. Stop Compositor's service on that port before running `.\YTLiveChat.Overlay.ps1`; stop Overlay with `.\YTLiveChat.Overlay.ps1 -StopOnly` before switching back. Overlay refreshes sources using `/` or `/index.html`, including their copies in other scenes, and excludes Compositor's `/show` sources on the same port.
 
 ## Install
 
